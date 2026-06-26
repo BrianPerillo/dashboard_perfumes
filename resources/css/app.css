@@ -1,0 +1,93 @@
+@import 'tailwindcss';
+
+/* class-based dark mode para Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../../vendor/livewire/livewire/src/**/*.blade.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+    /* Paleta principal: ciruela + dorado */
+    --color-primary-50:  #f5f0ff;
+    --color-primary-100: #ede5ff;
+    --color-primary-200: #ddd0ff;
+    --color-primary-300: #c4a8ff;
+    --color-primary-400: #a87aff;
+    --color-primary-500: #8b52f0;
+    --color-primary-600: #5B3A8C;
+    --color-primary-700: #6325ba;
+    --color-primary-800: #3a2259;
+    --color-primary-900: #2a1840;
+
+    --color-accent-400: #e8c040;
+    --color-accent-500: #C9A227;
+    --color-accent-600: #a8861f;
+
+    --color-good-600:   #16a34a;
+    --color-bad-600:    #dc2626;
+
+    /* Superficie del dashboard */
+    --color-surface:    #faf8ff;
+    --color-border:     #9580c8;
+}
+
+/* ── Variables de tema (light / dark) ────────────────── */
+:root {
+    --c-bg:       #ede9f8;
+    --c-card:     #fbfbfb;
+    --c-border:   #c7c7c7;
+    --c-sidebar:  #f5f0ff;
+    --c-nav:      #f5f0ff;
+    --c-text:     #1e293b;
+    --c-muted:    #64748b;
+    --c-input:    #ffffff;
+}
+
+html.dark {
+    --c-bg:       #0d0f1a;
+    --c-card:     #1a1d2e;
+    --c-border:   #2d3148;
+    --c-sidebar:  #131524;
+    --c-nav:      #1a1d2e;
+    --c-text:     #e2e8f0;
+    --c-muted:    #94a3b8;
+    --c-input:    #1e2236;
+    /* design tokens: override para contraste en modo oscuro */
+    --color-surface:     #1a1d2e;
+    --color-border:      #2d3148;
+    --color-primary-700: #b528b5;
+    --color-good-600:    #22c822;
+    --color-bad-600:     #ff4444;
+}
+
+/* Alpine x-cloak: ocultar hasta que Alpine inicializa */
+[x-cloak] { display: none !important; }
+
+
+/* ── Scrollbar delgado ── */
+* { scrollbar-width: thin; scrollbar-color: #c4a8ff transparent; }
+
+/* ── Transiciones solo en elementos interactivos ── */
+button, a, input, select, textarea, [role="button"] {
+    transition: background-color 150ms ease, color 150ms ease,
+                border-color 150ms ease, opacity 150ms ease,
+                box-shadow 150ms ease;
+}
+
+/* ── Scrollbar hidden utility ── */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { scrollbar-width: none; }
+
+/* ── Sidebar collapsible (desktop) ── */
+.app-sidebar  { transition: transform 300ms cubic-bezier(.4,0,.2,1); }
+.app-content  { transition: padding-left 300ms cubic-bezier(.4,0,.2,1); }
+@media (min-width: 1024px) {
+    html.sidebar-hidden .app-sidebar { transform: translateX(-100%); }
+    html.sidebar-hidden .app-content { padding-left: 0 !important; }
+}
+

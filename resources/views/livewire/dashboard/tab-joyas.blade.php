@@ -1,0 +1,111 @@
+{{-- ════ TAB: Joyas ═══════════════════════════════════ --}}
+<style>
+    .joya-card {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        will-change: transform;
+    }
+    .dark .joya-card {
+        box-shadow: 0 2px 10px rgba(0,0,0,0.45);
+    }
+    .joya-card:hover {
+        transform: scale(1.03) translateZ(0);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        position: relative;
+        z-index: 1;
+    }
+    .dark .joya-card:hover {
+        box-shadow: 0 6px 22px rgba(0,0,0,0.55);
+    }
+</style>
+<div x-show="tab==='joyas'" x-cloak>
+    @php
+        $joyas = json_decode($joyasJson, true) ?? [];
+        $marcasConJoyas = collect($joyas)->groupBy('marca');
+        $joyasBrandOrder = [
+            'Versace'=>1,'Yves Saint Laurent'=>2,'Armani'=>3,'Dior'=>4,
+            'Chanel'=>5,'Dolce & Gabbana'=>6,'Hugo Boss'=>7,'Rabanne'=>8,
+            'Jean Paul Gaultier'=>9,'Givenchy'=>10,'Montblanc'=>11,'Carolina Herrera'=>12,
+        ];
+    @endphp
+
+    @if(empty($joyas))
+        <div class="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900 px-4 py-8 text-center text-amber-700 dark:text-amber-400">
+            No hay joyas con {{ $joyasUmbral }}% de descuento o más. Bajá el umbral.
+        </div>
+    @else
+        {{-- KPIs de joyas --}}
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="rounded-xl border border-[var(--c-border)] bg-[var(--c-bg)] p-4 text-center">
+                <p class="text-2xl font-bold text-violet-500 dark:text-violet-300">{{ count($joyas) }}</p>
+                <p class="text-xs text-[var(--c-muted)] uppercase tracking-wide mt-0.5">Ofertas Destacadas</p>
+            </div>
+            <div class="rounded-xl border border-[var(--c-border)] bg-[var(--c-bg)] p-4 text-center">
+                <p class="text-2xl font-bold" style="color:#2ce427">{{ collect($joyas)->where('descuento_pct','>=',40)->count() }}</p>
+                <p class="text-xs text-[var(--c-muted)] uppercase tracking-wide mt-0.5">Con 40% o más</p>
+            </div>
+            <div class="rounded-xl border border-[var(--c-border)] bg-[var(--c-bg)] p-4 text-center">
+                <p class="text-2xl font-bold text-violet-500 dark:text-violet-300">{{ $marcasConJoyas->count() }}</p>
+                <p class="text-xs text-[var(--c-muted)] uppercase tracking-wide mt-0.5">Marcas destacadas</p>
+            </div>
+        </div>
+
+        {{-- Cards por marca --}}
+        @foreach($marcasConJoyas->sortBy(fn($g, $m) => $joyasBrandOrder[$m] ?? 99) as $marca => $items)
+        <div class="mb-6">
+            <h3 class="text-base font-bold text-violet-500 dark:text-violet-300 mb-3 flex items-center gap-2">
+                <span class="inline-block w-1 h-5 rounded-full bg-[var(--color-primary-600)]"></span>
+                {{ $marca }}
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                @foreach($items->sortByDesc('descuento_pct') as $j)
+                @php
+                    $pct  = $j['descuento_pct'];
+                    $freq = $j['freq_pct'] ?? 0;
+                    $dias = $j['dias_en_oferta'] ?? 0;
+                    $borderColor = $pct >= 40 ? '#2ce427' : ($pct >= 20 ? '#b427e4' : '#94a3b8');
+                    $tier = $pct >= 40 ? '🔥🔥' : ($pct >= 30 ? '🔥' : '✅');
+
+                    if ($dias >= 365) {
+                        $badgeLabel = '⚠️ siempre en oferta';
+                        $badgeClass = 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+                    } elseif ($dias >= 30) {
+                        $badgeLabel = '📌 habitualmente en oferta';
+                        $badgeClass = 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
+                    } elseif ($dias > 0 && $dias < 7) {
+                        $badgeLabel = '🆕 oferta reciente';
+                        $badgeClass = 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+                    } elseif ($freq > 0) {
+                        $badgeLabel = "en oferta {$freq}% del tiempo";
+                        $badgeClass = 'bg-[var(--c-bg)] text-[var(--c-muted)]';
+                    } else {
+                        $badgeLabel = null;
+                        $badgeClass = '';
+                    }
+                @endphp
+                <div class="joya-card rounded-xl border border-[var(--c-border)] p-4 bg-[var(--c-card)]"
+                     style="border-left: 4px solid {{ $borderColor }}">
+                    <div class="flex justify-between items-start gap-2">
+                        <span class="font-bold text-[var(--c-text)] text-sm leading-tight">{{ $tier }} {{ $j['linea'] }}</span>
+                        <span class="text-lg font-extrabold shrink-0" style="color:{{ $borderColor }}">{{ $pct }}%</span>
+                    </div>
+                    <p class="text-sm text-[var(--c-muted)] mt-1"><span class="font-semibold text-[var(--c-text)]">{{ $j['tienda'] }}</span> · ${{ number_format($j['precio_actual'], 0, ',', '.') }}</p>
+                    <p class="text-xs text-[var(--c-muted)] mt-0.5 truncate">{{ $j['producto'] }}</p>
+                    <div class="flex items-center justify-between mt-2">
+                        @if(!empty($j['url']))
+                        <a href="{{ $j['url'] }}" target="_blank" rel="noopener"
+                           class="text-xs text-violet-500 dark:text-violet-400 hover:underline">ver producto →</a>
+                        @else<span></span>@endif
+                        @if($badgeLabel)
+                        <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium {{ $badgeClass }}">
+                            {{ $badgeLabel }}
+                        </span>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endforeach
+    @endif
+</div>
