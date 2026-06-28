@@ -10,9 +10,10 @@ class Producto extends Model
     public $timestamps = false;
 
     protected $casts = [
-        'primera_vez' => 'datetime',
-        'ultima_vez'  => 'datetime',
-        'tamano_ml'   => 'integer',
+        'primera_vez'  => 'datetime',
+        'ultima_vez'   => 'datetime',
+        'tamano_ml'    => 'integer',
+        'presentacion' => 'string',
     ];
 
     public function tienda()

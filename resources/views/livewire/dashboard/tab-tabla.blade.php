@@ -10,7 +10,42 @@
         z-index: 1;
     }
 </style>
-<div x-show="tab==='tabla'" x-cloak x-data="{ tablaOrdOpen: false }">
+<div x-show="tab==='tabla'" x-cloak
+     x-data="{ tablaOrdOpen: false, _cargando: false, _tablaThrottle: 0 }"
+     x-init="
+         $nextTick(() => {
+             const spShow = () => { const el = document.getElementById('tabla-cargando'); if (el) el.style.display = 'flex'; };
+             const spHide = () => { const el = document.getElementById('tabla-cargando'); if (el) el.style.display = 'none'; };
+
+             const tryLoad = () => {
+                 if (this._cargando || !$wire.tablaTieneMas) return;
+                 const s = document.getElementById('tabla-sentinel');
+                 if (!s || s.getBoundingClientRect().top > window.innerHeight + 300) return;
+                 this._cargando = true;
+                 spShow();
+                 $wire.cargarMasTabla().then(() => {
+                     this._cargando = false;
+                     spHide();
+                     tryLoad();
+                 });
+             };
+
+             const sentinel = document.getElementById('tabla-sentinel');
+             if (sentinel) {
+                 new IntersectionObserver(
+                     (entries) => { if (entries[0].isIntersecting) tryLoad(); },
+                     { rootMargin: '300px' }
+                 ).observe(sentinel);
+             }
+
+             window.addEventListener('scroll', () => {
+                 const now = Date.now();
+                 if (now - this._tablaThrottle < 100) return;
+                 this._tablaThrottle = now;
+                 if (tab === 'tabla') tryLoad();
+             }, { passive: true });
+         });
+     ">
 
     {{-- Toggle ordenamiento --}}
     <button @click="tablaOrdOpen = !tablaOrdOpen"
@@ -133,11 +168,16 @@
                     [$tablaSortCol3, $tablaSortDir3],
                 ])->filter(fn($s) => $s[0])->map(fn($s) => ($sortCols[$s[0]] ?? $s[0]) . ' ' . ($s[1] === 'asc' ? '↑' : '↓'))->implode(' › ');
             @endphp
-            @if($n >= 500)
-                primeros <span class="font-semibold text-[var(--c-text)]">500</span> resultados
-                <span class="text-[10px] text-[var(--c-muted)]">(hay más · usá filtros para acotar)</span>
+            <span class="font-semibold text-[var(--c-text)]">{{ $n }}</span>
+            @if($tablaTotalCount > $n)
+                de <span class="font-semibold text-[var(--c-text)]">{{ $tablaTotalCount }}</span>
+                resultados cargados
+                <span class="ml-1 text-violet-500 dark:text-violet-400 text-[10px] font-semibold">↓ seguí scrolleando</span>
             @else
-                <span class="font-semibold text-[var(--c-text)]">{{ $n }}</span> resultado{{ $n !== 1 ? 's' : '' }}
+                resultado{{ $n !== 1 ? 's' : '' }}
+                @if($tablaTotalCount > 0 && $n === $tablaTotalCount)
+                <span class="text-[10px] text-[var(--c-muted)]">· todos cargados</span>
+                @endif
             @endif
             @if($sortDesc) · orden: <span class="text-[var(--color-primary-600)] font-medium">{{ $sortDesc }}</span>@endif
         </p>
@@ -242,9 +282,23 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="10" class="px-4 py-8 text-center text-slate-400">Sin productos con esos filtros.</td></tr>
+                <tr><td colspan="10" class="px-4 py-8 text-center text-[var(--c-muted)]">Sin productos con esos filtros.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
+
+    {{-- ── Infinite scroll: sentinel + estados ── --}}
+    <div id="tabla-sentinel" class="py-1" aria-hidden="true"></div>
+
+
+    {{-- Fin de resultados --}}
+    @if(!$tablaTieneMas && count($tabla) > 0)
+    <p class="py-4 text-center text-xs text-[var(--c-muted)]">
+        ✓ {{ number_format(count($tabla), 0, ',', '.') }} resultados cargados
+        @if($tablaTotalCount > count($tabla))
+        de {{ number_format($tablaTotalCount, 0, ',', '.') }}
+        @endif
+    </p>
+    @endif
 </div>

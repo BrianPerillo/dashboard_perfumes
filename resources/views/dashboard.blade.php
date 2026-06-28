@@ -2,10 +2,10 @@
 
     {{-- Panel KPIs (colapsado por defecto en mobile, abierto en desktop) --}}
     @php
-        $primerSnap  = \App\Models\Corrida::orderBy('fecha_hora')->first();
-        $ultimoSnap  = \App\Models\Corrida::orderByDesc('fecha_hora')->first();
-        $snapDesde   = $primerSnap  ? $primerSnap->fecha_hora->format('d/m/Y H:i')  : null;
-        $snapHasta   = $ultimoSnap  ? $ultimoSnap->fecha_hora->format('d/m/Y H:i')  : null;
+        $primerSnap = \App\Models\Corrida::orderBy('fecha_hora')->first();
+        $ultimoSnap = \App\Models\Corrida::orderByDesc('fecha_hora')->first();
+        $snapDesde  = $primerSnap ? $primerSnap->fecha_hora->format('d/m/Y H:i') : null;
+        $snapHasta  = $ultimoSnap ? $ultimoSnap->fecha_hora->format('d/m/Y H:i') : null;
     @endphp
     <div x-data="{ kpiOpen: false }">
 

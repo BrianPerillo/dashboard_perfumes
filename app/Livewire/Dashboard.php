@@ -13,6 +13,8 @@ class Dashboard extends Component
     // ── Filtros globales ──────────────────────────────────────────
     public array  $tiendasSeleccionadas = [];
     public array  $generosSeleccionados = ['masculino', 'femenino', 'unisex'];
+    public array  $mlDisponibles        = [];
+    public array  $mlSeleccionados      = [];
     public float  $descMin = 0;
     public float  $descMax = 90;
     public string $tabActiva = 'joyas';
@@ -58,6 +60,11 @@ class Dashboard extends Component
     public string $seguirProdKey = '';
     public array  $seguirOpciones = [];
 
+    // ── Tabla: infinite scroll ────────────────────────────────────
+    public int    $tablaPagina        = 1;
+    public bool   $tablaTieneMas      = false;
+    public int    $tablaTotalCount    = 0;
+
     // ── JSON para vistas ──────────────────────────────────────────
     public string $serieEvolucionJson = '[]';
     public string $resumenTiendasJson = '[]';
@@ -70,6 +77,9 @@ class Dashboard extends Component
     public string $compararJson       = '[]';
     public string $transferJson       = '[]';
     public string $conclusionesJson   = '{"puntos":[],"joyas":[],"narrativa":""}';
+
+    // ── Marcas excluidas (no son perfumes) ───────────────────────
+    private const MARCAS_EXCLUIDAS = ['rimmel'];
 
     // ── Catálogo de joyas ─────────────────────────────────────────
     private const CATALOGO = [
@@ -109,7 +119,8 @@ class Dashboard extends Component
         $this->descMin = $filtros['descMin'] ?? 0;
         $this->descMax = $filtros['descMax'] ?? 90;
 
-        $corridas = Corrida::orderByDesc('fecha_hora')->limit(20)->get();
+        // Cargar todas las corridas existentes
+        $corridas = Corrida::orderByDesc('fecha_hora')->get();
         $this->corridas = $corridas->map(fn($c) => [
             'id'    => $c->id,
             'label' => Carbon::parse($c->fecha_hora)->format('d/m/Y H:i'),
@@ -124,6 +135,8 @@ class Dashboard extends Component
         }
 
         $this->cargarMarcasDisponibles();
+        $this->cargarMlDisponibles();
+        $this->mlSeleccionados = $this->mlDisponibles;
         $this->cargarFavoritosLista();
 
         // Carga lazy: solo el tab solicitado en la URL
@@ -172,6 +185,26 @@ class Dashboard extends Component
             ? []
             : ['masculino', 'femenino', 'unisex'];
         $this->guardarFiltrosEnSession();
+        $this->recargarTodo();
+    }
+
+    public function toggleMl(int $ml): void
+    {
+        $sel = $this->mlSeleccionados;
+        if (($pos = array_search($ml, $sel)) !== false) {
+            array_splice($sel, $pos, 1);
+        } else {
+            $sel[] = $ml;
+        }
+        $this->mlSeleccionados = array_values($sel);
+        $this->recargarTodo();
+    }
+
+    public function toggleTodosMl(): void
+    {
+        $this->mlSeleccionados = count($this->mlSeleccionados) === count($this->mlDisponibles)
+            ? []
+            : $this->mlDisponibles;
         $this->recargarTodo();
     }
 
@@ -280,6 +313,7 @@ class Dashboard extends Component
             ->whereBetween('o.descuento_pct', [$this->descMin, $this->descMax])
             ->when(!empty($tiendaIds), fn($q) => $q->whereIn('p.tienda_id', $tiendaIds))
             ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
+            ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
             ->groupBy('o.corrida_id', 'c.fecha_hora')
             ->orderBy('c.fecha_hora')
             ->selectRaw('c.fecha_hora, COUNT(*) AS total, AVG(o.descuento_pct) AS desc_prom, MAX(o.descuento_pct) AS desc_max, SUM(o.ahorro) AS ahorro_total, COUNT(DISTINCT p.tienda_id) AS tiendas_n')
@@ -312,6 +346,8 @@ class Dashboard extends Component
             ->whereBetween('o.descuento_pct', [$this->descMin, $this->descMax])
             ->when(!empty($tiendaIds), fn($q) => $q->whereIn('p.tienda_id', $tiendaIds))
             ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
+            ->when(!empty($this->mlDisponibles) && count($this->mlSeleccionados) < count($this->mlDisponibles),
+                fn($q) => empty($this->mlSeleccionados) ? $q->whereRaw('1 = 0') : $q->whereIn('p.tamano_ml', $this->mlSeleccionados))
             ->groupBy('t.nombre')
             ->orderByDesc('total')
             ->selectRaw('t.nombre AS tienda, COUNT(*) AS total, AVG(o.descuento_pct) AS desc_prom, MAX(o.descuento_pct) AS desc_max, SUM(o.ahorro) AS ahorro_total')
@@ -339,6 +375,8 @@ class Dashboard extends Component
             ->whereBetween('o.descuento_pct', [$this->descMin, $this->descMax])
             ->when(!empty($tiendaIds), fn($q) => $q->whereIn('p.tienda_id', $tiendaIds))
             ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
+            ->when(!empty($this->mlDisponibles) && count($this->mlSeleccionados) < count($this->mlDisponibles),
+                fn($q) => empty($this->mlSeleccionados) ? $q->whereRaw('1 = 0') : $q->whereIn('p.tamano_ml', $this->mlSeleccionados))
             ->selectRaw('FLOOR(o.descuento_pct / 5) * 5 AS rango, COUNT(*) AS n')
             ->groupBy('rango')
             ->orderBy('rango')
@@ -350,9 +388,47 @@ class Dashboard extends Component
         ])->toJson();
     }
 
+    private const TABLA_POR_PAGINA = 100;
+
     private function cargarTabla(): void
     {
         if (!$this->corridaActualId) return;
+
+        $this->tablaPagina = 1;
+        $q = $this->buildTablaQuery();
+
+        $this->tablaTotalCount = (clone $q)->count();
+
+        $rows = (clone $q)
+            ->limit(self::TABLA_POR_PAGINA)
+            ->offset(0)
+            ->get();
+
+        $mapped = $rows->map(fn($r) => $this->mapTablaRow($r))->toArray();
+        $this->tablaDatosJson = json_encode($mapped);
+        $this->tablaTieneMas  = count($mapped) >= self::TABLA_POR_PAGINA;
+    }
+
+    public function cargarMasTabla(): void
+    {
+        if (!$this->tablaTieneMas || !$this->corridaActualId) return;
+
+        $this->tablaPagina++;
+        $offset = ($this->tablaPagina - 1) * self::TABLA_POR_PAGINA;
+
+        $rows = $this->buildTablaQuery()
+            ->limit(self::TABLA_POR_PAGINA)
+            ->offset($offset)
+            ->get();
+
+        $mapped    = $rows->map(fn($r) => $this->mapTablaRow($r))->toArray();
+        $existente = json_decode($this->tablaDatosJson, true) ?? [];
+        $this->tablaDatosJson = json_encode(array_merge($existente, $mapped));
+        $this->tablaTieneMas  = count($mapped) >= self::TABLA_POR_PAGINA;
+    }
+
+    private function buildTablaQuery(): \Illuminate\Database\Query\Builder
+    {
         $tiendaIds = $this->tiendaIds();
 
         $sortable = [
@@ -375,11 +451,14 @@ class Dashboard extends Component
             ->whereBetween('o.descuento_pct', [$this->descMin, $this->descMax])
             ->whereIn('p.tienda_id', $tiendaIds)
             ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
-            ->when($this->tablaSnapshotTipo === 'ultimo', fn($q) => $q->where('o.corrida_id', $this->corridaActualId))
+            ->when(!empty($this->mlDisponibles) && count($this->mlSeleccionados) < count($this->mlDisponibles),
+                fn($q) => empty($this->mlSeleccionados) ? $q->whereRaw('1 = 0') : $q->whereIn('p.tamano_ml', $this->mlSeleccionados))
             ->when(!empty($this->tablaFiltroMarcas),  fn($q) => $q->whereIn('p.marca', $this->tablaFiltroMarcas))
+            ->when(!empty($this->tablaFiltroTiendas), fn($q) => $q->whereIn('t.nombre', $this->tablaFiltroTiendas))
             ->when($this->tablaFiltroBuscar, fn($q) => $q->where('p.nombre', 'like', '%' . $this->tablaFiltroBuscar . '%'))
-            ->limit(500)
             ->selectRaw('c.fecha_hora, t.nombre AS tienda, p.marca, p.nombre AS producto, o.precio_lista, o.precio_actual, o.descuento_pct, o.ahorro, o.fuente, p.url');
+
+        $query->where('o.corrida_id', $this->corridaActualId);
 
         $sortApplied = false;
         foreach ([
@@ -396,9 +475,12 @@ class Dashboard extends Component
             $query->orderByDesc('o.descuento_pct');
         }
 
-        $rows = $query->get();
+        return $query;
+    }
 
-        $this->tablaDatosJson = $rows->map(fn($r) => [
+    private function mapTablaRow(object $r): array
+    {
+        return [
             'fecha'        => Carbon::parse($r->fecha_hora)->format('d/m H:i'),
             'tienda'       => $r->tienda,
             'marca'        => $r->marca ?? '',
@@ -409,7 +491,7 @@ class Dashboard extends Component
             'ahorro'       => '$' . number_format($r->ahorro, 0, ',', '.'),
             'fuente'       => $r->fuente ?? '',
             'url'          => $r->url ?? '',
-        ])->toJson();
+        ];
     }
 
     // ── Joyas ─────────────────────────────────────────────────────
@@ -428,6 +510,8 @@ class Dashboard extends Component
             ->where('o.descuento_pct', '<=', $this->descMax)
             ->when(!empty($tiendaIds), fn($q) => $q->whereIn('p.tienda_id', $tiendaIds))
             ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
+            ->when(!empty($this->mlDisponibles) && count($this->mlSeleccionados) < count($this->mlDisponibles),
+                fn($q) => empty($this->mlSeleccionados) ? $q->whereRaw('1 = 0') : $q->whereIn('p.tamano_ml', $this->mlSeleccionados))
             ->when($this->joyasTiendaFiltro, fn($q) => $q->where('t.nombre', $this->joyasTiendaFiltro))
             ->selectRaw('t.nombre AS tienda, p.marca, p.nombre AS producto, o.precio_actual, o.descuento_pct, p.url')
             ->orderByDesc('o.descuento_pct')
@@ -436,7 +520,7 @@ class Dashboard extends Component
 
         $matched = $this->matchJoyas($rows, $this->joyasUmbral);
 
-        // Compute historical frequency and days-on-sale per product
+        // Frecuencia y antigüedad dentro de la ventana visible (ayer → hoy)
         $totalCorridas = DB::table('corridas')->count();
         if ($totalCorridas > 0 && !empty($matched)) {
             $prodNombres = array_unique(array_map(fn($j) => mb_strtolower($j['producto']), $matched));
@@ -446,7 +530,7 @@ class Dashboard extends Component
                 ->whereIn(DB::raw('LOWER(p.nombre)'), $prodNombres)
                 ->where('o.tipo_descuento', 'rebaja')
                 ->whereNotIn('o.fuente', ['dos_precios', 'badge_%'])
-            ->whereNotIn('o.fuente', ['dos_precios', 'badge_%'])
+                ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
                 ->selectRaw('LOWER(p.nombre) AS pnorm, COUNT(DISTINCT o.corrida_id) AS cnt')
                 ->groupBy('pnorm')
                 ->pluck('cnt', 'pnorm')
@@ -458,7 +542,7 @@ class Dashboard extends Component
                 ->whereIn(DB::raw('LOWER(p.nombre)'), $prodNombres)
                 ->where('o.tipo_descuento', 'rebaja')
                 ->whereNotIn('o.fuente', ['dos_precios', 'badge_%'])
-            ->whereNotIn('o.fuente', ['dos_precios', 'badge_%'])
+                ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
                 ->selectRaw('LOWER(p.nombre) AS pnorm, MIN(c.fecha_hora) AS primera_fecha')
                 ->groupBy('pnorm')
                 ->pluck('primera_fecha', 'pnorm')
@@ -593,6 +677,8 @@ class Dashboard extends Component
             ->whereNotIn('o.fuente', ['dos_precios', 'badge_%'])
             ->when(!empty($this->tiendaIds()), fn($q) => $q->whereIn('p.tienda_id', $this->tiendaIds()))
             ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
+            ->when(!empty($this->mlDisponibles) && count($this->mlSeleccionados) < count($this->mlDisponibles),
+                fn($q) => empty($this->mlSeleccionados) ? $q->whereRaw('1 = 0') : $q->whereIn('p.tamano_ml', $this->mlSeleccionados))
             ->selectRaw('p.nombre AS producto, t.nombre AS tienda, o.descuento_pct')
             ->orderByDesc('o.descuento_pct')
             ->first();
@@ -643,6 +729,24 @@ class Dashboard extends Component
         $d = $start->copy();
         while ($d->dayOfWeek !== $dow) $d->addDay();
         return $d->addWeeks($n - 1);
+    }
+
+    // Subquery: para cada producto, el corrida_id más reciente en toda la base de datos.
+    private function latestEnVentana(string $tipo = 'rebaja'): \Illuminate\Database\Query\Builder
+    {
+        $q = DB::table('observaciones as o')
+            ->join('productos as p', 'p.id', '=', 'o.producto_id')
+            ->select('o.producto_id', DB::raw('MAX(o.corrida_id) as max_cid'))
+            ->where('o.tipo_descuento', $tipo)
+            ->groupBy('o.producto_id');
+        if ($tipo === 'rebaja') {
+            $q->whereNotIn('o.fuente', ['dos_precios', 'badge_%']);
+        }
+        if (!empty(self::MARCAS_EXCLUIDAS)) {
+            $q->where(fn($q2) => $q2->whereNull('p.marca')
+                                    ->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS));
+        }
+        return $q;
     }
 
     private function matchJoyas(array $rows, float $umbral): array
@@ -730,6 +834,8 @@ class Dashboard extends Component
             ->whereNotNull('p.marca')
             ->when(!empty($tiendaIds), fn($q) => $q->whereIn('p.tienda_id', $tiendaIds))
             ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
+            ->when(!empty($this->mlDisponibles) && count($this->mlSeleccionados) < count($this->mlDisponibles),
+                fn($q) => empty($this->mlSeleccionados) ? $q->whereRaw('1 = 0') : $q->whereIn('p.tamano_ml', $this->mlSeleccionados))
             ->groupBy('p.marca')
             ->orderByDesc('total')
             ->selectRaw('p.marca, COUNT(*) AS total, AVG(o.descuento_pct) AS desc_prom, MAX(o.descuento_pct) AS desc_max')
@@ -757,10 +863,9 @@ class Dashboard extends Component
                 ->where('o.corrida_id', $cid)
                 ->where('o.tipo_descuento', 'rebaja')
                 ->whereNotIn('o.fuente', ['dos_precios', 'badge_%'])
-            ->whereNotIn('o.fuente', ['dos_precios', 'badge_%'])
                 ->when(!empty($tiendaIds), fn($q) => $q->whereIn('p.tienda_id', $tiendaIds))
                 ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
-            ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
+                ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
                 ->selectRaw('CONCAT(LOWER(t.nombre),"||",LOWER(p.nombre)) AS pk, t.nombre AS tienda, p.marca, p.nombre AS producto, o.descuento_pct, o.precio_actual, p.url')
                 ->orderByDesc('o.descuento_pct')
                 ->get()
@@ -813,6 +918,7 @@ class Dashboard extends Component
             ->whereNotIn('o.fuente', ['dos_precios', 'badge_%'])
             ->when(!empty($tiendaIds), fn($q) => $q->whereIn('p.tienda_id', $tiendaIds))
             ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
+            ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
             ->selectRaw('CONCAT(LOWER(t.nombre),"||",LOWER(p.nombre)) AS pk, CONCAT(p.nombre," (",t.nombre,")") AS etiqueta')
             ->groupBy('pk', 'etiqueta')
             ->orderBy('p.nombre')
@@ -837,6 +943,7 @@ class Dashboard extends Component
             ->join('corridas as c',  'c.id', '=', 'o.corrida_id')
             ->where('o.tipo_descuento', 'rebaja')
             ->whereNotIn('o.fuente', ['dos_precios', 'badge_%'])
+            ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
             ->whereRaw('LOWER(t.nombre) = ?', [$tiendaN])
             ->whereRaw('LOWER(p.nombre) = ?', [$prodN])
             ->orderBy('c.fecha_hora')
@@ -867,6 +974,8 @@ class Dashboard extends Component
             ->whereNotIn('o.fuente', ['dos_precios', 'badge_%'])
             ->when(!empty($tiendaIds), fn($q) => $q->whereIn('p.tienda_id', $tiendaIds))
             ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
+            ->when(!empty($this->mlDisponibles) && count($this->mlSeleccionados) < count($this->mlDisponibles),
+                fn($q) => empty($this->mlSeleccionados) ? $q->whereRaw('1 = 0') : $q->whereIn('p.tamano_ml', $this->mlSeleccionados))
             ->selectRaw('t.nombre AS tienda, p.marca, LOWER(p.nombre) AS prod_norm, p.nombre AS producto, o.precio_actual, o.descuento_pct, p.url')
             ->orderBy('o.precio_actual')
             ->get();
@@ -912,7 +1021,8 @@ class Dashboard extends Component
                 ->whereRaw('o.precio_transferencia < o.precio_actual')
                 ->when(!empty($tiendaIds), fn($q) => $q->whereIn('p.tienda_id', $tiendaIds))
                 ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
-            ->when(count($this->generosSeleccionados) < 3, fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
+                ->when(!empty($this->mlDisponibles) && count($this->mlSeleccionados) < count($this->mlDisponibles),
+                    fn($q) => empty($this->mlSeleccionados) ? $q->whereRaw('1 = 0') : $q->whereIn('p.tamano_ml', $this->mlSeleccionados))
                 ->selectRaw('t.nombre AS tienda, p.marca, p.nombre AS producto, o.precio_actual, o.precio_transferencia, p.url')
                 ->orderByRaw('(o.precio_actual - o.precio_transferencia) / o.precio_actual DESC')
                 ->limit(200)
@@ -984,6 +1094,7 @@ class Dashboard extends Component
         $this->descMax              = 90;
         $this->tiendasSeleccionadas = array_keys($this->tiendas);
         $this->generosSeleccionados = ['masculino', 'femenino', 'unisex'];
+        $this->mlSeleccionados      = $this->mlDisponibles;
         $this->tablaFiltroBuscar  = '';
         $this->tablaFiltroMarcas  = [];
         $this->tablaFiltroTiendas = [];
@@ -1055,9 +1166,22 @@ class Dashboard extends Component
         $this->marcasDisponibles = DB::table('productos')
             ->whereNotNull('marca')
             ->where('marca', '!=', '')
+            ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('marca')->orWhereNotIn(DB::raw('LOWER(marca)'), self::MARCAS_EXCLUIDAS)))
             ->distinct()
             ->orderBy('marca')
             ->pluck('marca')
+            ->toArray();
+    }
+
+    private function cargarMlDisponibles(): void
+    {
+        $this->mlDisponibles = DB::table('productos')
+            ->whereNotNull('tamano_ml')
+            ->where('tamano_ml', '>', 0)
+            ->distinct()
+            ->orderBy('tamano_ml')
+            ->pluck('tamano_ml')
+            ->map(fn($v) => (int) $v)
             ->toArray();
     }
 
@@ -1066,6 +1190,18 @@ class Dashboard extends Component
     {
         if (empty($this->tiendasSeleccionadas)) return [-1];
         return array_map('intval', $this->tiendasSeleccionadas);
+    }
+
+    private function aplicarFiltroMl(\Illuminate\Database\Query\Builder $q): \Illuminate\Database\Query\Builder
+    {
+        if (!empty($this->mlDisponibles) && count($this->mlSeleccionados) < count($this->mlDisponibles)) {
+            if (empty($this->mlSeleccionados)) {
+                $q->whereRaw('1 = 0'); // nada seleccionado → sin resultados
+            } else {
+                $q->whereIn('p.tamano_ml', $this->mlSeleccionados);
+            }
+        }
+        return $q;
     }
 
     public function render()

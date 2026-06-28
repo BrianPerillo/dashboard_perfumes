@@ -18,6 +18,14 @@ Route::post('/logout', function () {
 // Raíz → redirige a la pestaña por defecto
 Route::get('/', fn() => redirect('/joyas'))->name('dashboard');
 
+// Notificaciones (accesible a todos, auth controlado en el componente)
+Route::get('/notificaciones', \App\Livewire\Notificaciones::class)->name('notificaciones');
+
+// Admin (requiere auth + is_admin)
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', \App\Livewire\Admin\Dashboard::class)->name('dashboard');
+});
+
 // Rutas de pestañas del dashboard
 Route::get('/{tab}', fn($tab) => view('dashboard', ['activeTab' => $tab]))
     ->where('tab', 'joyas|tabla|cambios|comparar|seguir|tiendas|distribucion|evolucion|transfer|marcas|conclusiones')

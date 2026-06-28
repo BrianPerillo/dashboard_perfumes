@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class KpiPanel extends Component
 {
+    private const MARCAS_EXCLUIDAS = ['rimmel'];
     public array $kpis = [];
     public ?string $fechaUltima = null;
     public ?string $fechaAnterior = null;
@@ -39,18 +40,15 @@ class KpiPanel extends Component
 
         // Métricas del snapshot actual (solo rebajas para stats de descuento)
         $actual = Observacion::deCorrida($idActual)->rebajas()
-            ->selectRaw('
-                COUNT(*)                     AS total,
-                AVG(descuento_pct)           AS desc_prom,
-                MAX(descuento_pct)           AS desc_max,
-                SUM(ahorro)                  AS ahorro_total
-            ')
             ->join('productos as p', 'p.id', '=', 'observaciones.producto_id')
+            ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
+            ->selectRaw('COUNT(*) AS total, AVG(descuento_pct) AS desc_prom, MAX(descuento_pct) AS desc_max, SUM(ahorro) AS ahorro_total')
             ->first();
 
         // Tiendas activas: todas las que tienen cualquier tipo de observación (incluye transferencia)
         $tiendasActivas = Observacion::deCorrida($idActual)
             ->join('productos as p', 'p.id', '=', 'observaciones.producto_id')
+            ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
             ->distinct('p.tienda_id')
             ->count('p.tienda_id');
 
@@ -58,6 +56,8 @@ class KpiPanel extends Component
         $anterior = null;
         if ($idAnterior) {
             $anterior = Observacion::deCorrida($idAnterior)->rebajas()
+                ->join('productos as p', 'p.id', '=', 'observaciones.producto_id')
+                ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
                 ->selectRaw('COUNT(*) AS total, AVG(descuento_pct) AS desc_prom, SUM(ahorro) AS ahorro_total')
                 ->first();
         }

@@ -139,18 +139,21 @@
 <div class="rounded-2xl border border-[var(--c-border)] bg-white dark:bg-[var(--c-card)] shadow-sm">
     <div class="p-5 relative">
 
-    {{-- Loading overlay --}}
+    {{-- Loading overlay: glass + spinner centrado en el viewport --}}
     <div wire:loading.delay
-         class="absolute inset-0 z-30 rounded-2xl flex items-start justify-center pt-16 pointer-events-none"
+         class="absolute inset-0 z-30 rounded-2xl flex items-start justify-center pointer-events-none"
          style="background: color-mix(in srgb, var(--c-card) 80%, transparent); backdrop-filter: blur(2px);">
-        <div class="flex items-center gap-2.5 rounded-xl border border-[var(--c-border)] bg-[var(--c-card)] px-5 py-2.5 shadow-lg pointer-events-auto">
-            <svg class="animate-spin w-4 h-4 text-[var(--color-primary-600)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        <div style="margin-top:30vh;display:flex;flex-direction:column;align-items:center;gap:14px;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 width="52" height="52"
+                 style="animation:spin 1s linear infinite;flex-shrink:0;">
+                <circle cx="12" cy="12" r="10" stroke="#8b5cf6" stroke-width="3" opacity="0.25"/>
+                <path fill="#8b5cf6" opacity="0.9" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
             </svg>
-            <span class="text-sm font-semibold text-[var(--c-text)]">Cargando…</span>
+            <span style="font-size:14px;font-weight:700;color:var(--c-text);">Cargando…</span>
         </div>
     </div>
+    <style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
 
     <div class="tab-content-area">
     @include('livewire.dashboard.tab-joyas')
@@ -180,6 +183,7 @@
     if (!empty($tablaFiltroMarcas))  $_fc += count($tablaFiltroMarcas);
     if (!empty($tablaFiltroTiendas)) $_fc++;
     if ($joyasOcultarFreq) $_fc++;
+    if (!empty($mlDisponibles) && count($mlSeleccionados) < count($mlDisponibles)) $_fc++;
 @endphp
 @if(!in_array($tabActiva, ['marcas', 'distribucion']))
 <template x-teleport="#sidebar-filters">
@@ -198,80 +202,9 @@
     </div>
     @endif
 
-    {{-- ── Tiendas ──────────────────────────────────────── --}}
-    <div class="px-4 pt-3 pb-2" wire:loading.class="opacity-50 pointer-events-none">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)] mb-2">
-            Tiendas <span class="font-normal normal-case opacity-60">({{ count($tiendasSeleccionadas) }}/{{ count($tiendas) }})</span>
-        </p>
-        <div class="flex flex-wrap gap-1 mb-2">
-            @foreach($tiendas as $tid => $tnombre)
-            <button wire:click="toggleTienda({{ $tid }})"
-                    class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
-                           {{ in_array($tid, $tiendasSeleccionadas)
-                               ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
-                               : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
-                {{ $tnombre }}
-            </button>
-            @endforeach
-        </div>
-        <button wire:click="toggleTodasTiendas"
-                class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
-            {{ count($tiendasSeleccionadas) === count($tiendas) ? '× Ninguna' : '✓ Todas' }}
-        </button>
-    </div>
-
-    {{-- ── Género ───────────────────────────────────────────── --}}
-    <div class="px-4 pt-3 pb-2 border-t border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)] mb-2">
-            Género <span class="font-normal normal-case opacity-60">({{ count($generosSeleccionados) }}/3)</span>
-        </p>
-        <div class="flex flex-wrap gap-1 mb-2">
-            @foreach(['masculino' => 'Masculino', 'femenino' => 'Femenino', 'unisex' => 'Unisex'] as $gkey => $glabel)
-            <button wire:click="toggleGenero('{{ $gkey }}')"
-                    class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
-                           {{ in_array($gkey, $generosSeleccionados)
-                               ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
-                               : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
-                {{ $glabel }}
-            </button>
-            @endforeach
-        </div>
-        <button wire:click="toggleTodosGeneros"
-                class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
-            {{ count($generosSeleccionados) === 3 ? '× Ninguno' : '✓ Todos' }}
-        </button>
-    </div>
-
-    {{-- ── Descuento ─────────────────────────────────────── --}}
-    @if(!in_array($tabActiva, ['seguir','cambios','conclusiones','comparar']))
-    <div class="px-4 py-2 space-y-1.5 border-t border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Descuento</p>
-        <div class="flex items-center gap-2">
-            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Mín</span>
-            <input type="range" wire:model.live.debounce.400ms="descMin" min="0" max="89" step="1" class="flex-1 accent-[var(--color-primary-600)]">
-            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMin }}%</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Máx</span>
-            <input type="range" wire:model.live.debounce.400ms="descMax" min="1" max="90" step="1" class="flex-1 accent-[var(--color-primary-600)]">
-            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMax }}%</span>
-        </div>
-    </div>
-    @endif
-
-    {{-- ── Opciones · Joyas ─────────────────────────────── --}}
-    @if($tabActiva === 'joyas')
-    <div class="px-4 py-2 border-t border-[var(--c-border)]">
-        <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" wire:model.live="joyasOcultarFreq" class="rounded accent-[var(--color-primary-600)]">
-            <span class="text-xs text-[var(--c-text)]">Ocultar siempre en oferta</span>
-        </label>
-    </div>
-    @endif
-
-    {{-- ── Filtros · Tabla ──────────────────────────────── --}}
+    {{-- ── Buscar (Tabla) ──────────────────────────────── --}}
     @if($tabActiva === 'tabla')
-    <div class="px-4 py-2 space-y-2 border-t border-[var(--c-border)]">
+    <div class="px-4 py-2 space-y-2 border-b border-[var(--c-border)]">
         <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Buscar</p>
         <input type="text" wire:model.live.debounce.400ms="tablaFiltroBuscar"
                placeholder="Producto…"
@@ -330,6 +263,137 @@
     </div>
     @endif
 
+    {{-- ── Género ───────────────────────────────────────────── --}}
+    <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+        <button @click="open = !open"
+                class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+                Género <span class="font-normal normal-case opacity-60">({{ count($generosSeleccionados) }}/3)</span>
+            </p>
+            <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </span>
+        </button>
+        <div class="collapsible-wrap" :class="open ? 'is-open' : ''">
+            <div class="collapsible-inner">
+                <div class="px-4 pb-3">
+                    <div class="flex flex-wrap gap-1 mb-2">
+                        @foreach(['masculino' => 'Masculino', 'femenino' => 'Femenino', 'unisex' => 'Unisex'] as $gkey => $glabel)
+                        <button wire:click="toggleGenero('{{ $gkey }}')"
+                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                       {{ in_array($gkey, $generosSeleccionados)
+                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
+                            {{ $glabel }}
+                        </button>
+                        @endforeach
+                    </div>
+                    <button wire:click="toggleTodosGeneros"
+                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                        {{ count($generosSeleccionados) === 3 ? '× Ninguno' : '✓ Todos' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ── Presentación ─────────────────────────────────────── --}}
+    @if(!empty($mlDisponibles))
+    <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+        <button @click="open = !open"
+                class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+                Presentación <span class="font-normal normal-case opacity-60">({{ count($mlSeleccionados) }}/{{ count($mlDisponibles) }})</span>
+            </p>
+            <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </span>
+        </button>
+        <div class="collapsible-wrap" :class="open ? 'is-open' : ''">
+            <div class="collapsible-inner">
+                <div class="px-4 pb-3">
+                    <div class="flex flex-wrap gap-1 mb-2">
+                        @foreach($mlDisponibles as $ml)
+                        <button wire:click="toggleMl({{ $ml }})"
+                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                       {{ in_array($ml, $mlSeleccionados)
+                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
+                            {{ $ml }} ml
+                        </button>
+                        @endforeach
+                    </div>
+                    <button wire:click="toggleTodosMl"
+                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                        {{ count($mlSeleccionados) === count($mlDisponibles) ? '× Ninguno' : '✓ Todos' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- ── Tiendas ──────────────────────────────────────── --}}
+    <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+        <button @click="open = !open"
+                class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+                Tiendas <span class="font-normal normal-case opacity-60">({{ count($tiendasSeleccionadas) }}/{{ count($tiendas) }})</span>
+            </p>
+            <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </span>
+        </button>
+        <div class="collapsible-wrap" :class="open ? 'is-open' : ''">
+            <div class="collapsible-inner">
+                <div class="px-4 pb-3">
+                    <div class="flex flex-wrap gap-1 mb-2">
+                        @foreach($tiendas as $tid => $tnombre)
+                        <button wire:click="toggleTienda({{ $tid }})"
+                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                       {{ in_array($tid, $tiendasSeleccionadas)
+                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
+                            {{ $tnombre }}
+                        </button>
+                        @endforeach
+                    </div>
+                    <button wire:click="toggleTodasTiendas"
+                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                        {{ count($tiendasSeleccionadas) === count($tiendas) ? '× Ninguna' : '✓ Todas' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ── Descuento ─────────────────────────────────────── --}}
+    @if(!in_array($tabActiva, ['seguir','cambios','conclusiones','comparar']))
+    <div class="px-4 py-2 space-y-1.5 border-t border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Descuento</p>
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Mín</span>
+            <input type="range" wire:model.live.debounce.400ms="descMin" min="0" max="89" step="1" class="flex-1 accent-[var(--color-primary-600)]">
+            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMin }}%</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Máx</span>
+            <input type="range" wire:model.live.debounce.400ms="descMax" min="1" max="90" step="1" class="flex-1 accent-[var(--color-primary-600)]">
+            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMax }}%</span>
+        </div>
+    </div>
+    @endif
+
+    {{-- ── Opciones · Joyas ─────────────────────────────── --}}
+    @if($tabActiva === 'joyas')
+    <div class="px-4 py-2 border-t border-[var(--c-border)]">
+        <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" wire:model.live="joyasOcultarFreq" class="rounded accent-[var(--color-primary-600)]">
+            <span class="text-xs text-[var(--c-text)]">Ocultar siempre en oferta</span>
+        </label>
+    </div>
+    @endif
+
     {{-- ── Período · Cambios ────────────────────────────── --}}
     @if($tabActiva === 'cambios')
     <div class="px-4 py-2 space-y-2 border-t border-[var(--c-border)]">
@@ -373,80 +437,9 @@
     </div>
     @endif
 
-    {{-- ── Tiendas ──────────────────────────────────────── --}}
-    <div class="px-4 pt-3 pb-2" wire:loading.class="opacity-50 pointer-events-none">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)] mb-2">
-            Tiendas <span class="font-normal normal-case opacity-60">({{ count($tiendasSeleccionadas) }}/{{ count($tiendas) }})</span>
-        </p>
-        <div class="flex flex-wrap gap-1 mb-2">
-            @foreach($tiendas as $tid => $tnombre)
-            <button wire:click="toggleTienda({{ $tid }})"
-                    class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
-                           {{ in_array($tid, $tiendasSeleccionadas)
-                               ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
-                               : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
-                {{ $tnombre }}
-            </button>
-            @endforeach
-        </div>
-        <button wire:click="toggleTodasTiendas"
-                class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
-            {{ count($tiendasSeleccionadas) === count($tiendas) ? '× Ninguna' : '✓ Todas' }}
-        </button>
-    </div>
-
-    {{-- ── Género ───────────────────────────────────────────── --}}
-    <div class="px-4 pt-3 pb-2 border-t border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)] mb-2">
-            Género <span class="font-normal normal-case opacity-60">({{ count($generosSeleccionados) }}/3)</span>
-        </p>
-        <div class="flex flex-wrap gap-1 mb-2">
-            @foreach(['masculino' => 'Masculino', 'femenino' => 'Femenino', 'unisex' => 'Unisex'] as $gkey => $glabel)
-            <button wire:click="toggleGenero('{{ $gkey }}')"
-                    class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
-                           {{ in_array($gkey, $generosSeleccionados)
-                               ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
-                               : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
-                {{ $glabel }}
-            </button>
-            @endforeach
-        </div>
-        <button wire:click="toggleTodosGeneros"
-                class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
-            {{ count($generosSeleccionados) === 3 ? '× Ninguno' : '✓ Todos' }}
-        </button>
-    </div>
-
-    {{-- ── Descuento ─────────────────────────────────────── --}}
-    @if(!in_array($tabActiva, ['seguir','cambios','conclusiones','comparar']))
-    <div class="px-4 py-2 space-y-1.5 border-t border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Descuento</p>
-        <div class="flex items-center gap-2">
-            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Mín</span>
-            <input type="range" wire:model.live.debounce.400ms="descMin" min="0" max="89" step="1" class="flex-1 accent-[var(--color-primary-600)]">
-            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMin }}%</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Máx</span>
-            <input type="range" wire:model.live.debounce.400ms="descMax" min="1" max="90" step="1" class="flex-1 accent-[var(--color-primary-600)]">
-            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMax }}%</span>
-        </div>
-    </div>
-    @endif
-
-    {{-- ── Opciones · Joyas ─────────────────────────────── --}}
-    @if($tabActiva === 'joyas')
-    <div class="px-4 py-2 border-t border-[var(--c-border)]">
-        <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" wire:model.live="joyasOcultarFreq" class="rounded accent-[var(--color-primary-600)]">
-            <span class="text-xs text-[var(--c-text)]">Ocultar siempre en oferta</span>
-        </label>
-    </div>
-    @endif
-
-    {{-- ── Filtros · Tabla ──────────────────────────────── --}}
+    {{-- ── Buscar (Tabla) ──────────────────────────────── --}}
     @if($tabActiva === 'tabla')
-    <div class="px-4 py-2 space-y-2 border-t border-[var(--c-border)]">
+    <div class="px-4 py-2 space-y-2 border-b border-[var(--c-border)]">
         <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Buscar</p>
         <input type="text" wire:model.live.debounce.400ms="tablaFiltroBuscar"
                placeholder="Producto…"
@@ -502,6 +495,137 @@
         @if(!empty($tablaFiltroMarcas) || $tablaFiltroBuscar)
         <button wire:click="limpiarFiltrosTabla" class="text-[10px] text-[var(--c-muted)] hover:text-[var(--c-text)] underline">↺ Limpiar</button>
         @endif
+    </div>
+    @endif
+
+    {{-- ── Género ───────────────────────────────────────────── --}}
+    <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+        <button @click="open = !open"
+                class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+                Género <span class="font-normal normal-case opacity-60">({{ count($generosSeleccionados) }}/3)</span>
+            </p>
+            <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </span>
+        </button>
+        <div class="collapsible-wrap" :class="open ? 'is-open' : ''">
+            <div class="collapsible-inner">
+                <div class="px-4 pb-3">
+                    <div class="flex flex-wrap gap-1 mb-2">
+                        @foreach(['masculino' => 'Masculino', 'femenino' => 'Femenino', 'unisex' => 'Unisex'] as $gkey => $glabel)
+                        <button wire:click="toggleGenero('{{ $gkey }}')"
+                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                       {{ in_array($gkey, $generosSeleccionados)
+                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
+                            {{ $glabel }}
+                        </button>
+                        @endforeach
+                    </div>
+                    <button wire:click="toggleTodosGeneros"
+                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                        {{ count($generosSeleccionados) === 3 ? '× Ninguno' : '✓ Todos' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ── Presentación ─────────────────────────────────────── --}}
+    @if(!empty($mlDisponibles))
+    <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+        <button @click="open = !open"
+                class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+                Presentación <span class="font-normal normal-case opacity-60">({{ count($mlSeleccionados) }}/{{ count($mlDisponibles) }})</span>
+            </p>
+            <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </span>
+        </button>
+        <div class="collapsible-wrap" :class="open ? 'is-open' : ''">
+            <div class="collapsible-inner">
+                <div class="px-4 pb-3">
+                    <div class="flex flex-wrap gap-1 mb-2">
+                        @foreach($mlDisponibles as $ml)
+                        <button wire:click="toggleMl({{ $ml }})"
+                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                       {{ in_array($ml, $mlSeleccionados)
+                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
+                            {{ $ml }} ml
+                        </button>
+                        @endforeach
+                    </div>
+                    <button wire:click="toggleTodosMl"
+                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                        {{ count($mlSeleccionados) === count($mlDisponibles) ? '× Ninguno' : '✓ Todos' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- ── Tiendas ──────────────────────────────────────── --}}
+    <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+        <button @click="open = !open"
+                class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+                Tiendas <span class="font-normal normal-case opacity-60">({{ count($tiendasSeleccionadas) }}/{{ count($tiendas) }})</span>
+            </p>
+            <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </span>
+        </button>
+        <div class="collapsible-wrap" :class="open ? 'is-open' : ''">
+            <div class="collapsible-inner">
+                <div class="px-4 pb-3">
+                    <div class="flex flex-wrap gap-1 mb-2">
+                        @foreach($tiendas as $tid => $tnombre)
+                        <button wire:click="toggleTienda({{ $tid }})"
+                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                       {{ in_array($tid, $tiendasSeleccionadas)
+                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
+                            {{ $tnombre }}
+                        </button>
+                        @endforeach
+                    </div>
+                    <button wire:click="toggleTodasTiendas"
+                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                        {{ count($tiendasSeleccionadas) === count($tiendas) ? '× Ninguna' : '✓ Todas' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ── Descuento ─────────────────────────────────────── --}}
+    @if(!in_array($tabActiva, ['seguir','cambios','conclusiones','comparar']))
+    <div class="px-4 py-2 space-y-1.5 border-t border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Descuento</p>
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Mín</span>
+            <input type="range" wire:model.live.debounce.400ms="descMin" min="0" max="89" step="1" class="flex-1 accent-[var(--color-primary-600)]">
+            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMin }}%</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Máx</span>
+            <input type="range" wire:model.live.debounce.400ms="descMax" min="1" max="90" step="1" class="flex-1 accent-[var(--color-primary-600)]">
+            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMax }}%</span>
+        </div>
+    </div>
+    @endif
+
+    {{-- ── Opciones · Joyas ─────────────────────────────── --}}
+    @if($tabActiva === 'joyas')
+    <div class="px-4 py-2 border-t border-[var(--c-border)]">
+        <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" wire:model.live="joyasOcultarFreq" class="rounded accent-[var(--color-primary-600)]">
+            <span class="text-xs text-[var(--c-text)]">Ocultar siempre en oferta</span>
+        </label>
     </div>
     @endif
 

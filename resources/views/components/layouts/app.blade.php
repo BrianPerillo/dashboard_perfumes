@@ -52,6 +52,17 @@
             if (localStorage.getItem('dark') !== 'false') document.documentElement.classList.add('dark');
         })();
     </script>
+    {{-- Google Analytics --}}
+    @if(config('services.google.analytics_id'))
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '{{ config('services.google.analytics_id') }}');
+    </script>
+    @endif
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     <style>
@@ -384,6 +395,24 @@
                     <span x-show="dark"  class="text-lg leading-none" x-cloak>☀️</span>
                 </button>
 
+                {{-- Botón Notificaciones --}}
+                <a href="{{ route('notificaciones') }}"
+                   class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                          bg-violet-600 hover:bg-violet-700 text-white transition-colors whitespace-nowrap">
+                    🔥 Alertas
+                </a>
+
+                @auth
+                @if(auth()->user()->is_admin)
+                <a href="{{ route('admin.dashboard') }}"
+                   class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                          {{ $activeTab === 'admin' ? 'bg-violet-800 text-white' : 'bg-[var(--c-border)] text-[var(--c-text)] hover:bg-violet-100 dark:hover:bg-violet-900/40' }}
+                          transition-colors whitespace-nowrap">
+                    🛡️ Admin
+                </a>
+                @endif
+                @endauth
+
                 <div class="hidden lg:block w-px h-6 bg-[var(--c-border)]"></div>
 
                 @auth
@@ -437,7 +466,23 @@
              class="lg:hidden border-t border-[var(--c-border)] bg-[var(--c-nav)] overflow-y-auto"
              style="max-height: calc(100dvh - 56px)">
             <div id="mobile-filters"></div>
-            <div class="border-t border-[var(--c-border)] px-4 py-3 flex items-center justify-between">
+            <div class="border-t border-[var(--c-border)] px-4 py-3">
+            <a href="{{ route('notificaciones') }}"
+               class="flex items-center justify-center gap-2 w-full px-4 py-2.5 mb-3 rounded-xl
+                      bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors">
+                🔥 Activar Alertas de Descuentos
+            </a>
+            @auth
+            @if(auth()->user()->is_admin)
+            <a href="{{ route('admin.dashboard') }}"
+               class="flex items-center justify-center gap-2 w-full px-4 py-2.5 mb-3 rounded-xl
+                      bg-[var(--c-border)] text-[var(--c-text)] text-sm font-semibold transition-colors hover:bg-violet-100 dark:hover:bg-violet-900/30">
+                🛡️ Panel Admin
+            </a>
+            @endif
+            @endauth
+        </div>
+        <div class="border-t border-[var(--c-border)] px-4 py-3 flex items-center justify-between">
                 @auth
                 <span class="text-sm font-medium text-[var(--c-text)]">{{ auth()->user()->name }}</span>
                 <form method="POST" action="{{ route('logout') }}">
@@ -487,6 +532,20 @@
     {{-- ── Slot de contenido ──────────────────────────────────── --}}
     <main class="flex-1 px-4 sm:px-6 py-6">
         {{ $slot }}
+
+        {{-- Spinner de scroll infinito: controlado directamente por JS (getElementById),
+             sin wire:loading ni x-show para evitar problemas de timing/display --}}
+        <div id="tabla-cargando" style="display:none"
+             class="justify-center items-center py-10">
+            <span class="inline-flex items-center gap-3 rounded-full px-6 py-3 text-sm font-semibold
+                         shadow-xl bg-[var(--c-card)] border-2 border-violet-500/60 text-[var(--c-text)]">
+                <svg class="animate-spin w-5 h-5 text-violet-500 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Cargando más resultados…
+            </span>
+        </div>
     </main>
 
     {{-- ── Footer ─────────────────────────────────────────────── --}}
@@ -545,5 +604,7 @@
     */
 </script>
 @stack('scripts')
+
+
 </body>
 </html>

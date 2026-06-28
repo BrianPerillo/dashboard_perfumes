@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+    ],
+
+    'google' => [
+        'analytics_id'          => env('GOOGLE_ANALYTICS_ID'),           // G-XXXXXXXXXX (medición)
+        'analytics_property_id' => env('GOOGLE_ANALYTICS_PROPERTY_ID'), // numérico, ej: 123456789
+    ],
+
 ];
