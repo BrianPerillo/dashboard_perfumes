@@ -215,3 +215,682 @@
 16:26:02  INFO        60.0%  beauty24     CK One Essence Viva Love Parfum Intens ($200675 -> $80270) [api]
 16:26:02  INFO        60.0%  rouge        Hot Water EDT ($163350 -> $65340) [api]
 16:26:02  INFO        60.0%  rouge        So Real Cheap & Chic EDT ($99900 -> $39960) [api]
+18:21:09  INFO     == pigmento (vtex) ==
+18:21:10  INFO       categorias detectadas: [3, 7, 90, 95, 189]
+18:21:12  INFO       0 productos (0 con descuento)
+18:21:13  INFO     == pigmento (vtex) ==
+18:21:17  INFO       69 productos (16 con descuento)
+18:21:17  INFO     == pigmento (vtex) ==
+18:21:20  INFO       61 productos (24 con descuento)
+18:21:21  INFO     == beauty24 (vtex) ==
+18:21:54  INFO       995 productos (119 con descuento)
+18:21:55  INFO     == beauty24 (vtex) ==
+18:22:24  INFO       1126 productos (168 con descuento)
+18:22:26  INFO     == beauty24 (vtex) ==
+18:22:33  INFO       193 productos (31 con descuento)
+18:22:34  INFO     == rouge (vtex) ==
+18:23:04  INFO       1001 productos (143 con descuento)
+18:23:05  INFO     == rouge (vtex) ==
+18:23:31  INFO       975 productos (165 con descuento)
+18:23:33  INFO     == rouge (vtex) ==
+18:23:43  INFO       359 productos (50 con descuento)
+18:23:44  INFO     == fiorani (vtex) ==
+18:24:01  INFO       461 productos (86 con descuento)
+18:24:02  INFO     == fiorani (vtex) ==
+18:24:13  INFO       271 productos (38 con descuento)
+18:24:14  INFO     == fiorani (vtex) ==
+18:24:17  INFO       87 productos (18 con descuento)
+18:24:19  INFO     == getthelook (vtex) ==
+18:24:46  INFO       308 productos (73 con descuento)
+18:24:47  INFO     == getthelook (vtex) ==
+18:24:51  INFO       100 productos (19 con descuento)
+18:24:52  INFO     == farmalife (vtex) ==
+18:25:06  INFO       330 productos (34 con descuento)
+18:25:07  INFO     == farmalife (vtex) ==
+18:25:18  INFO       266 productos (9 con descuento)
+18:25:20  INFO     == unishop (unishop) ==
+18:26:01  INFO       170 productos (169 con descuento)
+18:26:02  INFO     == unishop (unishop) ==
+18:26:50  INFO       144 productos (138 con descuento)
+18:26:51  INFO     == unishop (unishop) ==
+18:26:56  INFO       15 productos (14 con descuento)
+18:26:57  INFO     == ambrosia (tiendanube) ==
+18:27:08  INFO       288 productos (0 con descuento, 288 por transferencia)
+18:27:09  INFO     == ambrosia (tiendanube) ==
+18:27:20  INFO       303 productos (0 con descuento, 303 por transferencia)
+18:27:21  INFO     == ambrosia (tiendanube) ==
+18:27:35  INFO       364 productos (0 con descuento, 364 por transferencia)
+18:27:38  INFO     == juleriaque (html) ==
+18:27:54  INFO       pagina 1: 96 tarjetas, 93 nuevos (total 93)
+18:28:06  INFO       pagina 2: 96 tarjetas, 12 nuevos (total 105)
+18:28:16  INFO       pagina 3: 86 tarjetas, 2 nuevos (total 107)
+18:28:28  INFO       pagina 4: 75 tarjetas, 1 nuevos (total 108)
+18:28:40  INFO       pagina 5: 80 tarjetas, 15 nuevos (total 123)
+18:28:52  INFO       pagina 6: 69 tarjetas, 0 nuevos (total 123)
+18:28:52  INFO       expandiendo variantes en 123 productos con descuento...
+18:34:10  INFO       total tras expandir variantes: 123
+18:34:10  INFO       123 productos (123 con descuento)
+18:34:12  INFO     == juleriaque (html) ==
+18:34:23  INFO       pagina 1: 48 tarjetas, 40 nuevos (total 40)
+18:34:35  INFO       pagina 2: 39 tarjetas, 4 nuevos (total 44)
+18:34:45  INFO       pagina 3: 26 tarjetas, 0 nuevos (total 44)
+18:34:45  INFO       expandiendo variantes en 44 productos con descuento...
+18:36:33  INFO       total tras expandir variantes: 44
+18:36:33  INFO       44 productos (44 con descuento)
+18:36:35  INFO     == juleriaque (html) ==
+18:36:46  INFO       pagina 1: 13 tarjetas, 13 nuevos (total 13)
+18:36:59  INFO       pagina 2: 3 tarjetas, 0 nuevos (total 13)
+18:36:59  INFO       expandiendo variantes en 13 productos con descuento...
+18:37:29  INFO       total tras expandir variantes: 13
+18:37:29  INFO       13 productos (13 con descuento)
+18:37:32  INFO     == parfumerie (html) ==
+18:37:50  INFO       pagina 1: 159 tarjetas, 37 nuevos (total 37)
+18:37:50  INFO       expandiendo variantes en 37 productos con descuento...
+18:39:45  INFO       total tras expandir variantes: 37
+18:39:45  INFO       37 productos (37 con descuento)
+18:39:46  INFO     == parfumerie (html) ==
+18:40:04  INFO       pagina 1: 114 tarjetas, 30 nuevos (total 30)
+18:40:04  INFO       expandiendo variantes en 30 productos con descuento...
+18:41:42  INFO       total tras expandir variantes: 30
+18:41:42  INFO       30 productos (30 con descuento)
+18:41:44  INFO     == parfumerie (html) ==
+18:42:01  INFO       pagina 1: 105 tarjetas, 67 nuevos (total 67)
+18:42:01  INFO       expandiendo variantes en 67 productos con descuento...
+18:45:35  INFO       total tras expandir variantes: 67
+18:45:35  INFO       67 productos (67 con descuento)
+18:45:37  INFO     == ruizyroca (html) ==
+18:45:44  INFO       pagina 1: 1 tarjetas, 1 nuevos (total 1)
+18:45:50  INFO       pagina 2: 7 tarjetas, 6 nuevos (total 7)
+18:45:55  INFO       pagina 3: 11 tarjetas, 4 nuevos (total 11)
+18:46:01  INFO       pagina 4: 12 tarjetas, 1 nuevos (total 12)
+18:46:06  INFO       pagina 5: 13 tarjetas, 1 nuevos (total 13)
+18:46:12  INFO       pagina 6: 15 tarjetas, 2 nuevos (total 15)
+18:46:18  INFO       pagina 7: 18 tarjetas, 3 nuevos (total 18)
+18:46:24  INFO       pagina 8: 23 tarjetas, 5 nuevos (total 23)
+18:46:30  INFO       pagina 9: 23 tarjetas, 0 nuevos (total 23)
+18:46:30  INFO       expandiendo variantes en 23 productos con descuento...
+18:46:30  INFO       total tras expandir variantes: 23
+18:46:30  INFO       23 productos (23 con descuento)
+18:46:31  INFO     == ruizyroca (html) ==
+18:46:38  INFO       pagina 1: 2 tarjetas, 2 nuevos (total 2)
+18:46:44  INFO       pagina 2: 3 tarjetas, 1 nuevos (total 3)
+18:46:49  INFO       pagina 3: 4 tarjetas, 1 nuevos (total 4)
+18:46:55  INFO       pagina 4: 4 tarjetas, 0 nuevos (total 4)
+18:46:55  INFO       expandiendo variantes en 4 productos con descuento...
+18:46:55  INFO       total tras expandir variantes: 4
+18:46:55  INFO       4 productos (4 con descuento)
+18:46:56  INFO     == ruizyroca (html) ==
+18:47:02  INFO       pagina 1: 3 tarjetas, 3 nuevos (total 3)
+18:47:07  INFO       pagina 2: 3 tarjetas, 0 nuevos (total 3)
+18:47:07  INFO       expandiendo variantes en 3 productos con descuento...
+18:47:07  INFO       total tras expandir variantes: 3
+18:47:07  INFO       3 productos (3 con descuento)
+18:47:09  INFO     == normy (html) ==
+18:47:22  INFO       pagina 1: 7 tarjetas, 0 nuevos (total 0)
+18:47:22  INFO       expandiendo variantes en 0 productos con descuento...
+18:47:22  INFO       total tras expandir variantes: 0
+18:47:22  INFO       0 productos (0 con descuento)
+18:47:23  INFO     == normy (html) ==
+18:47:36  INFO       pagina 1: 6 tarjetas, 0 nuevos (total 0)
+18:47:36  INFO       expandiendo variantes en 0 productos con descuento...
+18:47:36  INFO       total tras expandir variantes: 0
+18:47:36  INFO       0 productos (0 con descuento)
+18:47:38  INFO     Comparando contra corrida anterior: descuentos_perfumes_28-6-2026_05-14-49.xlsx
+18:47:41  WARNING  ALERTA pigmento_masculino [vacio]: 0 productos: posible error de scraping (0 encontrados)
+18:47:41  WARNING  ALERTA normy_masculino [vacio]: 0 productos: posible error de scraping (0 encontrados)
+18:47:41  WARNING  ALERTA normy_femenino [vacio]: 0 productos: posible error de scraping (0 encontrados)
+18:47:44  INFO     MySQL: corrida #34 guardada (2545 observaciones, 2545 productos).
+18:47:44  INFO     Mejor negocio que antes (verde): 10 | productos nuevos (amarillo): 74
+18:47:44  INFO     
+18:47:44  INFO     LISTO: 1604 con descuento real -> C:\xampp\htdocs\perfumes-dashboard\excel_perfumes\descuentos_perfumes_28-6-2026_18-21-09.xlsx
+18:47:44  INFO            + 955 productos más baratos por transferencia (guardados aparte en la base).
+18:47:44  INFO        65.0%  beauty24     Woman EDP 100 ml ($283000 -> $99050) [api]
+18:47:44  INFO        65.0%  rouge        Woman EDP 100 ml ($283000 -> $99050) [api]
+18:47:44  INFO        64.7%  fiorani      VERSACE WOMAN  EDP 100ml ($283000 -> $99900) [api]
+18:47:44  INFO        60.0%  beauty24     Hot Water EDT Promo 110ml ($163350 -> $65340) [api]
+18:47:44  INFO        60.0%  beauty24     So Real Cheap & Chic EDT Promo 30ml ($99900 -> $39960) [api]
+18:47:44  INFO        60.0%  beauty24     CK One Essence Viva Love Parfum Intens ($200675 -> $80270) [api]
+18:47:44  INFO        60.0%  rouge        Hot Water EDT Promo 110ml ($163350 -> $65340) [api]
+18:47:44  INFO        60.0%  rouge        So Real Cheap & Chic EDT Promo 30ml ($99900 -> $39960) [api]
+09:46:26  INFO     == pigmento (vtex) ==
+09:46:41  INFO       470 productos (90 con descuento)
+09:46:42  INFO     == pigmento (vtex) ==
+09:47:05  INFO       688 productos (112 con descuento)
+09:47:07  INFO     == pigmento (vtex) ==
+09:47:09  INFO       61 productos (24 con descuento)
+09:47:11  INFO     == beauty24 (vtex) ==
+09:47:39  INFO       998 productos (234 con descuento)
+09:47:40  INFO     == beauty24 (vtex) ==
+09:48:04  INFO       786 productos (127 con descuento)
+09:48:05  INFO     == beauty24 (vtex) ==
+09:48:11  INFO       192 productos (30 con descuento)
+09:48:12  INFO     == rouge (vtex) ==
+09:48:40  INFO       1003 productos (250 con descuento)
+09:48:41  INFO     == rouge (vtex) ==
+09:48:57  INFO       599 productos (134 con descuento)
+09:48:58  INFO     == rouge (vtex) ==
+09:49:12  INFO       359 productos (49 con descuento)
+09:49:14  INFO     == fiorani (vtex) ==
+09:49:24  INFO       318 productos (58 con descuento)
+09:49:25  INFO     == fiorani (vtex) ==
+09:49:34  INFO       269 productos (36 con descuento)
+09:49:35  INFO     == fiorani (vtex) ==
+09:49:38  INFO       87 productos (18 con descuento)
+09:49:39  INFO     == getthelook (vtex) ==
+09:50:04  INFO       308 productos (73 con descuento)
+09:50:04  INFO     == getthelook (vtex) ==
+09:50:28  INFO       433 productos (94 con descuento)
+09:50:30  INFO     == farmalife (vtex) ==
+09:50:43  INFO       330 productos (34 con descuento)
+09:50:44  INFO     == farmalife (vtex) ==
+09:50:55  INFO       266 productos (9 con descuento)
+09:50:56  INFO     == unishop (unishop) ==
+09:51:35  INFO       167 productos (166 con descuento)
+09:51:37  INFO     == unishop (unishop) ==
+09:52:20  INFO       143 productos (137 con descuento)
+09:52:21  INFO     == unishop (unishop) ==
+09:52:25  INFO       15 productos (14 con descuento)
+09:52:27  INFO     == ambrosia (tiendanube) ==
+09:52:36  INFO       285 productos (0 con descuento, 285 por transferencia)
+09:52:37  INFO     == ambrosia (tiendanube) ==
+09:52:49  INFO       301 productos (0 con descuento, 301 por transferencia)
+09:52:50  INFO     == ambrosia (tiendanube) ==
+09:53:04  INFO       364 productos (0 con descuento, 364 por transferencia)
+09:53:14  INFO     == juleriaque (html) ==
+09:53:33  INFO       pagina 1: 106 tarjetas, 105 nuevos (total 105)
+09:53:43  INFO       pagina 2: 85 tarjetas, 0 nuevos (total 105)
+09:53:43  INFO       expandiendo variantes en 105 productos con descuento...
+09:58:40  INFO       total tras expandir variantes: 105
+09:58:40  INFO       105 productos (105 con descuento)
+09:58:42  INFO     == juleriaque (html) ==
+09:58:53  INFO       pagina 1: 85 tarjetas, 79 nuevos (total 79)
+09:59:03  INFO       pagina 2: 88 tarjetas, 17 nuevos (total 96)
+09:59:16  INFO       pagina 3: 79 tarjetas, 0 nuevos (total 96)
+09:59:16  INFO       expandiendo variantes en 96 productos con descuento...
+10:03:42  INFO       total tras expandir variantes: 96
+10:03:42  INFO       96 productos (96 con descuento)
+10:03:44  INFO     == juleriaque (html) ==
+10:03:54  INFO       pagina 1: 14 tarjetas, 13 nuevos (total 13)
+10:04:06  INFO       pagina 2: 3 tarjetas, 0 nuevos (total 13)
+10:04:06  INFO       expandiendo variantes en 13 productos con descuento...
+10:04:41  INFO       total tras expandir variantes: 13
+10:04:41  INFO       13 productos (13 con descuento)
+10:04:43  INFO     == parfumerie (html) ==
+10:05:00  INFO       pagina 1: 124 tarjetas, 23 nuevos (total 23)
+10:05:00  INFO       expandiendo variantes en 23 productos con descuento...
+10:06:14  INFO       total tras expandir variantes: 23
+10:06:14  INFO       23 productos (23 con descuento)
+10:06:16  INFO     == parfumerie (html) ==
+10:06:34  INFO       pagina 1: 126 tarjetas, 41 nuevos (total 41)
+10:06:34  INFO       expandiendo variantes en 41 productos con descuento...
+10:08:44  INFO       total tras expandir variantes: 41
+10:08:44  INFO       41 productos (41 con descuento)
+10:08:46  INFO     == parfumerie (html) ==
+10:09:03  INFO       pagina 1: 117 tarjetas, 77 nuevos (total 77)
+10:09:03  INFO       expandiendo variantes en 77 productos con descuento...
+10:13:01  INFO       total tras expandir variantes: 77
+10:13:01  INFO       77 productos (77 con descuento)
+10:13:02  INFO     == ruizyroca (html) ==
+10:13:09  INFO       pagina 1: 2 tarjetas, 2 nuevos (total 2)
+10:13:14  INFO       pagina 2: 7 tarjetas, 5 nuevos (total 7)
+10:13:20  INFO       pagina 3: 11 tarjetas, 4 nuevos (total 11)
+10:13:25  INFO       pagina 4: 12 tarjetas, 1 nuevos (total 12)
+10:13:31  INFO       pagina 5: 13 tarjetas, 1 nuevos (total 13)
+10:13:36  INFO       pagina 6: 15 tarjetas, 2 nuevos (total 15)
+10:13:42  INFO       pagina 7: 18 tarjetas, 3 nuevos (total 18)
+10:13:47  INFO       pagina 8: 23 tarjetas, 5 nuevos (total 23)
+10:13:53  INFO       pagina 9: 23 tarjetas, 0 nuevos (total 23)
+10:13:53  INFO       expandiendo variantes en 23 productos con descuento...
+10:13:53  INFO       total tras expandir variantes: 23
+10:13:53  INFO       23 productos (23 con descuento)
+10:13:54  INFO     == ruizyroca (html) ==
+10:14:01  INFO       pagina 1: 2 tarjetas, 2 nuevos (total 2)
+10:14:07  INFO       pagina 2: 3 tarjetas, 1 nuevos (total 3)
+10:14:12  INFO       pagina 3: 4 tarjetas, 1 nuevos (total 4)
+10:14:18  INFO       pagina 4: 4 tarjetas, 0 nuevos (total 4)
+10:14:18  INFO       expandiendo variantes en 4 productos con descuento...
+10:14:18  INFO       total tras expandir variantes: 4
+10:14:18  INFO       4 productos (4 con descuento)
+10:14:19  INFO     == ruizyroca (html) ==
+10:14:25  INFO       pagina 1: 3 tarjetas, 3 nuevos (total 3)
+10:14:31  INFO       pagina 2: 3 tarjetas, 0 nuevos (total 3)
+10:14:31  INFO       expandiendo variantes en 3 productos con descuento...
+10:14:31  INFO       total tras expandir variantes: 3
+10:14:31  INFO       3 productos (3 con descuento)
+10:14:32  INFO     == normy (html) ==
+10:14:45  INFO       pagina 1: 7 tarjetas, 0 nuevos (total 0)
+10:14:45  INFO       expandiendo variantes en 0 productos con descuento...
+10:14:45  INFO       total tras expandir variantes: 0
+10:14:45  INFO       0 productos (0 con descuento)
+10:14:46  INFO     == normy (html) ==
+10:14:58  INFO       pagina 1: 6 tarjetas, 0 nuevos (total 0)
+10:14:58  INFO       expandiendo variantes en 0 productos con descuento...
+10:14:58  INFO       total tras expandir variantes: 0
+10:14:58  INFO       0 productos (0 con descuento)
+10:15:00  INFO     Comparando contra corrida anterior: descuentos_perfumes_28-6-2026_18-21-09.xlsx
+10:15:05  WARNING  ALERTA normy_masculino [vacio]: 0 productos: posible error de scraping (0 encontrados)
+10:15:05  WARNING  ALERTA normy_femenino [vacio]: 0 productos: posible error de scraping (0 encontrados)
+10:15:08  INFO     MySQL: corrida #35 guardada (2956 observaciones, 2956 productos).
+10:15:08  INFO     Mejor negocio que antes (verde): 34 | productos nuevos (amarillo): 654
+10:15:08  INFO     
+10:15:08  INFO     LISTO: 2028 con descuento real -> C:\xampp\htdocs\perfumes-dashboard\excel_perfumes\descuentos_perfumes_29-6-2026_09-46-26.xlsx
+10:15:08  INFO            + 950 productos más baratos por transferencia (guardados aparte en la base).
+10:15:08  INFO        65.0%  rouge        Woman EDP 100 ml ($283000 -> $99050) [api]
+10:15:08  INFO        64.7%  fiorani      VERSACE WOMAN  EDP 100ml ($283000 -> $99900) [api]
+10:15:08  INFO        60.0%  beauty24     Hot Water EDT Promo 110ml ($163350 -> $65340) [api]
+10:15:08  INFO        60.0%  beauty24     So Real Cheap & Chic EDT Promo 30ml ($99900 -> $39960) [api]
+10:15:08  INFO        60.0%  beauty24     CK One Essence Viva Love Parfum Intens ($200675 -> $80270) [api]
+10:15:08  INFO        60.0%  rouge        Hot Water EDT Promo 110ml ($163350 -> $65340) [api]
+10:15:08  INFO        60.0%  rouge        So Real Cheap & Chic EDT Promo 30ml ($99900 -> $39960) [api]
+10:15:08  INFO        60.0%  rouge        CK One Essence Viva Love Parfum Intens ($200675 -> $80270) [api]
+13:00:11  INFO     == pigmento (vtex) ==
+13:00:27  INFO       468 productos (171 con descuento)
+13:00:28  INFO     == pigmento (vtex) ==
+13:00:49  INFO       691 productos (181 con descuento)
+13:00:50  INFO     == pigmento (vtex) ==
+13:00:53  INFO       61 productos (24 con descuento)
+13:00:54  INFO     == beauty24 (vtex) ==
+13:01:24  INFO       998 productos (234 con descuento)
+13:01:25  INFO     == beauty24 (vtex) ==
+13:01:27  INFO       77 productos (25 con descuento)
+13:01:28  INFO     == beauty24 (vtex) ==
+13:01:36  INFO       192 productos (30 con descuento)
+13:01:37  INFO     == rouge (vtex) ==
+13:01:57  INFO       639 productos (199 con descuento)
+13:01:58  INFO     == rouge (vtex) ==
+13:02:00  INFO       86 productos (24 con descuento)
+13:02:01  INFO     == rouge (vtex) ==
+13:02:12  INFO       359 productos (49 con descuento)
+13:02:14  INFO     == fiorani (vtex) ==
+13:02:33  INFO       573 productos (191 con descuento)
+13:02:34  INFO     == fiorani (vtex) ==
+13:02:42  INFO       268 productos (50 con descuento)
+13:02:43  INFO     == fiorani (vtex) ==
+13:02:46  INFO       87 productos (18 con descuento)
+13:02:47  INFO     == getthelook (vtex) ==
+13:03:17  INFO       308 productos (73 con descuento)
+13:03:18  INFO     == getthelook (vtex) ==
+13:03:45  INFO       433 productos (94 con descuento)
+13:03:46  INFO     == farmalife (vtex) ==
+13:03:59  INFO       330 productos (34 con descuento)
+13:04:01  INFO     == farmalife (vtex) ==
+13:04:11  INFO       266 productos (9 con descuento)
+13:04:13  INFO     == unishop (unishop) ==
+13:04:51  INFO       167 productos (166 con descuento)
+13:04:53  INFO     == unishop (unishop) ==
+13:05:37  INFO       143 productos (137 con descuento)
+13:05:38  INFO     == unishop (unishop) ==
+13:05:43  INFO       15 productos (14 con descuento)
+13:05:44  INFO     == ambrosia (tiendanube) ==
+13:05:54  INFO       283 productos (0 con descuento, 283 por transferencia)
+13:05:55  INFO     == ambrosia (tiendanube) ==
+13:06:07  INFO       301 productos (0 con descuento, 301 por transferencia)
+13:06:08  INFO     == ambrosia (tiendanube) ==
+13:06:20  INFO       364 productos (0 con descuento, 364 por transferencia)
+13:06:26  INFO     == juleriaque (html) ==
+13:06:38  INFO       pagina 1: 32 tarjetas, 32 nuevos (total 32)
+13:06:48  INFO       pagina 2: 95 tarjetas, 74 nuevos (total 106)
+13:06:58  INFO       pagina 3: 96 tarjetas, 13 nuevos (total 119)
+13:07:08  INFO       pagina 4: 106 tarjetas, 23 nuevos (total 142)
+13:07:18  INFO       pagina 5: 95 tarjetas, 1 nuevos (total 143)
+13:07:28  INFO       pagina 6: 106 tarjetas, 23 nuevos (total 166)
+13:07:38  INFO       pagina 7: 106 tarjetas, 12 nuevos (total 178)
+13:07:48  INFO       pagina 8: 118 tarjetas, 22 nuevos (total 200)
+13:07:59  INFO       pagina 9: 96 tarjetas, 0 nuevos (total 200)
+13:07:59  INFO       expandiendo variantes en 200 productos con descuento...
+13:17:04  INFO       total tras expandir variantes: 200
+13:17:04  INFO       200 productos (200 con descuento)
+13:17:06  INFO     == juleriaque (html) ==
+13:17:16  INFO       pagina 1: 84 tarjetas, 77 nuevos (total 77)
+13:17:26  INFO       pagina 2: 85 tarjetas, 17 nuevos (total 94)
+13:17:37  INFO       pagina 3: 87 tarjetas, 12 nuevos (total 106)
+13:17:46  INFO       pagina 4: 76 tarjetas, 0 nuevos (total 106)
+13:17:46  INFO       expandiendo variantes en 106 productos con descuento...
+13:22:14  INFO       total tras expandir variantes: 106
+13:22:14  INFO       106 productos (106 con descuento)
+13:22:16  INFO     == juleriaque (html) ==
+13:22:26  INFO       pagina 1: 14 tarjetas, 13 nuevos (total 13)
+13:22:37  INFO       pagina 2: 2 tarjetas, 0 nuevos (total 13)
+13:22:37  INFO       expandiendo variantes en 13 productos con descuento...
+13:23:10  INFO       total tras expandir variantes: 13
+13:23:10  INFO       13 productos (13 con descuento)
+13:23:12  INFO     == parfumerie (html) ==
+13:23:29  INFO       pagina 1: 112 tarjetas, 23 nuevos (total 23)
+13:23:29  INFO       expandiendo variantes en 23 productos con descuento...
+13:24:37  INFO       total tras expandir variantes: 23
+13:24:37  INFO       23 productos (23 con descuento)
+13:24:39  INFO     == parfumerie (html) ==
+13:24:55  INFO       pagina 1: 114 tarjetas, 30 nuevos (total 30)
+13:24:55  INFO       expandiendo variantes en 30 productos con descuento...
+13:26:24  INFO       total tras expandir variantes: 30
+13:26:24  INFO       30 productos (30 con descuento)
+13:26:26  INFO     == parfumerie (html) ==
+13:26:44  INFO       pagina 1: 129 tarjetas, 85 nuevos (total 85)
+13:26:44  INFO       expandiendo variantes en 85 productos con descuento...
+13:31:12  INFO       total tras expandir variantes: 85
+13:31:12  INFO       85 productos (85 con descuento)
+13:31:13  INFO     == ruizyroca (html) ==
+13:31:19  INFO       pagina 1: 1 tarjetas, 1 nuevos (total 1)
+13:31:25  INFO       pagina 2: 6 tarjetas, 5 nuevos (total 6)
+13:31:30  INFO       pagina 3: 10 tarjetas, 4 nuevos (total 10)
+13:31:36  INFO       pagina 4: 11 tarjetas, 1 nuevos (total 11)
+13:31:41  INFO       pagina 5: 13 tarjetas, 2 nuevos (total 13)
+13:31:47  INFO       pagina 6: 17 tarjetas, 4 nuevos (total 17)
+13:31:52  INFO       pagina 7: 21 tarjetas, 4 nuevos (total 21)
+13:31:58  INFO       pagina 8: 23 tarjetas, 2 nuevos (total 23)
+13:32:04  INFO       pagina 9: 24 tarjetas, 1 nuevos (total 24)
+13:32:10  INFO       pagina 10: 24 tarjetas, 0 nuevos (total 24)
+13:32:10  INFO       expandiendo variantes en 24 productos con descuento...
+13:32:10  INFO       total tras expandir variantes: 24
+13:32:10  INFO       24 productos (24 con descuento)
+13:32:11  INFO     == ruizyroca (html) ==
+13:32:17  INFO       pagina 1: 1 tarjetas, 1 nuevos (total 1)
+13:32:22  INFO       pagina 2: 3 tarjetas, 2 nuevos (total 3)
+13:32:28  INFO       pagina 3: 4 tarjetas, 1 nuevos (total 4)
+13:32:33  INFO       pagina 4: 4 tarjetas, 0 nuevos (total 4)
+13:32:33  INFO       expandiendo variantes en 4 productos con descuento...
+13:32:33  INFO       total tras expandir variantes: 4
+13:32:33  INFO       4 productos (4 con descuento)
+13:32:34  INFO     == ruizyroca (html) ==
+13:32:41  INFO       pagina 1: 3 tarjetas, 3 nuevos (total 3)
+13:32:46  INFO       pagina 2: 3 tarjetas, 0 nuevos (total 3)
+13:32:46  INFO       expandiendo variantes en 3 productos con descuento...
+13:32:46  INFO       total tras expandir variantes: 3
+13:32:46  INFO       3 productos (3 con descuento)
+13:32:47  INFO     == normy (html) ==
+13:32:59  INFO       pagina 1: 7 tarjetas, 0 nuevos (total 0)
+13:32:59  INFO       expandiendo variantes en 0 productos con descuento...
+13:32:59  INFO       total tras expandir variantes: 0
+13:32:59  INFO       0 productos (0 con descuento)
+13:33:00  INFO     == normy (html) ==
+13:33:12  INFO       pagina 1: 6 tarjetas, 0 nuevos (total 0)
+13:33:12  INFO       expandiendo variantes en 0 productos con descuento...
+13:33:12  INFO       total tras expandir variantes: 0
+13:33:12  INFO       0 productos (0 con descuento)
+13:33:14  INFO     Comparando contra corrida anterior: descuentos_perfumes_29-6-2026_09-46-26.xlsx
+13:33:19  WARNING  ALERTA normy_masculino [vacio]: 0 productos: posible error de scraping (0 encontrados)
+13:33:19  WARNING  ALERTA normy_femenino [vacio]: 0 productos: posible error de scraping (0 encontrados)
+13:33:22  INFO     MySQL: corrida #36 guardada (3036 observaciones, 3036 productos).
+13:33:22  INFO     Mejor negocio que antes (verde): 25 | productos nuevos (amarillo): 306
+13:33:22  INFO     
+13:33:22  INFO     LISTO: 2121 con descuento real -> C:\xampp\htdocs\perfumes-dashboard\excel_perfumes\descuentos_perfumes_29-6-2026_13-00-11.xlsx
+13:33:22  INFO            + 948 productos más baratos por transferencia (guardados aparte en la base).
+13:33:22  INFO        65.0%  rouge        Woman EDP 100 ml ($283000 -> $99050) [api]
+13:33:22  INFO        64.7%  fiorani      VERSACE WOMAN  EDP 100ml ($283000 -> $99900) [api]
+13:33:22  INFO        60.0%  beauty24     Hot Water EDT Promo 110ml ($163350 -> $65340) [api]
+13:33:22  INFO        60.0%  beauty24     So Real Cheap & Chic EDT Promo 30ml ($99900 -> $39960) [api]
+13:33:22  INFO        60.0%  beauty24     CK One Essence Viva Love Parfum Intens ($200675 -> $80270) [api]
+13:33:22  INFO        60.0%  rouge        Hot Water EDT Promo 110ml ($163350 -> $65340) [api]
+13:33:22  INFO        60.0%  rouge        So Real Cheap & Chic EDT Promo 30ml ($99900 -> $39960) [api]
+13:33:22  INFO        60.0%  rouge        CK One Essence Viva Love Parfum Intens ($200675 -> $80270) [api]
+11:02:15  INFO     == pigmento (vtex) ==
+11:02:30  INFO       464 productos (177 con descuento)
+11:02:31  INFO     == pigmento (vtex) ==
+11:02:51  INFO       677 productos (177 con descuento)
+11:02:52  INFO     == pigmento (vtex) ==
+11:02:55  INFO       61 productos (24 con descuento)
+11:02:57  INFO     == beauty24 (vtex) ==
+11:03:28  INFO       993 productos (231 con descuento)
+11:03:29  INFO     == beauty24 (vtex) ==
+11:03:59  INFO       1133 productos (195 con descuento)
+11:04:00  INFO     == beauty24 (vtex) ==
+11:04:08  INFO       193 productos (30 con descuento)
+11:04:09  INFO     == rouge (vtex) ==
+11:04:38  INFO       999 productos (250 con descuento)
+11:04:39  INFO     == rouge (vtex) ==
+11:05:08  INFO       1112 productos (193 con descuento)
+11:05:09  INFO     == rouge (vtex) ==
+11:05:21  INFO       360 productos (49 con descuento)
+11:05:22  INFO     == fiorani (vtex) ==
+11:05:45  INFO       574 productos (199 con descuento)
+11:05:46  INFO     == fiorani (vtex) ==
+11:05:56  INFO       335 productos (60 con descuento)
+11:05:57  INFO     == fiorani (vtex) ==
+11:06:02  INFO       87 productos (18 con descuento)
+11:06:04  INFO     == getthelook (vtex) ==
+11:06:34  INFO       309 productos (73 con descuento)
+11:06:35  INFO     == getthelook (vtex) ==
+11:07:06  INFO       433 productos (93 con descuento)
+11:07:07  INFO     == farmalife (vtex) ==
+11:07:21  INFO       330 productos (34 con descuento)
+11:07:22  INFO     == farmalife (vtex) ==
+11:07:32  INFO       265 productos (9 con descuento)
+11:07:34  INFO     == unishop (unishop) ==
+11:08:15  INFO       167 productos (166 con descuento)
+11:08:16  INFO     == unishop (unishop) ==
+11:09:02  INFO       142 productos (136 con descuento)
+11:09:03  INFO     == unishop (unishop) ==
+11:09:07  INFO       15 productos (14 con descuento)
+11:09:09  INFO     == ambrosia (tiendanube) ==
+11:09:20  INFO       277 productos (0 con descuento, 277 por transferencia)
+11:09:21  INFO     == ambrosia (tiendanube) ==
+11:09:32  INFO       296 productos (0 con descuento, 296 por transferencia)
+11:09:33  INFO     == ambrosia (tiendanube) ==
+11:09:44  INFO       356 productos (0 con descuento, 356 por transferencia)
+11:09:50  INFO     == juleriaque (html) ==
+11:10:02  INFO       pagina 1: 64 tarjetas, 63 nuevos (total 63)
+11:10:12  INFO       pagina 2: 95 tarjetas, 41 nuevos (total 104)
+11:10:23  INFO       pagina 3: 117 tarjetas, 34 nuevos (total 138)
+11:10:33  INFO       pagina 4: 95 tarjetas, 0 nuevos (total 138)
+11:10:33  INFO       expandiendo variantes en 138 productos con descuento...
+11:17:11  INFO       total tras expandir variantes: 138
+11:17:11  INFO       138 productos (138 con descuento)
+11:17:14  INFO     == juleriaque (html) ==
+11:17:24  INFO       pagina 1: 85 tarjetas, 82 nuevos (total 82)
+11:17:34  INFO       pagina 2: 82 tarjetas, 7 nuevos (total 89)
+11:17:44  INFO       pagina 3: 73 tarjetas, 0 nuevos (total 89)
+11:17:44  INFO       expandiendo variantes en 89 productos con descuento...
+11:21:34  INFO       total tras expandir variantes: 89
+11:21:34  INFO       89 productos (89 con descuento)
+11:21:36  INFO     == juleriaque (html) ==
+11:21:46  INFO       pagina 1: 13 tarjetas, 11 nuevos (total 11)
+11:21:57  INFO       pagina 2: 0 tarjetas, 0 nuevos (total 11)
+11:21:57  INFO       expandiendo variantes en 11 productos con descuento...
+11:22:27  INFO       total tras expandir variantes: 11
+11:22:27  INFO       11 productos (11 con descuento)
+11:22:28  INFO     == parfumerie (html) ==
+11:22:45  INFO       pagina 1: 112 tarjetas, 23 nuevos (total 23)
+11:22:45  INFO       expandiendo variantes en 23 productos con descuento...
+11:23:54  INFO       total tras expandir variantes: 23
+11:23:54  INFO       23 productos (23 con descuento)
+11:23:56  INFO     == parfumerie (html) ==
+11:24:13  INFO       pagina 1: 126 tarjetas, 41 nuevos (total 41)
+11:24:13  INFO       expandiendo variantes en 41 productos con descuento...
+11:26:19  INFO       total tras expandir variantes: 41
+11:26:19  INFO       41 productos (41 con descuento)
+11:26:21  INFO     == parfumerie (html) ==
+11:26:38  INFO       pagina 1: 117 tarjetas, 13 nuevos (total 13)
+11:26:38  INFO       expandiendo variantes en 13 productos con descuento...
+11:27:22  INFO       total tras expandir variantes: 13
+11:27:22  INFO       13 productos (13 con descuento)
+11:27:24  INFO     == ruizyroca (html) ==
+11:27:30  INFO       pagina 1: 0 tarjetas, 0 nuevos (total 0)
+11:27:36  INFO       pagina 2: 5 tarjetas, 5 nuevos (total 5)
+11:27:41  INFO       pagina 3: 8 tarjetas, 3 nuevos (total 8)
+11:27:47  INFO       pagina 4: 10 tarjetas, 2 nuevos (total 10)
+11:27:52  INFO       pagina 5: 11 tarjetas, 1 nuevos (total 11)
+11:27:58  INFO       pagina 6: 15 tarjetas, 4 nuevos (total 15)
+11:28:04  INFO       pagina 7: 18 tarjetas, 3 nuevos (total 18)
+11:28:10  INFO       pagina 8: 21 tarjetas, 3 nuevos (total 21)
+11:28:15  INFO       pagina 9: 21 tarjetas, 0 nuevos (total 21)
+11:28:15  INFO       expandiendo variantes en 21 productos con descuento...
+11:28:15  INFO       total tras expandir variantes: 21
+11:28:15  INFO       21 productos (21 con descuento)
+11:28:17  INFO     == ruizyroca (html) ==
+11:28:24  INFO       pagina 1: 1 tarjetas, 1 nuevos (total 1)
+11:28:29  INFO       pagina 2: 3 tarjetas, 2 nuevos (total 3)
+11:28:35  INFO       pagina 3: 4 tarjetas, 1 nuevos (total 4)
+11:28:40  INFO       pagina 4: 4 tarjetas, 0 nuevos (total 4)
+11:28:40  INFO       expandiendo variantes en 4 productos con descuento...
+11:28:40  INFO       total tras expandir variantes: 4
+11:28:40  INFO       4 productos (4 con descuento)
+11:28:42  INFO     == ruizyroca (html) ==
+11:28:48  INFO       pagina 1: 3 tarjetas, 3 nuevos (total 3)
+11:28:53  INFO       pagina 2: 3 tarjetas, 0 nuevos (total 3)
+11:28:53  INFO       expandiendo variantes en 3 productos con descuento...
+11:28:53  INFO       total tras expandir variantes: 3
+11:28:53  INFO       3 productos (3 con descuento)
+11:28:55  INFO     == normy (html) ==
+11:29:07  INFO       pagina 1: 7 tarjetas, 0 nuevos (total 0)
+11:29:07  INFO       expandiendo variantes en 0 productos con descuento...
+11:29:07  INFO       total tras expandir variantes: 0
+11:29:07  INFO       0 productos (0 con descuento)
+11:29:09  INFO     == normy (html) ==
+11:29:21  INFO       pagina 1: 6 tarjetas, 0 nuevos (total 0)
+11:29:21  INFO       expandiendo variantes en 0 productos con descuento...
+11:29:21  INFO       total tras expandir variantes: 0
+11:29:21  INFO       0 productos (0 con descuento)
+11:29:24  INFO     Comparando contra corrida anterior: descuentos_perfumes_29-6-2026_13-00-11.xlsx
+11:29:30  WARNING  ALERTA normy_masculino [vacio]: 0 productos: posible error de scraping (0 encontrados)
+11:29:30  WARNING  ALERTA normy_femenino [vacio]: 0 productos: posible error de scraping (0 encontrados)
+11:29:34  INFO     MySQL: corrida #37 guardada (3315 observaciones, 3315 productos).
+11:29:34  INFO     Mejor negocio que antes (verde): 51 | productos nuevos (amarillo): 293
+11:29:34  INFO     
+11:29:34  INFO     LISTO: 2409 con descuento real -> C:\xampp\htdocs\perfumes-dashboard\excel_perfumes\descuentos_perfumes_30-6-2026_11-02-15.xlsx
+11:29:34  INFO            + 929 productos más baratos por transferencia (guardados aparte en la base).
+11:29:34  INFO        65.0%  beauty24     Woman EDP 100 ml ($283000 -> $99050) [api]
+11:29:34  INFO        65.0%  rouge        Woman EDP 100 ml ($283000 -> $99050) [api]
+11:29:34  INFO        64.7%  fiorani      VERSACE WOMAN  EDP 100ml ($283000 -> $99900) [api]
+11:29:34  INFO        60.0%  beauty24     Hot Water EDT Promo 110ml ($163350 -> $65340) [api]
+11:29:34  INFO        60.0%  beauty24     So Real Cheap & Chic EDT Promo 30ml ($99900 -> $39960) [api]
+11:29:34  INFO        60.0%  beauty24     CK One Essence Viva Love Parfum Intens ($200675 -> $80270) [api]
+11:29:34  INFO        60.0%  rouge        Hot Water EDT Promo 110ml ($163350 -> $65340) [api]
+11:29:34  INFO        60.0%  rouge        So Real Cheap & Chic EDT Promo 30ml ($99900 -> $39960) [api]
+13:00:11  INFO     == pigmento (vtex) ==
+13:00:51  INFO       465 productos (177 con descuento)
+13:00:53  INFO     == pigmento (vtex) ==
+13:01:46  INFO       677 productos (177 con descuento)
+13:01:46  INFO     == pigmento (vtex) ==
+13:01:50  INFO       61 productos (24 con descuento)
+13:01:51  INFO     == beauty24 (vtex) ==
+13:02:21  INFO       993 productos (231 con descuento)
+13:02:22  INFO     == beauty24 (vtex) ==
+13:02:53  INFO       1129 productos (198 con descuento)
+13:02:54  INFO     == beauty24 (vtex) ==
+13:03:00  INFO       193 productos (30 con descuento)
+13:03:01  INFO     == rouge (vtex) ==
+13:03:31  INFO       999 productos (250 con descuento)
+13:03:32  INFO     == rouge (vtex) ==
+13:04:03  INFO       1114 productos (192 con descuento)
+13:04:04  INFO     == rouge (vtex) ==
+13:04:15  INFO       360 productos (49 con descuento)
+13:04:17  INFO     == fiorani (vtex) ==
+13:04:35  INFO       575 productos (200 con descuento)
+13:04:36  INFO     == fiorani (vtex) ==
+13:04:46  INFO       334 productos (59 con descuento)
+13:04:47  INFO     == fiorani (vtex) ==
+13:04:51  INFO       87 productos (18 con descuento)
+13:04:52  INFO     == getthelook (vtex) ==
+13:05:19  INFO       309 productos (73 con descuento)
+13:05:20  INFO     == getthelook (vtex) ==
+13:05:48  INFO       433 productos (93 con descuento)
+13:05:49  INFO     == farmalife (vtex) ==
+13:06:02  INFO       330 productos (34 con descuento)
+13:06:03  INFO     == farmalife (vtex) ==
+13:06:14  INFO       265 productos (9 con descuento)
+13:06:16  INFO     == unishop (unishop) ==
+13:06:55  INFO       167 productos (166 con descuento)
+13:06:56  INFO     == unishop (unishop) ==
+13:07:41  INFO       142 productos (136 con descuento)
+13:07:42  INFO     == unishop (unishop) ==
+13:07:46  INFO       15 productos (14 con descuento)
+13:07:48  INFO     == ambrosia (tiendanube) ==
+13:07:58  INFO       277 productos (0 con descuento, 277 por transferencia)
+13:07:59  INFO     == ambrosia (tiendanube) ==
+13:08:09  INFO       294 productos (0 con descuento, 294 por transferencia)
+13:08:10  INFO     == ambrosia (tiendanube) ==
+13:08:21  INFO       356 productos (0 con descuento, 356 por transferencia)
+13:08:27  INFO     == juleriaque (html) ==
+13:08:38  INFO       pagina 1: 85 tarjetas, 84 nuevos (total 84)
+13:08:51  INFO       pagina 2: 95 tarjetas, 21 nuevos (total 105)
+13:09:02  INFO       pagina 3: 95 tarjetas, 13 nuevos (total 118)
+13:09:12  INFO       pagina 4: 95 tarjetas, 11 nuevos (total 129)
+13:09:23  INFO       pagina 5: 74 tarjetas, 1 nuevos (total 130)
+13:09:33  INFO       pagina 6: 106 tarjetas, 32 nuevos (total 162)
+13:09:44  INFO       pagina 7: 95 tarjetas, 2 nuevos (total 164)
+13:09:56  INFO       pagina 8: 107 tarjetas, 22 nuevos (total 186)
+13:10:05  INFO       pagina 9: 96 tarjetas, 0 nuevos (total 186)
+13:10:05  INFO       expandiendo variantes en 186 productos con descuento...
+13:17:47  INFO       total tras expandir variantes: 186
+13:17:47  INFO       186 productos (186 con descuento)
+13:17:49  INFO     == juleriaque (html) ==
+13:18:00  INFO       pagina 1: 85 tarjetas, 82 nuevos (total 82)
+13:18:12  INFO       pagina 2: 83 tarjetas, 10 nuevos (total 92)
+13:18:22  INFO       pagina 3: 72 tarjetas, 0 nuevos (total 92)
+13:18:22  INFO       expandiendo variantes en 92 productos con descuento...
+13:22:03  INFO       total tras expandir variantes: 92
+13:22:03  INFO       92 productos (92 con descuento)
+13:22:05  INFO     == juleriaque (html) ==
+13:22:16  INFO       pagina 1: 11 tarjetas, 11 nuevos (total 11)
+13:22:26  INFO       pagina 2: 0 tarjetas, 0 nuevos (total 11)
+13:22:26  INFO       expandiendo variantes en 11 productos con descuento...
+13:22:52  INFO       total tras expandir variantes: 11
+13:22:52  INFO       11 productos (11 con descuento)
+13:22:54  INFO     == parfumerie (html) ==
+13:23:12  INFO       pagina 1: 148 tarjetas, 34 nuevos (total 34)
+13:23:12  INFO       expandiendo variantes en 34 productos con descuento...
+13:24:58  INFO       total tras expandir variantes: 34
+13:24:58  INFO       34 productos (34 con descuento)
+13:25:00  INFO     == parfumerie (html) ==
+13:25:16  INFO       pagina 1: 114 tarjetas, 31 nuevos (total 31)
+13:25:16  INFO       expandiendo variantes en 31 productos con descuento...
+13:26:55  INFO       total tras expandir variantes: 31
+13:26:55  INFO       31 productos (31 con descuento)
+13:26:56  INFO     == parfumerie (html) ==
+13:27:13  INFO       pagina 1: 105 tarjetas, 12 nuevos (total 12)
+13:27:13  INFO       expandiendo variantes en 12 productos con descuento...
+13:27:55  INFO       total tras expandir variantes: 12
+13:27:55  INFO       12 productos (12 con descuento)
+13:27:56  INFO     == ruizyroca (html) ==
+13:28:02  INFO       pagina 1: 0 tarjetas, 0 nuevos (total 0)
+13:28:08  INFO       pagina 2: 5 tarjetas, 5 nuevos (total 5)
+13:28:14  INFO       pagina 3: 8 tarjetas, 3 nuevos (total 8)
+13:28:20  INFO       pagina 4: 10 tarjetas, 2 nuevos (total 10)
+13:28:25  INFO       pagina 5: 11 tarjetas, 1 nuevos (total 11)
+13:28:31  INFO       pagina 6: 15 tarjetas, 4 nuevos (total 15)
+13:28:37  INFO       pagina 7: 18 tarjetas, 3 nuevos (total 18)
+13:28:42  INFO       pagina 8: 21 tarjetas, 3 nuevos (total 21)
+13:28:48  INFO       pagina 9: 21 tarjetas, 0 nuevos (total 21)
+13:28:48  INFO       expandiendo variantes en 21 productos con descuento...
+13:28:48  INFO       total tras expandir variantes: 21
+13:28:48  INFO       21 productos (21 con descuento)
+13:28:50  INFO     == ruizyroca (html) ==
+13:28:56  INFO       pagina 1: 1 tarjetas, 1 nuevos (total 1)
+13:29:01  INFO       pagina 2: 3 tarjetas, 2 nuevos (total 3)
+13:29:07  INFO       pagina 3: 4 tarjetas, 1 nuevos (total 4)
+13:29:13  INFO       pagina 4: 4 tarjetas, 0 nuevos (total 4)
+13:29:13  INFO       expandiendo variantes en 4 productos con descuento...
+13:29:13  INFO       total tras expandir variantes: 4
+13:29:13  INFO       4 productos (4 con descuento)
+13:29:15  INFO     == ruizyroca (html) ==
+13:29:21  INFO       pagina 1: 3 tarjetas, 3 nuevos (total 3)
+13:29:27  INFO       pagina 2: 3 tarjetas, 0 nuevos (total 3)
+13:29:27  INFO       expandiendo variantes en 3 productos con descuento...
+13:29:27  INFO       total tras expandir variantes: 3
+13:29:27  INFO       3 productos (3 con descuento)
+13:29:28  INFO     == normy (html) ==
+13:29:40  INFO       pagina 1: 7 tarjetas, 0 nuevos (total 0)
+13:29:40  INFO       expandiendo variantes en 0 productos con descuento...
+13:29:40  INFO       total tras expandir variantes: 0
+13:29:40  INFO       0 productos (0 con descuento)
+13:29:42  INFO     == normy (html) ==
+13:29:56  INFO       pagina 1: 6 tarjetas, 0 nuevos (total 0)
+13:29:56  INFO       expandiendo variantes en 0 productos con descuento...
+13:29:56  INFO       total tras expandir variantes: 0
+13:29:56  INFO       0 productos (0 con descuento)
+13:29:59  INFO     Comparando contra corrida anterior: descuentos_perfumes_30-6-2026_11-02-15.xlsx
+13:30:05  WARNING  ALERTA normy_masculino [vacio]: 0 productos: posible error de scraping (0 encontrados)
+13:30:05  WARNING  ALERTA normy_femenino [vacio]: 0 productos: posible error de scraping (0 encontrados)
+13:30:09  INFO     MySQL: corrida #38 guardada (3342 observaciones, 3342 productos).
+13:30:09  INFO     Mejor negocio que antes (verde): 11 | productos nuevos (amarillo): 50
+13:30:09  INFO     
+13:30:09  INFO     LISTO: 2444 con descuento real -> C:\xampp\htdocs\perfumes-dashboard\excel_perfumes\descuentos_perfumes_30-6-2026_13-00-11.xlsx
+13:30:09  INFO            + 927 productos más baratos por transferencia (guardados aparte en la base).
+13:30:09  INFO        65.0%  beauty24     Woman EDP 100 ml ($283000 -> $99050) [api]
+13:30:09  INFO        65.0%  rouge        Woman EDP 100 ml ($283000 -> $99050) [api]
+13:30:09  INFO        64.7%  fiorani      VERSACE WOMAN  EDP 100ml ($283000 -> $99900) [api]
+13:30:09  INFO        60.0%  beauty24     Hot Water EDT Promo 110ml ($163350 -> $65340) [api]
+13:30:09  INFO        60.0%  beauty24     So Real Cheap & Chic EDT Promo 30ml ($99900 -> $39960) [api]
+13:30:09  INFO        60.0%  beauty24     CK One Essence Viva Love Parfum Intens ($200675 -> $80270) [api]
+13:30:09  INFO        60.0%  rouge        Hot Water EDT Promo 110ml ($163350 -> $65340) [api]
+13:30:09  INFO        60.0%  rouge        So Real Cheap & Chic EDT Promo 30ml ($99900 -> $39960) [api]

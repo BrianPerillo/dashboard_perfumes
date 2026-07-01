@@ -7,9 +7,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "google/analytics-data": "^0.22.3",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^4.3",
+        "mercadopago/dx-php": "^3.10",
         "spatie/laravel-analytics": "^5.6"
     },
     "require-dev": {

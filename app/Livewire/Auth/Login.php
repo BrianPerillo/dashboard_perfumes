@@ -30,6 +30,13 @@ class Login extends Component
         }
 
         session()->regenerate();
+
+        // Si el email no está verificado, redirigir al aviso de verificación
+        if (!Auth::user()->hasVerifiedEmail()) {
+            $this->redirect(route('verification.notice'), navigate: false);
+            return;
+        }
+
         $this->redirect(route('dashboard'), navigate: false);
     }
 

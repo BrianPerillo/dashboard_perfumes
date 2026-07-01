@@ -40,8 +40,15 @@ return [
     ],
 
     'google' => [
-        'analytics_id'          => env('GOOGLE_ANALYTICS_ID'),           // G-XXXXXXXXXX (medición)
-        'analytics_property_id' => env('GOOGLE_ANALYTICS_PROPERTY_ID'), // numérico, ej: 123456789
+        'analytics_id'          => env('GOOGLE_ANALYTICS_ID'),
+        'analytics_property_id' => env('GOOGLE_ANALYTICS_PROPERTY_ID'),
+        'analytics_credentials' => env('GOOGLE_ANALYTICS_CREDENTIALS'),
+    ],
+
+    'mercadopago' => [
+        'access_token'   => env('MP_ACCESS_TOKEN'),
+        'public_key'     => env('MP_PUBLIC_KEY'),
+        'webhook_secret' => env('MP_WEBHOOK_SECRET'),
     ],
 
 ];

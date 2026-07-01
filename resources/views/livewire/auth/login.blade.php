@@ -18,7 +18,11 @@
         </div>
 
         <div>
-            <label class="block text-xs font-semibold text-[var(--c-muted)] uppercase tracking-wide mb-1.5">Contraseña</label>
+            <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-semibold text-[var(--c-muted)] uppercase tracking-wide">Contraseña</label>
+                <a href="{{ route('password.request') }}"
+                   class="text-xs text-[var(--color-primary-600)] hover:underline">¿Olvidaste tu contraseña?</a>
+            </div>
             <input type="password" wire:model="password" autocomplete="current-password"
                    class="w-full rounded-lg border border-[var(--c-border)] bg-[var(--c-input)] text-[var(--c-text)]
                           px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-400)] focus:border-transparent"

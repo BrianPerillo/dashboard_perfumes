@@ -2,8 +2,19 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\Plan;
+use App\Models\Suscripcion;
 use App\Models\User;
-use Illuminate\Support\Collection;
+use App\Services\MercadoPagoService;
+use Google\Analytics\Data\V1beta\Client\BetaAnalyticsDataClient;
+use Google\Analytics\Data\V1beta\DateRange;
+use Google\Analytics\Data\V1beta\Dimension;
+use Google\Analytics\Data\V1beta\Metric;
+use Google\Analytics\Data\V1beta\OrderBy;
+use Google\Analytics\Data\V1beta\OrderBy\DimensionOrderBy;
+use Google\Analytics\Data\V1beta\OrderBy\MetricOrderBy;
+use Google\Analytics\Data\V1beta\RunReportRequest;
+use Google\Analytics\Data\V1beta\RunRealtimeReportRequest;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -12,12 +23,19 @@ use Livewire\Component;
 #[Title('Admin · Descuentos Perfumes')]
 class Dashboard extends Component
 {
-    public string $periodo   = '7';
-    public string $mensajeU  = '';
-    public bool   $gaOk      = false;
-    public array  $gaMetrics = [];
-    public array  $gaPages   = [];
-    public array  $gaCountries = [];
+    public string $periodo      = '30';
+    public string $mensajeU     = '';
+    public bool   $gaOk         = false;
+
+    // Test de integraciones
+    public string $mensajeTest      = '';
+    public string $tipoMensajeTest  = '';
+    public string $telegramChatTest = '';
+    public array  $gaMetrics    = [];
+    public array  $gaPages      = [];
+    public array  $gaDevices    = [];
+    public array  $gaDailyVisits = [];
+    public int    $gaActiveUsers = 0;
 
     public function mount(): void
     {
@@ -31,63 +49,207 @@ class Dashboard extends Component
 
     private function cargarAnalytics(): void
     {
-        $propertyId = config('analytics.property_id');
-        if (!$propertyId || !class_exists(\Spatie\Analytics\Facades\Analytics::class)) {
+        $credentialsPath = base_path(config('services.google.analytics_credentials'));
+        $propertyId      = config('services.google.analytics_property_id');
+
+        if (!$propertyId || !file_exists($credentialsPath)) {
             $this->gaOk = false;
             return;
         }
 
         try {
-            $days   = (int) $this->periodo;
-            $period = \Spatie\Analytics\Period::days($days);
+            $client   = new BetaAnalyticsDataClient(['credentials' => $credentialsPath]);
+            $days     = (int) $this->periodo;
+            $range    = new DateRange(['start_date' => "{$days}daysAgo", 'end_date' => 'today']);
+            $property = "properties/{$propertyId}";
 
-            // Métricas generales
-            $general = \Spatie\Analytics\Facades\Analytics::get(
-                $period,
-                ['screenPageViews', 'sessions', 'totalUsers', 'bounceRate', 'averageSessionDuration']
-            );
+            // ── Métricas generales
+            $res = $client->runReport(new RunReportRequest([
+                'property'    => $property,
+                'date_ranges' => [$range],
+                'metrics'     => [
+                    new Metric(['name' => 'sessions']),
+                    new Metric(['name' => 'screenPageViews']),
+                    new Metric(['name' => 'totalUsers']),
+                    new Metric(['name' => 'averageSessionDuration']),
+                ],
+            ]));
 
-            if ($general->isNotEmpty()) {
-                $row = $general->first();
+            if ($res->getRows()->count() > 0) {
+                $vals = [];
+                foreach ($res->getRows()[0]->getMetricValues() as $v) {
+                    $vals[] = $v->getValue();
+                }
                 $this->gaMetrics = [
-                    'pageviews'   => number_format($row['screenPageViews'] ?? 0, 0, ',', '.'),
-                    'sessions'    => number_format($row['sessions'] ?? 0, 0, ',', '.'),
-                    'users'       => number_format($row['totalUsers'] ?? 0, 0, ',', '.'),
-                    'bounce'      => round(($row['bounceRate'] ?? 0) * 100, 1) . '%',
-                    'avg_session' => gmdate('i:s', (int) ($row['averageSessionDuration'] ?? 0)),
+                    'sessions'    => number_format((int)($vals[0] ?? 0), 0, ',', '.'),
+                    'pageviews'   => number_format((int)($vals[1] ?? 0), 0, ',', '.'),
+                    'users'       => number_format((int)($vals[2] ?? 0), 0, ',', '.'),
+                    'avg_session' => gmdate('i:s', (int)($vals[3] ?? 0)),
                 ];
             }
 
-            // Top páginas
-            $pages = \Spatie\Analytics\Facades\Analytics::get(
-                $period,
-                ['screenPageViews'],
-                ['pagePath'],
-                10
-            );
+            // ── Visitas por día
+            $dimOrder = new OrderBy();
+            $dimOrder->setDimension(new DimensionOrderBy(['dimension_name' => 'date']));
 
-            $this->gaPages = $pages->map(fn ($r) => [
-                'path'  => $r['pagePath'] ?? '/',
-                'views' => number_format($r['screenPageViews'] ?? 0, 0, ',', '.'),
-            ])->toArray();
+            $dailyRes = $client->runReport(new RunReportRequest([
+                'property'    => $property,
+                'date_ranges' => [$range],
+                'dimensions'  => [new Dimension(['name' => 'date'])],
+                'metrics'     => [new Metric(['name' => 'sessions'])],
+                'order_bys'   => [$dimOrder],
+            ]));
 
-            // Top países
-            $countries = \Spatie\Analytics\Facades\Analytics::get(
-                $period,
-                ['sessions'],
-                ['country'],
-                8
-            );
+            $daily = [];
+            foreach ($dailyRes->getRows() as $row) {
+                $d = $row->getDimensionValues()[0]->getValue(); // YYYYMMDD
+                $daily[] = [
+                    'date'     => substr($d, 6, 2) . '/' . substr($d, 4, 2),
+                    'sessions' => (int)$row->getMetricValues()[0]->getValue(),
+                ];
+            }
+            $this->gaDailyVisits = $daily;
 
-            $this->gaCountries = $countries->map(fn ($r) => [
-                'country'  => $r['country'] ?? 'Unknown',
-                'sessions' => number_format($r['sessions'] ?? 0, 0, ',', '.'),
-            ])->toArray();
+            // ── Top páginas
+            $metOrder = new OrderBy();
+            $metOrder->setMetric(new MetricOrderBy(['metric_name' => 'screenPageViews']));
+            $metOrder->setDesc(true);
+
+            $pagesRes = $client->runReport(new RunReportRequest([
+                'property'    => $property,
+                'date_ranges' => [$range],
+                'dimensions'  => [new Dimension(['name' => 'pagePath'])],
+                'metrics'     => [new Metric(['name' => 'screenPageViews'])],
+                'order_bys'   => [$metOrder],
+                'limit'       => 8,
+            ]));
+
+            $this->gaPages = [];
+            foreach ($pagesRes->getRows() as $row) {
+                $this->gaPages[] = [
+                    'path'  => $row->getDimensionValues()[0]->getValue(),
+                    'views' => number_format((int)$row->getMetricValues()[0]->getValue(), 0, ',', '.'),
+                ];
+            }
+
+            // ── Dispositivos
+            $devRes = $client->runReport(new RunReportRequest([
+                'property'    => $property,
+                'date_ranges' => [$range],
+                'dimensions'  => [new Dimension(['name' => 'deviceCategory'])],
+                'metrics'     => [new Metric(['name' => 'sessions'])],
+            ]));
+
+            $devices = [];
+            $total   = 0;
+            foreach ($devRes->getRows() as $row) {
+                $s        = (int)$row->getMetricValues()[0]->getValue();
+                $total   += $s;
+                $devices[] = ['device' => $row->getDimensionValues()[0]->getValue(), 'sessions' => $s];
+            }
+            $this->gaDevices = array_map(fn($d) => [
+                'device'   => $d['device'],
+                'sessions' => number_format($d['sessions'], 0, ',', '.'),
+                'pct'      => $total > 0 ? round($d['sessions'] / $total * 100) : 0,
+            ], $devices);
+
+            // ── Activos ahora (realtime)
+            $rtRes = $client->runRealtimeReport(new RunRealtimeReportRequest([
+                'property' => $property,
+                'metrics'  => [new Metric(['name' => 'activeUsers'])],
+            ]));
+            $this->gaActiveUsers = $rtRes->getRows()->count() > 0
+                ? (int)$rtRes->getRows()[0]->getMetricValues()[0]->getValue()
+                : 0;
 
             $this->gaOk = true;
+            $client->close();
+
         } catch (\Throwable $e) {
             $this->gaOk = false;
             logger()->error('GA error: ' . $e->getMessage());
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Test de integraciones
+    // ──────────────────────────────────────────────────────────────
+
+    public function testEmail(): void
+    {
+        try {
+            $user = auth()->user();
+            \Illuminate\Support\Facades\Mail::raw(
+                "✅ Este es un mail de prueba desde el panel admin de Descuentos Perfumes.\n\nSi lo recibiste, el envío de mails está configurado correctamente.",
+                fn($m) => $m->to($user->email)->subject('✅ Test de mail — Descuentos Perfumes')
+            );
+            $this->mensajeTest     = "Mail enviado a {$user->email}. Revisá tu bandeja de entrada.";
+            $this->tipoMensajeTest = 'success';
+        } catch (\Throwable $e) {
+            $this->mensajeTest     = 'Error: ' . $e->getMessage();
+            $this->tipoMensajeTest = 'error';
+        }
+    }
+
+    public function testTelegram(): void
+    {
+        $token = config('services.telegram.bot_token');
+        if (!$token) {
+            $this->mensajeTest     = 'TELEGRAM_BOT_TOKEN no está configurado en .env';
+            $this->tipoMensajeTest = 'error';
+            return;
+        }
+        if (!$this->telegramChatTest) {
+            $this->mensajeTest     = 'Ingresá tu Chat ID de Telegram antes de probar.';
+            $this->tipoMensajeTest = 'error';
+            return;
+        }
+        try {
+            $response = \Illuminate\Support\Facades\Http::post(
+                "https://api.telegram.org/bot{$token}/sendMessage",
+                [
+                    'chat_id'    => $this->telegramChatTest,
+                    'text'       => "✅ Test desde el panel admin de *Descuentos Perfumes*\n\nSi recibís este mensaje, Telegram está configurado correctamente.",
+                    'parse_mode' => 'Markdown',
+                ]
+            );
+            if ($response->successful() && $response->json('ok')) {
+                $this->mensajeTest     = "Mensaje enviado al chat {$this->telegramChatTest}. Revisá Telegram.";
+                $this->tipoMensajeTest = 'success';
+            } else {
+                $this->mensajeTest     = 'Error Telegram: ' . ($response->json('description') ?? 'respuesta inválida');
+                $this->tipoMensajeTest = 'error';
+            }
+        } catch (\Throwable $e) {
+            $this->mensajeTest     = 'Error: ' . $e->getMessage();
+            $this->tipoMensajeTest = 'error';
+        }
+    }
+
+    public function testMercadoPago(): mixed
+    {
+        $token = config('services.mercadopago.access_token');
+        if (!$token) {
+            $this->mensajeTest     = 'MP_ACCESS_TOKEN no está configurado en .env';
+            $this->tipoMensajeTest = 'error';
+            return null;
+        }
+        try {
+            $plan        = Plan::where('slug', 'pro')->firstOrFail();
+            $user        = auth()->user();
+            $suscripcion = Suscripcion::create([
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'estado'  => 'pendiente',
+                'monto'   => $plan->precio,
+                'moneda'  => $plan->moneda,
+            ]);
+            $url = app(MercadoPagoService::class)->crearPreferencia($plan, $user, $suscripcion);
+            return redirect()->away($url);
+        } catch (\Throwable $e) {
+            $this->mensajeTest     = 'Error MP: ' . $e->getMessage();
+            $this->tipoMensajeTest = 'error';
+            return null;
         }
     }
 
@@ -95,7 +257,6 @@ class Dashboard extends Component
     {
         $user = User::findOrFail($userId);
 
-        // No permitir que el admin se quite el rol a sí mismo
         if ($user->id === auth()->id()) {
             $this->mensajeU = 'No podés quitarte el rol admin a vos mismo.';
             return;
@@ -109,7 +270,6 @@ class Dashboard extends Component
     {
         $usuarios = User::orderByDesc('is_admin')->orderBy('name')->get();
 
-        // Estadísticas rápidas de la DB
         $dbStats = [
             'usuarios'     => User::count(),
             'admins'       => User::where('is_admin', true)->count(),
