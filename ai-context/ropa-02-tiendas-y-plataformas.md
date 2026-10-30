@@ -23,11 +23,11 @@ Para un sitio `vtex_api` nuevo basta una entrada en `SITES` con `host`, `marca` 
 | Lacoste (`www.lacoste.com/ar/`) | Salesforce Commerce Cloud tras **Akamai Bot Manager** | **Bloqueada**: HTTP y navegador sin cabeza reciben `403 Access Denied` (Akamai). No se intentó sortear el bloqueo (ni navegador "real" automatizado ni evasión): es una medida anti-bots del sitio. Alternativas legítimas: pedir autorización/feed al sitio o programa de afiliados, o cargar datos a mano. **Decisión pendiente del usuario.** |
 | Adidas (`www.adidas.com.ar`) | Akamai | **Bloqueada** igual que Lacoste. |
 | Puma (`ar.puma.com`), Dexter (`www.dexter.com.ar`) | Salesforce Commerce Cloud tras Cloudflare | Pendiente: portada responde 200; falta ver si el listado se puede leer (necesita adaptador `sfcc`). |
-| Kevingston (`www.kevingston.com`) | VTEX + Cloudflare; `/api/catalog_system` devuelve 404 | Pendiente: probablemente VTEX IO como Nike (adaptador `vtex_io` con `__STATE__`) — no verificado. |
-| Prototype (`www.prototype.com.ar`) | Tiendanube + Cloudflare | Pendiente: ya existe un lector Tiendanube en `descuentos_master.py`. |
-| Stone (`stone.com.ar`) | WooCommerce | Pendiente: WooCommerce expone `/wp-json/wc/store/v1/products` (no verificado). |
-| Montagne (`www.montagne.com.ar`) | Apache, sin marcador de plataforma conocido | Pendiente: investigar. |
-| Wrangler | `www.wrangler.com.ar` no resuelve (DNS) | Pendiente: averiguar el dominio correcto. |
+| Kevingston (`www.kevingston.com`) | VTEX + Cloudflare; `/api/catalog_system` devuelve 404 | Pendiente. **No es VTEX IO**: el sitio es propio (rutas `/categoria/hombres/jeans`…, catálogo en HTML) y la API de VTEX no existe. Necesita un adaptador HTML a medida. |
+| Prototype (`www.prototype.com.ar`) | Tiendanube + Cloudflare | Pendiente: existe un lector Tiendanube en `descuentos_master.py` (reutilizable); falta ubicar el listado de ofertas (`/ofertas/` da 404). |
+| Stone (`stone.com.ar`) | WooCommerce | Pendiente: `/wp-json/wc/store/v1/products` responde 404 (API de WooCommerce no expuesta); habría que leer el HTML del listado. |
+| Montagne (`www.montagne.com.ar`) | Apache, sin marcador de plataforma conocido | Pendiente: sitio propio en PHP (`/categoria/104-zapatillas`, tema alojado en CloudFront), sin API: adaptador HTML a medida. |
+| Wrangler | `www.wrangler.com.ar` no resuelve (DNS) | Pendiente: averiguar el dominio correcto (probados `wrangler.com.ar`, `www.wrangler.com.ar` y `wranglerarg.com`: no resuelven). |
 
 ## Talles de calzado con numeración argentina/europea
 Topper publica calzado con talle argentino (`44`, `36.5`). `Talles::normalizar` / `normalizar_talles` (mantener iguales) **no agregan prefijo H/M a números ≥ 30**; en el filtro de talle (`Dashboard::grupoTalle`) forman el grupo **"Calzado (talle AR / EU)"** (los talles US de Nike siguen siendo `H…`/`M…`).
