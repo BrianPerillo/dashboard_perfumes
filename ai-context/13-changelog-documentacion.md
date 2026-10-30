@@ -12,6 +12,10 @@ Formato:
 
 ---
 
+## 2026-10-30 (noche) — Imagen del producto en el email de alertas
+
+- `ProcesarAlertas` selecciona `p.imagen` y el mail la muestra (07). Verificado con `alertas:procesar --dry-run`; el render del mail no se probó con un envío real.
+
 ## 2026-10-30 (noche) — Filtros en celular: botón "Filtros" y "Ver resultados"
 
 - Al probarlo en un navegador real (Playwright, 390 px) los filtros quedaban ocultos tras ☰. Se agregó el botón **⚙️ Filtros** con contador en la barra de búsqueda (solo móvil), el botón **Ver resultados** al final del panel móvil y `whitespace-nowrap` en los `ver →`. Se recompiló el CSS (`npm run build`). Detalle en 10.

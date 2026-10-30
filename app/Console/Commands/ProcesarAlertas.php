@@ -62,7 +62,7 @@ class ProcesarAlertas extends Command
             ->where('o.tipo_descuento', 'rebaja')
             ->whereBetween('o.descuento_pct', [max(5, (int) $alerta->descuento_min), 100])
             ->selectRaw('p.nombre as producto, p.marca, p.url, t.nombre as tienda,
-                         o.precio_lista, o.precio_actual, o.descuento_pct, o.ahorro, c.fecha_hora, p.talles');
+                         o.precio_lista, o.precio_actual, o.descuento_pct, o.ahorro, c.fecha_hora, p.talles, p.imagen');
 
         // Mismos criterios que el dashboard: sin fuentes no confiables ni marcas que no son perfumes
         Observacion::filtrarFuentesValidas($query, 'o.fuente');

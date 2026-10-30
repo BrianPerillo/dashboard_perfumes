@@ -88,6 +88,9 @@
         <span class="card-store">{{ $r->tienda }}</span>
       </div>
       <div class="card-body">
+        @if(!empty($r->imagen) && str_starts_with($r->imagen, 'http'))
+        <img src="{{ $r->imagen }}" alt="" width="96" style="float:right;margin:0 0 6px 12px;border-radius:8px;max-width:96px;height:auto;">
+        @endif
         <div class="price-row">
           <span class="price-now">${{ number_format($r->precio_actual, 0, ',', '.') }}</span>
           <span class="price-was">${{ number_format($r->precio_lista, 0, ',', '.') }}</span>

@@ -97,3 +97,6 @@ Columnas nuevas en `alertas` (migración `2026_10_30_010000`): `talles` (varchar
 Los mensajes de alerta (email y Telegram) incluyen **"Talles disponibles: …"** cuando el producto tiene talles (ropa); los perfumes no cambian.
 
 **Talles de calzado en alertas (2026-10-30):** `ProcesarAlertas` busca en `COALESCE(talles_norm, talles)`. En calzado se puede escribir `H10` (talle hombre), `M7` (talle mujer) o un número solo (`10`), que coincide con `H10`, `M10` y `10`. El formulario lo explica. Probado en seco: `M7` y `H5.5` encuentran el Nike Alphafly 3 (`H 5.5 / M 7`); `10` no.
+
+## Imagen en el email (2026-10-30)
+`ProcesarAlertas::procesarAlerta` ahora también trae `p.imagen`; `emails/alerta_descuento.blade.php` la muestra (96 px, a la derecha de la tarjeta) cuando es una URL http(s). Telegram sigue siendo solo texto. Pendiente (no hecho): aviso "vuelve un talle" (comparar talles entre corridas) y opción "incluir equivalentes H↔M" en el filtro de talle.
