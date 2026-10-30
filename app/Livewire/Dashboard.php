@@ -1398,7 +1398,7 @@ class Dashboard extends Component
     private static function grupoTalle(?string $categoria, string $t): string
     {
         $u = mb_strtoupper(trim($t));
-        if (preg_match('/^(XXS|XS|S|M|L|XL|XXL|[2-6]XL)$/', $u))        return 'Letras';
+        if (preg_match('/^(XXS|XS|S|M|L|XL|XXL|[2-6]XL|[2-4]XS)$/', $u))        return 'Letras';
         if (preg_match('/^\d+(\.5)?[CY]$/', $u))                         return 'Calzado infantil (C / Y)';
         if (preg_match('/^(\d+T|\dX|\d+-\d+M)$/', $u))                  return 'Niños (T / X / meses)';
         if (preg_match('/^H\d/', $u))                                    return 'Calzado hombre (talle H)';   // talles_norm: H10
@@ -1416,7 +1416,7 @@ class Dashboard extends Component
     /** Orden natural de talles: XS < S < M < L < XL < 2XL; números por valor; resto alfabético. */
     private static function ordenTalle(string $t): array
     {
-        $letras = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', '4XL', '5XL'];
+        $letras = ['3XS', '2XS', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL', '4XL', '5XL'];
         $u = mb_strtoupper(trim($t));
         if (($i = array_search($u, $letras, true)) !== false) return [0, $i, ''];
         if (preg_match('/^[HM]?\s*(\d+(?:\.\d)?)/', $u, $m))               return [1, (float) $m[1], $u];   // 8, 9.5, H10, M7

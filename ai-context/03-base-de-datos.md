@@ -227,4 +227,4 @@ Un precio observado de un producto en una corrida. Tabla grande (~435k filas).
 Índices/claves: `UNIQUE (tienda_id, nombre_norm)`, índice en `marca`, FK `tienda_id → tiendas(id) ON DELETE CASCADE`. `rubro` VARCHAR(20) NOT NULL DEFAULT `'perfumes'` existe en `tiendas`, `corridas` y `alertas`. Las migraciones que agregaron estas columnas están listadas arriba; los scrapers (`descuentos_master.py` no toca las columnas de ropa; `descuentos_ropa.py` las llena todas) mantienen los datos.
 
 ## `observaciones.fuente` en ropa (2026-10-30)
-`vtex_state` (Nike, estado de VTEX leído con navegador) y `vtex_api` (Levi's, Topper: API pública de catálogo). `Observacion::filtrarFuentesValidas` es una lista negra, así que ambas pasan. `corrida_sitios.plataforma` guarda `vtex_io` o `vtex_api` según el sitio.
+`vtex_state` (Nike, estado de VTEX leído con navegador), `vtex_api` (Levi's, Topper), `kevingston_api`, `sfcc_html` (Dexter), `html` (Wrangler, Montagne) y `tiendanube` (Prototype). `Observacion::filtrarFuentesValidas` es una lista negra, así que ambas pasan. `corrida_sitios.plataforma` guarda `vtex_io` o `vtex_api` según el sitio.

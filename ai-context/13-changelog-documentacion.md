@@ -12,6 +12,11 @@ Formato:
 
 ---
 
+## 2026-10-30 (noche) — Kevingston, Dexter, Wrangler, Prototype y Montagne (desactivada)
+
+- Nuevos adaptadores en `descuentos_ropa.py`: `kevingston` (endpoint interno de listado + talles por producto), `sfcc_dexter` (Salesforce, multimarca), `wrangler` (fragmento HTML de LAST CHANCE), `tiendanube` (Prototype) y `montagne` (HTML; **desactivada** por el precio "Comunidad Montagne"). `tipo`/`color`/`disciplina` se normalizan con mayúscula inicial (`_cap`); talles `3XS/2XS` reconocidos (Python + `Dashboard::grupoTalle/ordenTalle`). `SITES` acepta `"activo": False`.
+- Corrida #164 ahora con 7 tiendas / 6880 observaciones (ver [ropa-02](ropa-02-tiendas-y-plataformas.md)). Puma (scroll infinito) y Stone (Tienda Oficial de Mercado Libre) quedan pendientes; Lacoste/Adidas bloqueadas.
+
 ## 2026-10-30 (noche) — Adaptador `vtex_api` y tiendas Levi's y Topper
 
 - `descuentos_ropa.py` pasa a **adaptadores por plataforma**: `vtex_io` (Nike, navegador) y nuevo `vtex_api` (catálogo público de VTEX por HTTP, sin navegador). Se agregaron **Levi's** (699 leídos, 464 con descuento) y **Topper** (647 / 548) a la corrida #164 con `--fecha`. `corrida_sitios` registra la plataforma real; `observaciones.fuente` = `vtex_api`.
