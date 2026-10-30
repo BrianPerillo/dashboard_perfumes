@@ -71,7 +71,23 @@ SITES = [
         },
         "pag_max": 60,
     },
+    # --- plataforma "vtex_api": catalogo publico de VTEX por HTTP, sin navegador (ver scrap_seccion_api) ---
+    {
+        "name": "levis", "platform": "vtex_api", "host": "www.levi.com.ar", "marca": "Levi's", "pag_max": 40,
+        "specs": {"genero": ["Género"], "tipo": ["Tipo producto"], "color": ["Color", "Color Levi's"], "linea": [], "disciplina": []},   # "Linea" de Levi's son niveles de precio (Good/Better/Best), no lineas de producto
+        "secciones": {"descuento": [{"path": "/catalogo", "genero": "unisex", "categoria": "ropa", "etiqueta": "catalogo",
+                                      "orden": "OrderByBestDiscountDESC", "cortar_sin_descuento": True}]},
+    },
+    {
+        "name": "topper", "platform": "vtex_api", "host": "www.topper.com.ar", "marca": "Topper", "pag_max": 40,
+        "specs": {"genero": ["Género"], "tipo": ["Tipo de Producto"], "color": ["Color"], "linea": [], "disciplina": ["Deporte"]},
+        "secciones": {"descuento": [{"path": "/catalogo", "genero": "unisex", "categoria": "ropa", "etiqueta": "catalogo",
+                                      "orden": "OrderByBestDiscountDESC", "cortar_sin_descuento": True}]},
+    },
 ]
+# Las plataformas sin secciones propias para "oportunidades" usan las de "descuento".
+for _s in SITES:
+    _s["secciones"].setdefault("oportunidades", _s["secciones"]["descuento"])
 
 
 # --------------------------------------------------------------------------- #
@@ -179,7 +195,7 @@ def _skus(st: dict, p: dict) -> list[dict]:
 def normalizar_talles(genero_db: str, categoria: str, talles: list) -> str:
     """Talles de CALZADO normalizados (copia de app/Support/Talles.php (PHP): mantener iguales).
     masculino: 8 -> H8 | femenino: 5 -> M5 | unisex: "H 10 / M 11.5" -> H10, M11.5 (numero simple unisex -> H) |
-    ninos (5.5Y, 13C, numeros) sin cambios. Ropa y accesorios no se modifican."""
+    numeros >= 30 (talle argentino/europeo: 44) y ninos (5.5Y, 13C, numeros) sin cambios. Ropa y accesorios no se modifican."""
     if categoria != "calzado" or not talles:
         return ", ".join(talles)
     out = []
@@ -190,7 +206,10 @@ def normalizar_talles(genero_db: str, categoria: str, talles: list) -> str:
         elif re.match(r"^\d+(?:\.\d)?[CY]$", t, re.I):
             out.append(t.upper())
         elif re.match(r"^\d+(?:\.\d)?$", t):
-            out.append(("M" + t) if genero_db == "femenino" else (t if genero_db == "ninos" else "H" + t))
+            if genero_db == "ninos" or float(t) >= 30:      # >= 30: talle argentino/europeo (Topper...), no es US H/M
+                out.append(t)
+            else:
+                out.append(("M" + t) if genero_db == "femenino" else "H" + t)
         else:
             out.append(t)
     return ", ".join(dict.fromkeys(out))
@@ -346,6 +365,152 @@ def scrap_seccion(page, site: dict, seccion: dict, max_paginas: int) -> list[Ite
 
 
 # --------------------------------------------------------------------------- #
+# Adaptador "vtex_api": tiendas VTEX con el catalogo publico /api/catalog_system/pub/products/search
+# --------------------------------------------------------------------------- #
+# Sin navegador: JSON por HTTP (50 productos por pedido, ordenados por mayor descuento) con pausas entre pedidos.
+# Se usa donde el sitio lo permite (Levi's, Topper). Cada sitio declara en "specs" como se llaman sus campos.
+API_PAGINA = 50
+_RE_CALZADO = re.compile(r"calzado|zapatill|botin|sandalia|ojota|chinela|zapato|\bbotas?\b|mocasin|pantufla|championes", re.I)
+_RE_ACCESORIOS = re.compile(r"accesorio|mochila|gorra|gorro|bolso|pelota|cintur|billetera|medias|rinonera|riñonera|canillera|"
+                            r"lentes|bufanda|guante|valija|neceser|paraguas|bidon|bidón|inflador|\bmat\b|botinero|sombrero|"
+                            r"cartera|morral|llavero|pañuelo|panuelo|vincha|munequera|muñequera", re.I)
+
+
+def _genero_de_texto(valores) -> Optional[str]:
+    """'Hombre' -> hombre; ['Hombre','Mujer'] -> unisex; 'Niños'/'Bebe'/'Junior' -> ninos; sin dato -> None."""
+    if isinstance(valores, str):
+        valores = [valores]
+    gens = set()
+    for v in valores or []:
+        t = (v or "").strip().lower()
+        if re.search(r"mujer|dama|femenin", t):
+            gens.add("mujer")
+        elif re.search(r"hombre|masculin|varon|varón", t):
+            gens.add("hombre")
+        elif re.search(r"niñ|nin|kid|junior|bebe|bebé|infant|juvenil", t):
+            gens.add("ninos")
+        elif "unisex" in t:
+            gens.add("unisex")
+    if not gens:
+        return None
+    return gens.pop() if len(gens) == 1 else "unisex"
+
+
+def _spec1(p: dict, claves: list) -> str:
+    """Primer valor no vacio entre varios nombres posibles de un campo del producto (specs de VTEX)."""
+    for k in claves or []:
+        v = p.get(k)
+        if isinstance(v, list):
+            v = next((x for x in v if x), "")
+        if v:
+            return str(v).strip()
+    return ""
+
+
+def _oferta(it: dict) -> dict:
+    return next(((s.get("commertialOffer") or {}) for s in it.get("sellers") or [] if s.get("commertialOffer")), {})
+
+
+def producto_de_api(p: dict, site: dict, seccion: dict) -> Optional[ItemRopa]:
+    """Convierte un producto de la API de catalogo VTEX en ItemRopa (None si no se puede leer o no tiene stock)."""
+    sp = site.get("specs", {})
+    skus = []
+    for it in p.get("items") or []:
+        offer = _oferta(it)
+        if not offer:
+            continue
+        talle = it.get("Talle") or ""
+        talle = talle[0] if isinstance(talle, list) and talle else talle
+        imgs = it.get("images") or []
+        skus.append({"talle": str(talle).strip(), "precio": float(offer.get("Price") or 0), "lista": float(offer.get("ListPrice") or 0),
+                     "stock": int(offer.get("AvailableQuantity") or 0), "img": (imgs[0].get("imageUrl") if imgs else "") or ""})
+    con_stock = [s for s in skus if s["stock"] > 0 and s["precio"] > 0]
+    if not con_stock:
+        return None
+    ref_sku = min(con_stock, key=lambda s: s["precio"])
+    actual = ref_sku["precio"]
+    precio_lista = max(ref_sku["lista"], actual)
+    cats = [c.strip("/") for c in (p.get("categories") or [])]
+    arbol = " ".join(cats)
+    tipo = _spec1(p, sp.get("tipo")) or (cats[0].split("/")[-1] if cats else "")
+    gen_spec = _spec1(p, sp.get("genero"))
+    genero = _genero_de_texto(gen_spec) or _genero_de_texto(cats[0].split("/") if cats else None) or seccion["genero"]
+    if _RE_CALZADO.search(arbol + " " + tipo):
+        categoria = "calzado"
+    elif _RE_ACCESORIOS.search(arbol + " " + tipo):
+        categoria = "accesorios"
+    else:
+        categoria = "ropa"
+    link = p.get("link") or ""
+    talles = sorted({s["talle"] for s in con_stock if s["talle"]}, key=_orden_talle)
+    return ItemRopa(
+        tienda=site["name"], marca=p.get("brand") or site.get("marca", ""), nombre=(p.get("productName") or "").strip(),
+        referencia=str(p.get("productReference") or p.get("productId") or ""), genero=genero, categoria=categoria,
+        tipo=tipo, color=_spec1(p, sp.get("color")), talles=talles,
+        disciplina=_spec1(p, sp.get("disciplina")), linea=_spec1(p, sp.get("linea")),
+        precio_lista=precio_lista, precio_actual=actual, descuento_pct=_dto(precio_lista, actual),
+        url=(f"https://{site['host']}{link}" if link.startswith("/") else link), seccion=seccion["path"],
+        imagen=ref_sku["img"] or next((s["img"] for s in skus if s["img"]), ""))
+
+
+def cargar_json_api(sesion, url: str, reintentos: int = 3):
+    """GET de la API con pausa y espera creciente ante 429/5xx; Bloqueado si no cede."""
+    for intento in range(1, reintentos + 1):
+        time.sleep(random.uniform(2.5, 4.5) * _RITMO["factor"])
+        try:
+            r = sesion.get(url, timeout=40)
+            if r.status_code in (200, 206):
+                _ritmo_exito()
+                return r.json(), r.headers.get("resources", "")
+            if r.status_code in (403, 429, 503):
+                _ritmo_bloqueo()
+                espera = 45 * intento
+                log.warning("  API respondio %s en %s; espero %ss (intento %d/%d)", r.status_code, url, espera, intento, reintentos)
+                time.sleep(espera)
+                continue
+            log.warning("  API respondio %s en %s", r.status_code, url)
+            return [], ""
+        except Exception as e:  # noqa: BLE001
+            log.warning("  error en API %s: %s (intento %d/%d)", url, str(e)[:100], intento, reintentos)
+            time.sleep(10 * intento)
+    raise Bloqueado(url)
+
+
+def _hay_descuento_crudo(p: dict) -> bool:
+    """True si algun SKU del producto de la API tiene precio de lista mayor al de venta (aunque no tenga stock)."""
+    return any((_oferta(it).get("ListPrice") or 0) > (_oferta(it).get("Price") or 0) for it in p.get("items") or [])
+
+
+def scrap_seccion_api(sesion, site: dict, seccion: dict, max_paginas: int) -> list[ItemRopa]:
+    vistos: dict = {}
+    for pagina in range(min(max_paginas, site.get("pag_max", 60))):
+        desde = pagina * API_PAGINA
+        if desde + API_PAGINA > 2500:           # limite de la API de VTEX
+            break
+        params = f"_from={desde}&_to={desde + API_PAGINA - 1}"
+        if seccion.get("orden"):
+            params += f"&O={seccion['orden']}"
+        for f in seccion.get("fq") or []:
+            params += f"&fq={f}"
+        data, recursos = cargar_json_api(sesion, f"https://{site['host']}/api/catalog_system/pub/products/search?{params}")
+        if not isinstance(data, list) or not data:
+            break
+        items = [i for i in (producto_de_api(p, site, seccion) for p in data) if i]
+        nuevos = 0
+        for it in items:
+            if it.clave not in vistos:
+                vistos[it.clave] = it
+                nuevos += 1
+        log.info("  pagina %d: %d productos, %d legibles con stock (%d nuevos) [%s]", pagina + 1, len(data), len(items), nuevos, recursos)
+        if len(data) < API_PAGINA or nuevos == 0:
+            break
+        if seccion.get("cortar_sin_descuento") and not any(_hay_descuento_crudo(p) for p in data):
+            log.info("  pagina sin descuentos: fin de las ofertas")
+            break
+    return list(vistos.values())
+
+
+# --------------------------------------------------------------------------- #
 # Salida: Excel / JSON
 # --------------------------------------------------------------------------- #
 def escribir_excel(items: list[ItemRopa], ruta: str) -> str:
@@ -443,6 +608,7 @@ def guardar_en_mysql(items: list, fecha_hora: datetime, reporte: list) -> bool:
                      (normalizar_talles(_GENERO_DB.get(it.genero, "unisex"), it.categoria, it.talles)[:255] or None)))
                 prod_id[(it.tienda, nn)] = cur.lastrowid
 
+            fuente_de = {s["name"]: ("vtex_api" if s["platform"] == "vtex_api" else "vtex_state") for s in SITES}
             filas, vistos = [], set()
             for it in items:
                 pid = prod_id[(it.tienda, (it.referencia or it.url).strip().lower()[:255])]
@@ -450,7 +616,7 @@ def guardar_en_mysql(items: list, fecha_hora: datetime, reporte: list) -> bool:
                     continue
                 vistos.add(pid)
                 filas.append((corrida_id, pid, round(it.precio_lista, 2), round(it.precio_actual, 2), it.descuento_pct,
-                              "vtex_state", "rebaja" if it.descuento_pct > 0 else "ninguno"))
+                              fuente_de.get(it.tienda, "vtex_state"), "rebaja" if it.descuento_pct > 0 else "ninguno"))
             cur.executemany(
                 "INSERT INTO observaciones (corrida_id, producto_id, precio_lista, precio_actual, descuento_pct, fuente, tipo_descuento) "
                 "VALUES (%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE precio_lista=VALUES(precio_lista), "
@@ -468,7 +634,7 @@ def guardar_en_mysql(items: list, fecha_hora: datetime, reporte: list) -> bool:
                     "INSERT INTO corrida_sitios (corrida_id, tienda, plataforma, total_encontrados, con_descuento, estado, mensaje, segundos) "
                     "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE total_encontrados=VALUES(total_encontrados), "
                     "con_descuento=VALUES(con_descuento), estado=VALUES(estado), mensaje=VALUES(mensaje), segundos=VALUES(segundos)",
-                    [(corrida_id, r["tienda"], "vtex_io", r["total"], r["con"], r["estado"], None, r["segundos"]) for r in reporte])
+                    [(corrida_id, r["tienda"], r.get("plataforma", "vtex_io"), r["total"], r["con"], r["estado"], None, r["segundos"]) for r in reporte])
         conn.commit()
         log.info("MySQL: corrida #%d (ropa) guardada: %d observaciones, %d productos.", corrida_id, len(filas), len(prod_id))
         return True
@@ -506,19 +672,28 @@ def main() -> int:
         log.error("Ninguna tienda coincide con --solo %s", args.solo)
         return 2
 
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        log.error("Falta Playwright: pip install playwright && playwright install chromium")
-        return 2
+    necesita_browser = any(s["platform"] == "vtex_io" for s in sitios)
+    if necesita_browser:
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            log.error("Falta Playwright: pip install playwright && playwright install chromium")
+            return 2
+    import contextlib
+    import requests
 
     todos: dict = {}
     reporte = []
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=not args.headful)
-        ctx = browser.new_context(user_agent=USER_AGENT, locale="es-AR")
-        # no descargar imagenes/fuentes/media: menos carga para el sitio y para nosotros
-        ctx.route("**/*", lambda r: r.abort() if r.request.resource_type in ("image", "media", "font") else r.continue_())
+    with contextlib.ExitStack() as stack:
+        ctx = None
+        if necesita_browser:
+            browser = stack.enter_context(sync_playwright()).chromium.launch(headless=not args.headful)
+            stack.callback(browser.close)
+            ctx = browser.new_context(user_agent=USER_AGENT, locale="es-AR")
+            # no descargar imagenes/fuentes/media: menos carga para el sitio y para nosotros
+            ctx.route("**/*", lambda r: r.abort() if r.request.resource_type in ("image", "media", "font") else r.continue_())
+        sesion = requests.Session()
+        sesion.headers.update({"User-Agent": USER_AGENT, "Accept": "application/json", "Accept-Language": "es-AR,es;q=0.9"})
         for site in sitios:
             secciones = site["secciones"][args.modo]
             if args.seccion:
@@ -526,27 +701,30 @@ def main() -> int:
             for sec in secciones:
                 log.info("== %s %s ==", site["name"], sec["path"])
                 t0 = time.time()
-                page = ctx.new_page()
+                nombre_rep = f"{site['name']}_{sec.get('etiqueta') or (sec['genero'] + '_' + sec['categoria'])}"
+                page = ctx.new_page() if site["platform"] == "vtex_io" else None
                 try:
-                    items = scrap_seccion(page, site, sec, args.max_paginas)
+                    if page is not None:
+                        items = scrap_seccion(page, site, sec, args.max_paginas)
+                    else:
+                        items = scrap_seccion_api(sesion, site, sec, args.max_paginas)
                     con = sum(1 for i in items if i.descuento_pct > 0)
                     for it in items:
                         todos.setdefault(it.clave, it)
                     log.info("  -> %d productos (%d con descuento)", len(items), con)
-                    reporte.append({"tienda": f"{site['name']}_{sec['genero']}_{sec['categoria']}", "total": len(items),
-                                    "con": con, "estado": "ok" if items else "vacio", "segundos": round(time.time() - t0, 1)})
+                    estado = "ok" if items else "vacio"
                 except Bloqueado as e:
                     log.error("  BLOQUEADO: %s (dejo la seccion y sigo)", e)
-                    reporte.append({"tienda": f"{site['name']}_{sec['genero']}_{sec['categoria']}", "total": 0, "con": 0,
-                                    "estado": "bloqueado", "segundos": round(time.time() - t0, 1)})
+                    items, con, estado = [], 0, "bloqueado"
                 except Exception as e:  # noqa: BLE001
                     log.error("  fallo: %s", e)
-                    reporte.append({"tienda": f"{site['name']}_{sec['genero']}_{sec['categoria']}", "total": 0, "con": 0,
-                                    "estado": "error", "segundos": round(time.time() - t0, 1)})
+                    items, con, estado = [], 0, "error"
                 finally:
-                    page.close()
+                    if page is not None:
+                        page.close()
+                reporte.append({"tienda": nombre_rep, "plataforma": site["platform"], "total": len(items), "con": con,
+                                "estado": estado, "segundos": round(time.time() - t0, 1)})
                 time.sleep(random.uniform(8, 14))
-        browser.close()
 
     items = list(todos.values())
     con_desc = [i for i in items if i.descuento_pct > max(args.min_descuento, 0.0)]

@@ -1405,7 +1405,7 @@ class Dashboard extends Component
         if (preg_match('/^M\d/', $u))                                    return 'Calzado mujer (talle M)';    // talles_norm: M7
         if (preg_match('/^\d+(\.5)?$/', $u)) {
             return match ($categoria) {
-                'calzado'    => 'Calzado niños (número)',
+                'calzado'    => (float) $u >= 30 ? 'Calzado (talle AR / EU)' : 'Calzado niños (número)',
                 'accesorios' => 'Numérico (accesorios)',
                 default      => 'Numérico (ropa niños)',
             };

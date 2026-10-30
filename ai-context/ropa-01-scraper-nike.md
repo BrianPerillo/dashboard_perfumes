@@ -82,6 +82,8 @@ Secciones: `/hombre|mujer|nino-a/{calzado,ropa}` y `/accesorios`, todas con `?or
 * `descuento = (lista − actual) / lista` tomando `priceRange.lowPrice`; si un producto tiene variantes con distinto precio podría subestimarse.
 * Términos de uso de Nike: se consultan solo páginas públicas a ritmo humano-lento; conviene revisar sus condiciones antes de escalar.
 
+> Desde 2026-10-30 el script tiene **adaptadores por plataforma** (`vtex_io` = Nike, `vtex_api` = Levi's y Topper) y la investigación de las demás tiendas: ver [ropa-02](ropa-02-tiendas-y-plataformas.md).
+
 ## Cómo agregar otro sitio de ropa (Lacoste, etc.)
 Agregar una entrada en `SITES` con su `host`, `secciones` y, si no es VTEX IO con `__STATE__`, una función `productos_de_*` equivalente; mantener el mismo `ItemRopa`. Registrar el sitio en `config/rubros.php` no hace falta (el rubro ya existe). Lacoste: investigar primero su plataforma (hay un HTML guardado en `Clases\descuentos\lacoste html para claude.txt`).
 

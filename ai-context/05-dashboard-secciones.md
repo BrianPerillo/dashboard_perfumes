@@ -155,3 +155,6 @@ Estos tres atributos se comportan como **Género**: aparecen **todos seleccionad
 
 ### Talles de calzado normalizados (2026-10-30)
 `productos.talles_norm` (migración `2026_10_30_040000`, con backfill de los productos existentes) guarda los talles de **calzado** interpretados según el género, con la lógica de `App\Support\Talles::normalizar()` (copia en Python: `descuentos_ropa.py::normalizar_talles`; mantener iguales; test `TallesTest`): masculino `8` → `H8` (talle hombre); femenino `5` → `M5` (talle mujer); unisex `H 10 / M 11.5` → `H10` y `M11.5`; unisex con número simple → `H`; niños (`5.5Y`, `13C`) y ropa/accesorios sin cambios. Equivalencia de referencia: M = H + 1,5 (no se aplica automáticamente). El filtro **Talle** usa `COALESCE(talles_norm, talles)` y agrupa el calzado en *Calzado hombre (talle H)* y *Calzado mujer (talle M)* (+ *Calzado niños (número)* e *infantil C/Y*); las etiquetas se muestran sin el prefijo. La tabla sigue mostrando los talles originales de Nike.
+
+## Talle de calzado argentino/europeo (2026-10-30)
+Los talles numéricos **≥ 30** de calzado (Topper: 36–46) no se prefijan con H/M y `Dashboard::grupoTalle` los agrupa en **"Calzado (talle AR / EU)"**; los US de Nike siguen en "Calzado hombre (talle H)" / "Calzado mujer (talle M)". La alerta con un número simple (`44`) ya coincide con el talle sin prefijo.

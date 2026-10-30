@@ -28,6 +28,13 @@ class TallesTest extends TestCase
         $this->assertSame('H9', Talles::normalizar('unisex', 'calzado', '9'));
     }
 
+    public function test_talle_argentino_no_lleva_prefijo(): void
+    {
+        $this->assertSame('44, 45', Talles::normalizar('masculino', 'calzado', '44, 45'));
+        $this->assertSame('36.5, 38', Talles::normalizar('femenino', 'calzado', '36.5, 38'));
+        $this->assertSame('M7', Talles::normalizar('femenino', 'calzado', '7'));
+    }
+
     public function test_ninos_no_cambian(): void
     {
         $this->assertSame('5.5Y, 13C', Talles::normalizar('ninos', 'calzado', '5.5Y, 13C'));

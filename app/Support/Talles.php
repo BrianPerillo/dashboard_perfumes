@@ -11,6 +11,7 @@ namespace App\Support;
  *   - unisex   : "H 10 / M 11.5"            -> AMBOS talles     -> "H10" y "M11.5"
  *   - unisex con número simple              -> se asume talle de hombre (H)
  *   - niños: "5.5Y", "13C"                  -> sin cambios
+ *   - números >= 30 (talle argentino/europeo, ej. Topper: 44) -> sin cambios (no son talles US)
  * Ropa y accesorios no se modifican. Equivalencia de referencia: talle M = talle H + 1,5.
  *
  * Hay una copia de esta lógica en Python (descuentos_ropa.py::normalizar_talles): mantenerlas iguales.
@@ -33,10 +34,10 @@ class Talles
             } elseif (preg_match('/^\d+(?:\.\d)?[CY]$/i', $t)) {
                 $out[] = strtoupper($t);
             } elseif (preg_match('/^\d+(?:\.\d)?$/', $t)) {
-                $out[] = match ($genero) {
-                    'femenino' => 'M' . $t,
-                    'ninos'    => $t,
-                    default    => 'H' . $t,      // masculino y unisex
+                $out[] = match (true) {
+                    $genero === 'ninos' || (float) $t >= 30 => $t,   // niños y talle argentino/europeo (44): sin prefijo
+                    $genero === 'femenino'                  => 'M' . $t,
+                    default                                 => 'H' . $t,      // masculino y unisex
                 };
             } else {
                 $out[] = $t;

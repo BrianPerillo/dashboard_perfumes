@@ -12,6 +12,12 @@ Formato:
 
 ---
 
+## 2026-10-30 (noche) — Adaptador `vtex_api` y tiendas Levi's y Topper
+
+- `descuentos_ropa.py` pasa a **adaptadores por plataforma**: `vtex_io` (Nike, navegador) y nuevo `vtex_api` (catálogo público de VTEX por HTTP, sin navegador). Se agregaron **Levi's** (699 leídos, 464 con descuento) y **Topper** (647 / 548) a la corrida #164 con `--fecha`. `corrida_sitios` registra la plataforma real; `observaciones.fuente` = `vtex_api`.
+- Talles de calzado ≥ 30 (numeración argentina de Topper) sin prefijo H/M (`Talles.php` + Python) y grupo propio en el filtro; test agregado.
+- Investigación de plataformas de las demás tiendas y bloqueo de Lacoste/Adidas (Akamai): nuevo doc [ropa-02](ropa-02-tiendas-y-plataformas.md). No se sorteó el bloqueo.
+
 ## 2026-10-30 (noche) — Imagen del producto en el email de alertas
 
 - `ProcesarAlertas` selecciona `p.imagen` y el mail la muestra (07). Verificado con `alertas:procesar --dry-run`; el render del mail no se probó con un envío real.
