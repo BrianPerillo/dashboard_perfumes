@@ -25,11 +25,20 @@
             {{ $slot }}
         </div>
 
-        <p class="text-center text-xs text-[var(--c-muted)] mt-6">
-            <a href="{{ route('dashboard') }}" class="hover:text-[var(--color-primary-600)] transition-colors">
+        <div class="text-center mt-6">
+            @auth
+            <form method="POST" action="{{ route('logout') }}" class="inline">
+                @csrf
+                <button type="submit" class="text-xs text-[var(--c-muted)] hover:text-[var(--color-primary-600)] transition-colors">
+                    ← Volver al dashboard sin iniciar sesión
+                </button>
+            </form>
+            @else
+            <a href="{{ route('dashboard') }}" class="text-xs text-[var(--c-muted)] hover:text-[var(--color-primary-600)] transition-colors">
                 ← Volver al dashboard sin iniciar sesión
             </a>
-        </p>
+            @endauth
+        </div>
     </div>
 
     @livewireScripts

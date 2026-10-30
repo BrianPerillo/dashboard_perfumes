@@ -9,20 +9,22 @@ use Illuminate\Support\Facades\DB;
 
 class KpiPanel extends Component
 {
-    private const MARCAS_EXCLUIDAS = ['rimmel'];
+    private const MARCAS_EXCLUIDAS = Observacion::MARCAS_EXCLUIDAS;
     public array $kpis = [];
     public ?string $fechaUltima = null;
     public ?string $fechaAnterior = null;
+    public string $rubro = 'perfumes';
 
-    public function mount(): void
+    public function mount(string $rubro = 'perfumes'): void
     {
+        $this->rubro = $rubro;
         $this->cargarKpis();
     }
 
     private function cargarKpis(): void
     {
         // Las dos corridas más recientes
-        $corridas = Corrida::orderByDesc('fecha_hora')->limit(2)->pluck('id', 'fecha_hora');
+        $corridas = Corrida::deRubro($this->rubro)->orderByDesc('fecha_hora')->limit(2)->pluck('id', 'fecha_hora');
 
         if ($corridas->isEmpty()) {
             return;
@@ -64,7 +66,7 @@ class KpiPanel extends Component
 
         $this->kpis = [
             [
-                'label'  => 'Perfumes en oferta',
+                'label'  => config("rubros.rubros.{$this->rubro}.items_label", 'Productos en oferta'),
                 'value'  => number_format($actual->total ?? 0, 0, ',', '.'),
                 'delta'  => $anterior ? ($actual->total - $anterior->total) : null,
                 'icon'   => '🧴',

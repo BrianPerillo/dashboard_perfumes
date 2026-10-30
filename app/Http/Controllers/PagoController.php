@@ -14,7 +14,14 @@ class PagoController extends Controller
         $suscripcion = null;
 
         if ($ref = $request->query('external_reference')) {
-            $suscripcion = Suscripcion::with('plan')->find($ref);
+            $query = Suscripcion::with('plan')->where('id', $ref);
+
+            // Scoping a usuario autenticado para evitar enumeración
+            if ($request->user()) {
+                $query->where('user_id', $request->user()->id);
+            }
+
+            $suscripcion = $query->first();
         }
 
         return view('pago.exito', compact('suscripcion'));
@@ -43,8 +50,8 @@ class PagoController extends Controller
         $xRequestId  = $request->header('x-request-id', '');
         $dataId      = $request->input('data.id', '');
 
-        if ($xSignature && !$mp->validarFirmaWebhook($xSignature, $xRequestId, $dataId)) {
-            Log::warning('[MP Webhook] Firma inválida');
+        if (!$mp->validarFirmaWebhook($xSignature, $xRequestId, $dataId)) {
+            Log::warning('[MP Webhook] Firma inválida o ausente');
             return response()->json(['error' => 'invalid signature'], 400);
         }
 

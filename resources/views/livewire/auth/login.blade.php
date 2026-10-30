@@ -7,7 +7,28 @@
     </div>
     @endif
 
-    <form wire:submit="submit" class="space-y-4">
+    <form wire:submit="submit" class="space-y-4"
+          x-data="{
+              loading: false,
+              dots: '',
+              _timer: null,
+              init() {
+                  window.addEventListener('login-failed', () => this._reset());
+              },
+              _start() {
+                  this.loading = true;
+                  this._timer = setInterval(() => {
+                      this.dots = this.dots.length >= 3 ? '' : this.dots + '.';
+                  }, 380);
+              },
+              _reset() {
+                  this.loading = false;
+                  clearInterval(this._timer);
+                  this.dots = '';
+              }
+          }"
+          @submit="if (!loading) _start()">
+
         <div>
             <label class="block text-xs font-semibold text-[var(--c-muted)] uppercase tracking-wide mb-1.5">Email</label>
             <input type="email" wire:model="email" autocomplete="email"
@@ -21,7 +42,7 @@
             <div class="flex items-center justify-between mb-1.5">
                 <label class="block text-xs font-semibold text-[var(--c-muted)] uppercase tracking-wide">Contraseña</label>
                 <a href="{{ route('password.request') }}"
-                   class="text-xs text-[var(--color-primary-600)] hover:underline">¿Olvidaste tu contraseña?</a>
+                   class="text-xs text-[var(--color-primary-500)] hover:underline">¿Olvidaste tu contraseña?</a>
             </div>
             <input type="password" wire:model="password" autocomplete="current-password"
                    class="w-full rounded-lg border border-[var(--c-border)] bg-[var(--c-input)] text-[var(--c-text)]
@@ -31,22 +52,23 @@
         </div>
 
         <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" wire:model="remember" class="rounded border-[var(--c-border)] text-[var(--color-primary-600)]">
+            <input type="checkbox" wire:model="remember" class="rounded border-[var(--c-border)] text-[var(--color-primary-500)]">
             <span class="text-sm text-[var(--c-muted)]">Recordarme</span>
         </label>
 
         <button type="submit"
-                class="w-full bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white
+                :disabled="loading"
+                :class="loading ? 'opacity-75 cursor-wait' : 'hover:bg-[var(--color-primary-700)] cursor-pointer'"
+                class="w-full bg-[var(--color-primary-600)] text-white
                        font-semibold rounded-lg px-4 py-2.5 text-sm transition-colors
-                       flex items-center justify-center gap-2"
-                wire:loading.class="opacity-75 cursor-wait">
-            <span wire:loading.class="hidden">Ingresar</span>
-            <span wire:loading class="hidden">Ingresando…</span>
+                       flex items-center justify-center">
+            <span x-show="!loading">Ingresar</span>
+            <span x-show="loading" x-cloak>Ingresando<span x-text="dots"></span></span>
         </button>
     </form>
 
     <p class="text-center text-sm text-[var(--c-muted)] mt-5">
         ¿No tenés cuenta?
-        <a href="{{ route('register') }}" class="text-[var(--color-primary-600)] font-semibold hover:underline">Crear una</a>
+        <a href="{{ route('register') }}" class="text-[var(--color-primary-500)] font-semibold hover:underline">Crear una</a>
     </p>
 </div>

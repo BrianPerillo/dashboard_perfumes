@@ -199,6 +199,10 @@
                      style="width:54px;height:54px;flex-shrink:0;background:{{ $badgeColor }};color:{{ $badgeText }}">
                     {{ $row['descuento'] }}
                 </span>
+                @if(!empty($row['imagen']))
+                <img src="{{ $row['imagen'] }}" alt="" loading="lazy" referrerpolicy="no-referrer"
+                     class="w-14 h-14 rounded-lg object-cover bg-[var(--c-bg)] shrink-0">
+                @endif
                 {{-- Info producto --}}
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-[var(--c-text)] leading-snug">{{ $row['producto'] }}</p>
@@ -210,6 +214,11 @@
                                   class="hover:text-violet-500 hover:underline underline-offset-2 transition-colors">{{ $row['marca'] }}</button>
                         @endif
                     </p>
+                    @if(!empty($row['talles']))
+                    <p class="text-[11px] text-[var(--c-muted)] mt-0.5">
+                        {{ $row['tipo'] ? $row['tipo'] . ' · ' : '' }}@if(($row['variantes'] ?? 1) > 1)<span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span> · @endif{{ $row['color'] ? $row['color'] . ' · ' : '' }}Talles: {{ $row['talles'] }}
+                    </p>
+                    @endif
                 </div>
                 {{-- Link --}}
                 @if($row['url'])
@@ -272,7 +281,16 @@
                                 title="Filtrar por esta marca">{{ $row['marca'] }}</button>
                         @endif
                     </td>
-                    <td class="px-3 py-2 font-medium text-[var(--c-text)]">{{ $row['producto'] }}</td>
+                    <td class="px-3 py-2 font-medium text-[var(--c-text)]">
+                        @if(!empty($row['imagen']))
+                        <img src="{{ $row['imagen'] }}" alt="" loading="lazy" referrerpolicy="no-referrer"
+                             class="inline-block w-9 h-9 rounded object-cover bg-[var(--c-bg)] mr-2 align-middle">
+                        @endif
+                        {{ $row['producto'] }}
+                        @if(!empty($row['talles']))
+                        <span class="block text-[11px] font-normal text-[var(--c-muted)]">{{ $row['tipo'] ? $row['tipo'] . ' · ' : '' }}@if(($row['variantes'] ?? 1) > 1)<span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span> · @endif{{ $row['color'] ? $row['color'] . ' · ' : '' }}Talles: {{ $row['talles'] }}</span>
+                        @endif
+                    </td>
                     <td class="px-3 py-2 text-right text-slate-400 text-xs line-through">{{ $row['precio_lista'] }}</td>
                     <td class="px-3 py-2 text-right font-semibold text-violet-500 dark:text-violet-300">{{ $row['precio_actual'] }}</td>
                     <td class="px-3 py-2 text-right text-emerald-500 dark:text-emerald-400 font-medium text-xs">{{ $row['ahorro'] }}</td>

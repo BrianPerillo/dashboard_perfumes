@@ -50,7 +50,7 @@
 
         this.charts['chart-evo-prod'] = new ApexCharts(document.querySelector('#chart-evo-prod'), {
             chart: { type:'area', height:h, width:'100%', toolbar:{show:false}, fontFamily:'Inter,sans-serif', background:'transparent' },
-            series: [{ name:'Perfumes en oferta', data: data.map(d=>d.total) }],
+            series: [{ name: @js(config("rubros.rubros.$rubro.items_label")), data: data.map(d=>d.total) }],
             xaxis: { categories: cats, labels:{rotate:-30, style:{fontSize:'10px'}} },
             yaxis: { labels:{formatter:v=>v.toFixed(0)} },
             colors:[purple], fill:{type:'gradient',gradient:{opacityFrom:.3,opacityTo:.05}},
@@ -135,6 +135,9 @@
 }"
 >
 
+{{-- ═══════════════ BÚSQUEDA GLOBAL (producto + marcas) ═══════════════ --}}
+@include('livewire.dashboard.barra-busqueda')
+
 {{-- ═══════════════ CARD PRINCIPAL ══════════════════════ --}}
 <div class="rounded-2xl border border-[var(--c-border)] bg-white dark:bg-[var(--c-card)] shadow-sm">
     <div class="p-5 relative">
@@ -176,7 +179,11 @@
 @php
     $_fc = 0;
     if (count($tiendasSeleccionadas) < count($tiendas)) $_fc++;
-    if (count($generosSeleccionados) < 3) $_fc++;
+    if (count($generosSeleccionados) < count($generosDisponibles)) $_fc++;
+    if ($categoriaFiltro !== '') $_fc++;
+    $_fc += count($tiposExcluidos) + count($tallesSeleccionados) + count($disciplinasExcluidas) + count($lineasExcluidas);
+    if ($precioMin) $_fc++;
+    if ($precioMax) $_fc++;
     if ($descMin > 0)  $_fc++;
     if ($descMax < 90) $_fc++;
     if (!empty($tablaFiltroBuscar))  $_fc++;
@@ -202,73 +209,13 @@
     </div>
     @endif
 
-    {{-- ── Buscar (Tabla) ──────────────────────────────── --}}
-    @if($tabActiva === 'tabla')
-    <div class="px-4 py-2 space-y-2 border-b border-[var(--c-border)]">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Buscar</p>
-        <input type="text" wire:model.live.debounce.400ms="tablaFiltroBuscar"
-               placeholder="Producto…"
-               class="w-full rounded border border-[var(--c-border)] bg-[var(--c-input)] px-2.5 py-1.5 text-xs text-[var(--c-text)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-300)]">
-        @if(!empty($tablaFiltroMarcas))
-        <div class="flex flex-wrap gap-1">
-            @foreach($tablaFiltroMarcas as $m)
-            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium
-                         bg-[var(--color-primary-100)] dark:bg-[var(--color-primary-900)]/40
-                         text-[var(--color-primary-800)] dark:text-[var(--color-primary-300)]
-                         border border-[var(--color-primary-300)]">
-                {{ $m }}
-                <button wire:click="toggleTablaFiltroMarca('{{ $m }}')" class="ml-0.5 font-bold hover:text-red-500 leading-none">×</button>
-            </span>
-            @endforeach
-        </div>
-        @endif
-        <div x-data="{
-                 q: '',
-                 open: false,
-                 pos: { top: 0, left: 0, width: 0 },
-                 reposicionar() {
-                     const r = $refs.marcaInput.getBoundingClientRect();
-                     this.pos = { top: r.bottom + 2, left: r.left, width: r.width };
-                 }
-             }"
-             x-init="
-                 const dispatch = $dispatch;
-                 const el = $el;
-                 document.addEventListener('mousedown', function handler(e) {
-                     if (!el.isConnected) { document.removeEventListener('mousedown', handler, true); return; }
-                     if (!el.contains(e.target)) dispatch('marca-cerrar');
-                 }, true);
-             "
-             @marca-cerrar="open = false; q = ''">
-            <input x-ref="marcaInput"
-                   type="text" x-model="q"
-                   @focus="open = true; reposicionar()"
-                   @input="open = true"
-                   @keydown.escape="open = false; q = ''"
-                   placeholder="Marca…"
-                   class="w-full rounded border border-[var(--c-border)] bg-[var(--c-input)] px-2.5 py-1.5 text-xs text-[var(--c-text)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-300)]">
-            <div x-show="open && q.length > 0" x-cloak
-                 :style="'position:fixed; z-index:9999; overflow-y:auto; max-height:260px; top:' + pos.top + 'px; left:' + pos.left + 'px; width:' + pos.width + 'px;'"
-                 class="rounded border border-[var(--c-border)] bg-[var(--c-card)] shadow-xl">
-                <template x-for="m in @js($marcasDisponibles).filter(m => m.toLowerCase().includes(q.toLowerCase()))" :key="m">
-                    <button type="button" x-on:click="$wire.toggleTablaFiltroMarca(m); q=''; open=false"
-                            class="w-full px-2.5 py-1.5 text-left text-xs hover:bg-[var(--color-primary-50)] dark:hover:bg-white/5 text-[var(--c-text)]"
-                            x-text="m"></button>
-                </template>
-            </div>
-        </div>
-        @if(!empty($tablaFiltroMarcas) || $tablaFiltroBuscar)
-        <button wire:click="limpiarFiltrosTabla" class="text-[10px] text-[var(--c-muted)] hover:text-[var(--c-text)] underline">↺ Limpiar</button>
-        @endif
-    </div>
-    @endif
-
     {{-- ── Género ───────────────────────────────────────────── --}}
     <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
+                :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
             <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
-                Género <span class="font-normal normal-case opacity-60">({{ count($generosSeleccionados) }}/3)</span>
+                Género <span class="font-normal normal-case opacity-60">({{ count($generosSeleccionados) }}/{{ count($generosDisponibles) }})</span>
             </p>
             <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
@@ -278,11 +225,11 @@
             <div class="collapsible-inner">
                 <div class="px-4 pb-3">
                     <div class="flex flex-wrap gap-1 mb-2">
-                        @foreach(['masculino' => 'Masculino', 'femenino' => 'Femenino', 'unisex' => 'Unisex'] as $gkey => $glabel)
+                        @foreach(config("rubros.rubros.$rubro.generos") as $gkey => $glabel)
                         <button wire:click="toggleGenero('{{ $gkey }}')"
                                 class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
                                        {{ in_array($gkey, $generosSeleccionados)
-                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
                             {{ $glabel }}
                         </button>
@@ -290,7 +237,7 @@
                     </div>
                     <button wire:click="toggleTodosGeneros"
                             class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
-                        {{ count($generosSeleccionados) === 3 ? '× Ninguno' : '✓ Todos' }}
+                        {{ count($generosSeleccionados) === count($generosDisponibles) ? '× Ninguno' : '✓ Todos' }}
                     </button>
                 </div>
             </div>
@@ -298,9 +245,10 @@
     </div>
 
     {{-- ── Presentación ─────────────────────────────────────── --}}
-    @if(!empty($mlDisponibles))
-    <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+    @if(config("rubros.rubros.$rubro.filtro_ml") && !empty($mlDisponibles))
+    <div x-data="{ open: false, id: 'ml' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
+                :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
             <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
                 Presentación <span class="font-normal normal-case opacity-60">({{ count($mlSeleccionados) }}/{{ count($mlDisponibles) }})</span>
@@ -317,7 +265,7 @@
                         <button wire:click="toggleMl({{ $ml }})"
                                 class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
                                        {{ in_array($ml, $mlSeleccionados)
-                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
                             {{ $ml }} ml
                         </button>
@@ -333,9 +281,12 @@
     </div>
     @endif
 
+    @include('livewire.dashboard.filtros-ropa')
+
     {{-- ── Tiendas ──────────────────────────────────────── --}}
-    <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+    <div x-data="{ open: false, id: 'tiendas' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
+                :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
             <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
                 Tiendas <span class="font-normal normal-case opacity-60">({{ count($tiendasSeleccionadas) }}/{{ count($tiendas) }})</span>
@@ -352,7 +303,7 @@
                         <button wire:click="toggleTienda({{ $tid }})"
                                 class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
                                        {{ in_array($tid, $tiendasSeleccionadas)
-                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
                             {{ $tnombre }}
                         </button>
@@ -437,73 +388,13 @@
     </div>
     @endif
 
-    {{-- ── Buscar (Tabla) ──────────────────────────────── --}}
-    @if($tabActiva === 'tabla')
-    <div class="px-4 py-2 space-y-2 border-b border-[var(--c-border)]">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Buscar</p>
-        <input type="text" wire:model.live.debounce.400ms="tablaFiltroBuscar"
-               placeholder="Producto…"
-               class="w-full rounded border border-[var(--c-border)] bg-[var(--c-input)] px-2.5 py-1.5 text-xs text-[var(--c-text)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-300)]">
-        @if(!empty($tablaFiltroMarcas))
-        <div class="flex flex-wrap gap-1">
-            @foreach($tablaFiltroMarcas as $m)
-            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium
-                         bg-[var(--color-primary-100)] dark:bg-[var(--color-primary-900)]/40
-                         text-[var(--color-primary-800)] dark:text-[var(--color-primary-300)]
-                         border border-[var(--color-primary-300)]">
-                {{ $m }}
-                <button wire:click="toggleTablaFiltroMarca('{{ $m }}')" class="ml-0.5 font-bold hover:text-red-500 leading-none">×</button>
-            </span>
-            @endforeach
-        </div>
-        @endif
-        <div x-data="{
-                 q: '',
-                 open: false,
-                 pos: { top: 0, left: 0, width: 0 },
-                 reposicionar() {
-                     const r = $refs.marcaInputMob.getBoundingClientRect();
-                     this.pos = { top: r.bottom + 2, left: r.left, width: r.width };
-                 }
-             }"
-             x-init="
-                 const dispatch = $dispatch;
-                 const el = $el;
-                 document.addEventListener('mousedown', function handler(e) {
-                     if (!el.isConnected) { document.removeEventListener('mousedown', handler, true); return; }
-                     if (!el.contains(e.target)) dispatch('marca-cerrar-mob');
-                 }, true);
-             "
-             @marca-cerrar-mob="open = false; q = ''">
-            <input x-ref="marcaInputMob"
-                   type="text" x-model="q"
-                   @focus="open = true; reposicionar()"
-                   @input="open = true"
-                   @keydown.escape="open = false; q = ''"
-                   placeholder="Marca…"
-                   class="w-full rounded border border-[var(--c-border)] bg-[var(--c-input)] px-2.5 py-1.5 text-xs text-[var(--c-text)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-300)]">
-            <div x-show="open && q.length > 0" x-cloak
-                 :style="'position:fixed; z-index:9999; overflow-y:auto; max-height:260px; top:' + pos.top + 'px; left:' + pos.left + 'px; width:' + pos.width + 'px;'"
-                 class="rounded border border-[var(--c-border)] bg-[var(--c-card)] shadow-xl">
-                <template x-for="m in @js($marcasDisponibles).filter(m => m.toLowerCase().includes(q.toLowerCase()))" :key="m">
-                    <button type="button" x-on:click="$wire.toggleTablaFiltroMarca(m); q=''; open=false"
-                            class="w-full px-2.5 py-1.5 text-left text-xs hover:bg-[var(--color-primary-50)] dark:hover:bg-white/5 text-[var(--c-text)]"
-                            x-text="m"></button>
-                </template>
-            </div>
-        </div>
-        @if(!empty($tablaFiltroMarcas) || $tablaFiltroBuscar)
-        <button wire:click="limpiarFiltrosTabla" class="text-[10px] text-[var(--c-muted)] hover:text-[var(--c-text)] underline">↺ Limpiar</button>
-        @endif
-    </div>
-    @endif
-
     {{-- ── Género ───────────────────────────────────────────── --}}
     <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
+                :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
             <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
-                Género <span class="font-normal normal-case opacity-60">({{ count($generosSeleccionados) }}/3)</span>
+                Género <span class="font-normal normal-case opacity-60">({{ count($generosSeleccionados) }}/{{ count($generosDisponibles) }})</span>
             </p>
             <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
@@ -513,11 +404,11 @@
             <div class="collapsible-inner">
                 <div class="px-4 pb-3">
                     <div class="flex flex-wrap gap-1 mb-2">
-                        @foreach(['masculino' => 'Masculino', 'femenino' => 'Femenino', 'unisex' => 'Unisex'] as $gkey => $glabel)
+                        @foreach(config("rubros.rubros.$rubro.generos") as $gkey => $glabel)
                         <button wire:click="toggleGenero('{{ $gkey }}')"
                                 class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
                                        {{ in_array($gkey, $generosSeleccionados)
-                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
                             {{ $glabel }}
                         </button>
@@ -525,7 +416,7 @@
                     </div>
                     <button wire:click="toggleTodosGeneros"
                             class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
-                        {{ count($generosSeleccionados) === 3 ? '× Ninguno' : '✓ Todos' }}
+                        {{ count($generosSeleccionados) === count($generosDisponibles) ? '× Ninguno' : '✓ Todos' }}
                     </button>
                 </div>
             </div>
@@ -533,9 +424,10 @@
     </div>
 
     {{-- ── Presentación ─────────────────────────────────────── --}}
-    @if(!empty($mlDisponibles))
-    <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+    @if(config("rubros.rubros.$rubro.filtro_ml") && !empty($mlDisponibles))
+    <div x-data="{ open: false, id: 'ml' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
+                :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
             <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
                 Presentación <span class="font-normal normal-case opacity-60">({{ count($mlSeleccionados) }}/{{ count($mlDisponibles) }})</span>
@@ -552,7 +444,7 @@
                         <button wire:click="toggleMl({{ $ml }})"
                                 class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
                                        {{ in_array($ml, $mlSeleccionados)
-                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
                             {{ $ml }} ml
                         </button>
@@ -568,9 +460,12 @@
     </div>
     @endif
 
+    @include('livewire.dashboard.filtros-ropa')
+
     {{-- ── Tiendas ──────────────────────────────────────── --}}
-    <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+    <div x-data="{ open: false, id: 'tiendas' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
+                :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
             <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
                 Tiendas <span class="font-normal normal-case opacity-60">({{ count($tiendasSeleccionadas) }}/{{ count($tiendas) }})</span>
@@ -587,7 +482,7 @@
                         <button wire:click="toggleTienda({{ $tid }})"
                                 class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
                                        {{ in_array($tid, $tiendasSeleccionadas)
-                                           ? 'bg-[var(--color-primary-600)] text-white border-[var(--color-primary-600)]'
+                                           ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
                             {{ $tnombre }}
                         </button>

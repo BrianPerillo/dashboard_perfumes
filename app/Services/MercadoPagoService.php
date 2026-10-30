@@ -49,7 +49,10 @@ class MercadoPagoService
             'expires'            => false,
         ]);
 
-        $suscripcion->update(['mp_preference_id' => $preference->id]);
+        $suscripcion->update([
+            'mp_preference_id'      => $preference->id,
+            'mp_external_reference' => (string) $suscripcion->id,
+        ]);
 
         // En sandbox usa sandbox_init_point, en producción init_point
         $esSandbox = str_contains(config('services.mercadopago.access_token', ''), 'TEST');
@@ -76,6 +79,12 @@ class MercadoPagoService
                 return null;
             }
 
+            // Idempotencia: si ya fue aprobado con este mismo pago, no reprocess
+            if ($suscripcion->mp_payment_id == $payment->id && $suscripcion->estado === 'aprobado') {
+                Log::info("[MP] Pago {$paymentId} ya procesado anteriormente, ignorando replay");
+                return 'aprobado';
+            }
+
             $estado = match ($payment->status) {
                 'approved'    => 'aprobado',
                 'rejected'    => 'rechazado',
@@ -84,6 +93,15 @@ class MercadoPagoService
                 'pending'     => 'pendiente',
                 default       => 'pendiente',
             };
+
+            // Validar que el monto cobrado coincida con el precio del plan
+            if ($estado === 'aprobado' && $suscripcion->plan) {
+                $diferencia = abs($payment->transaction_amount - (float) $suscripcion->plan->precio);
+                if ($diferencia > 0.01) {
+                    Log::error("[MP] Pago {$paymentId}: monto {$payment->transaction_amount} no coincide con precio del plan {$suscripcion->plan->precio}");
+                    return null;
+                }
+            }
 
             $updates = [
                 'mp_payment_id' => $payment->id,
@@ -116,7 +134,10 @@ class MercadoPagoService
     public function validarFirmaWebhook(string $xSignature, string $xRequestId, string $dataId): bool
     {
         $secret = config('services.mercadopago.webhook_secret');
-        if (!$secret) return true; // sin secret configurado, aceptar de todas formas
+        if (!$secret) {
+            Log::error('[MP Webhook] MP_WEBHOOK_SECRET no configurado — rechazando webhook');
+            return false;
+        }
 
         // Extraer ts y v1 de x-signature: "ts=...,v1=..."
         $parts = [];

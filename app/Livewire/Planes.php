@@ -27,7 +27,18 @@ class Planes extends Component
         $user = Auth::user();
 
         if ($plan->esGratis()) {
-            // Plan gratis: asignar directamente sin pasar por MP
+            // Plan gratis: asignar directamente sin pasar por MP (solo si no hay ya una suscripción vigente)
+            $vigente = $user->suscripcionActiva();
+            if ($vigente) {
+                $this->mensaje     = $vigente->plan->esGratis()
+                    ? 'Ya estás en el plan Gratis.'
+                    : "Tu plan {$vigente->plan->nombre} está vigente"
+                        . ($vigente->vence_at ? ' hasta el ' . $vigente->vence_at->format('d/m/Y') : '')
+                        . '. Al vencer pasás automáticamente al plan Gratis.';
+                $this->tipoMensaje = 'info';
+                return null;
+            }
+
             Suscripcion::create([
                 'user_id' => $user->id,
                 'plan_id' => $plan->id,

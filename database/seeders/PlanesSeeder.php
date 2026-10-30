@@ -43,7 +43,7 @@ class PlanesSeeder extends Seeder
         ];
 
         foreach ($planes as $data) {
-            $data['features'] = json_encode($data['features']);
+            // 'features' se pasa como array: el cast `array` del modelo lo codifica (json_encode aquí lo duplicaba)
             Plan::updateOrCreate(['slug' => $data['slug']], $data);
         }
     }

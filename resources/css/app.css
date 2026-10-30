@@ -12,17 +12,17 @@
 @theme {
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-    /* Paleta principal: ciruela + dorado */
-    --color-primary-50:  #f5f0ff;
-    --color-primary-100: #ede5ff;
-    --color-primary-200: #ddd0ff;
-    --color-primary-300: #c4a8ff;
-    --color-primary-400: #a87aff;
-    --color-primary-500: #8b52f0;
-    --color-primary-600: #5B3A8C;
-    --color-primary-700: #6325ba;
-    --color-primary-800: #3a2259;
-    --color-primary-900: #2a1840;
+    /* Paleta principal: violeta vivo */
+    --color-primary-50:  #fdf0fd;
+    --color-primary-100: #f9d9f9;
+    --color-primary-200: #f0aef0;
+    --color-primary-300: #e07ae0;
+    --color-primary-400: #cc45cc;
+    --color-primary-500: #951d95;
+    --color-primary-600: #8a1caf;
+    --color-primary-700: #680f68;
+    --color-primary-800: #4a0a4a;
+    --color-primary-900: #310632;
 
     --color-accent-400: #e8c040;
     --color-accent-500: #C9A227;
@@ -60,13 +60,17 @@ html.dark {
     /* design tokens: override para contraste en modo oscuro */
     --color-surface:     #1a1d2e;
     --color-border:      #2d3148;
-    --color-primary-700: #b528b5;
+    --color-primary-700: #cc45cc;
     --color-good-600:    #22c822;
     --color-bad-600:     #ff4444;
 }
 
 /* Alpine x-cloak: ocultar hasta que Alpine inicializa */
 [x-cloak] { display: none !important; }
+
+/* ── Hover en secciones de filtro colapsadas ── */
+.filter-section-closed:hover { background-color: #1f2130; }
+html:not(.dark) .filter-section-closed:hover { background-color: #e8dffa; }
 
 
 /* ── Scrollbar delgado ── */

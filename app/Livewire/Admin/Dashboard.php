@@ -31,6 +31,10 @@ class Dashboard extends Component
     public string $mensajeTest      = '';
     public string $tipoMensajeTest  = '';
     public string $telegramChatTest = '';
+
+    // Envío manual de alertas
+    public string $mensajeAlertas     = '';
+    public string $tipoMensajeAlertas = '';
     public array  $gaMetrics    = [];
     public array  $gaPages      = [];
     public array  $gaDevices    = [];
@@ -175,6 +179,19 @@ class Dashboard extends Component
     // Test de integraciones
     // ──────────────────────────────────────────────────────────────
 
+    public function procesarAlertasEmail(): void
+    {
+        try {
+            \Illuminate\Support\Facades\Artisan::call('alertas:procesar');
+            $output = trim(\Illuminate\Support\Facades\Artisan::output());
+            $this->mensajeAlertas     = $output ?: 'No hay alertas activas o sin novedades.';
+            $this->tipoMensajeAlertas = 'success';
+        } catch (\Throwable $e) {
+            $this->mensajeAlertas     = 'Error: ' . $e->getMessage();
+            $this->tipoMensajeAlertas = 'error';
+        }
+    }
+
     public function testEmail(): void
     {
         try {
@@ -266,6 +283,32 @@ class Dashboard extends Component
         $this->mensajeU = "Usuario {$user->name} actualizado.";
     }
 
+    /**
+     * Estado de la última corrida de cada rubro y de cada sitio/sección (tabla corrida_sitios).
+     * Alerta si la última corrida es vieja (> 36 h) o si algún sitio quedó bloqueado/con error/vacío.
+     */
+    private function saludScrapers(): array
+    {
+        $out = [];
+        foreach (config('rubros.rubros') as $slug => $cfg) {
+            $corrida = \App\Models\Corrida::ultima($slug);
+            if (!$corrida) {
+                $out[] = ['rubro' => $slug, 'nombre' => $cfg['nombre'], 'icono' => $cfg['icono'], 'corrida' => null, 'sitios' => [], 'horas' => null, 'problemas' => 0];
+                continue;
+            }
+            $sitios = \Illuminate\Support\Facades\DB::table('corrida_sitios')
+                ->where('corrida_id', $corrida->id)->orderBy('tienda')->get()->all();
+            $horas = (int) round($corrida->fecha_hora->diffInMinutes(now()) / 60);
+            $problemas = count(array_filter($sitios, fn($x) => $x->estado !== 'ok'));
+            $out[] = [
+                'rubro' => $slug, 'nombre' => $cfg['nombre'], 'icono' => $cfg['icono'],
+                'corrida' => $corrida, 'sitios' => $sitios, 'horas' => $horas, 'problemas' => $problemas,
+                'vieja' => $horas > 36,
+            ];
+        }
+        return $out;
+    }
+
     public function render()
     {
         $usuarios = User::orderByDesc('is_admin')->orderBy('name')->get();
@@ -277,6 +320,8 @@ class Dashboard extends Component
             'alertas_mail' => \App\Models\Alerta::where('canal', 'email')->count(),
         ];
 
-        return view('livewire.admin.dashboard', compact('usuarios', 'dbStats'));
+        $saludScrapers = $this->saludScrapers();
+
+        return view('livewire.admin.dashboard', compact('usuarios', 'dbStats', 'saludScrapers'));
     }
 }

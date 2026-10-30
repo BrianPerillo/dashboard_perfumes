@@ -56,11 +56,22 @@ Route::post('/webhook/mercadopago', [PagoController::class, 'webhook'])
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
 // Admin (requiere auth + is_admin)
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', \App\Livewire\Admin\Dashboard::class)->name('dashboard');
 });
 
-// Rutas de pestañas del dashboard
-Route::get('/{tab}', fn($tab) => view('dashboard', ['activeTab' => $tab]))
-    ->where('tab', 'joyas|tabla|cambios|comparar|seguir|tiendas|distribucion|evolucion|transfer|marcas|conclusiones')
+// Rutas de pestañas del dashboard, por rubro (config/rubros.php).
+// Perfumes (rubro por defecto) conserva las URLs sin prefijo (/joyas, /tabla...); el resto va con prefijo (/ropa/tabla).
+foreach (config('rubros.rubros') as $slug => $cfg) {
+    if ($cfg['prefijo']) {
+        Route::redirect('/' . $cfg['prefijo'], '/' . $cfg['prefijo'] . '/' . $cfg['tab_inicial']);
+        Route::get('/' . $cfg['prefijo'] . '/{tab}', fn($tab) => view('dashboard', ['activeTab' => $tab, 'rubro' => $slug]))
+            ->where('tab', implode('|', $cfg['tabs_rutas']))
+            ->name($slug . '.tab');
+    }
+}
+
+// Rubro por defecto (perfumes): debe ir al final porque /{tab} captura cualquier primer segmento válido
+Route::get('/{tab}', fn($tab) => view('dashboard', ['activeTab' => $tab, 'rubro' => config('rubros.default')]))
+    ->where('tab', implode('|', config('rubros.rubros.' . config('rubros.default') . '.tabs_rutas')))
     ->name('tab');

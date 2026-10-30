@@ -1,7 +1,4 @@
-@extends('components.layouts.app', ['activeTab' => 'planes'])
-
-@section('title', 'Pago pendiente')
-
+<x-layouts.app activeTab="planes">
 <div class="max-w-lg mx-auto py-20 px-4 text-center space-y-5">
     <div class="text-6xl">⏳</div>
     <h1 class="text-2xl font-bold text-[var(--c-text)]">Pago pendiente</h1>
@@ -11,3 +8,4 @@
         Volver al inicio
     </a>
 </div>
+</x-layouts.app>

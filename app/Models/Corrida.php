@@ -26,8 +26,14 @@ class Corrida extends Model
         return $this->hasMany(Observacion::class, 'corrida_id');
     }
 
-    public static function ultima(): ?self
+    /** Corridas de un rubro (perfumes, ropa...). Cada rubro tiene sus propias corridas/snapshots. */
+    public function scopeDeRubro($query, string $rubro)
     {
-        return static::orderByDesc('fecha_hora')->first();
+        return $query->where('rubro', $rubro);
+    }
+
+    public static function ultima(string $rubro = 'perfumes'): ?self
+    {
+        return static::deRubro($rubro)->orderByDesc('fecha_hora')->first();
     }
 }

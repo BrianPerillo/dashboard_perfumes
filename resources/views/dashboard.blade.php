@@ -1,9 +1,10 @@
-<x-layouts.app :activeTab="$activeTab ?? 'joyas'">
+<x-layouts.app :activeTab="$activeTab ?? 'joyas'" :rubro="$rubro ?? 'perfumes'">
 
     {{-- Panel KPIs (colapsado por defecto en mobile, abierto en desktop) --}}
     @php
-        $primerSnap = \App\Models\Corrida::orderBy('fecha_hora')->first();
-        $ultimoSnap = \App\Models\Corrida::orderByDesc('fecha_hora')->first();
+        $rubro = $rubro ?? 'perfumes';
+        $primerSnap = \App\Models\Corrida::deRubro($rubro)->orderBy('fecha_hora')->first();
+        $ultimoSnap = \App\Models\Corrida::deRubro($rubro)->orderByDesc('fecha_hora')->first();
         $snapDesde  = $primerSnap ? $primerSnap->fecha_hora->format('d/m/Y H:i') : null;
         $snapHasta  = $ultimoSnap ? $ultimoSnap->fecha_hora->format('d/m/Y H:i') : null;
     @endphp
@@ -32,13 +33,13 @@
 
         <div class="collapsible-wrap" :class="kpiOpen ? 'is-open' : ''">
             <div class="collapsible-inner">
-                @livewire('kpi-panel')
+                @livewire('kpi-panel', ['rubro' => $rubro])
             </div>
         </div>
     </div>
 
     <div class="mt-6">
-        @livewire('dashboard', ['activeTab' => $activeTab ?? 'joyas'])
+        @livewire('dashboard', ['activeTab' => $activeTab ?? 'joyas', 'rubro' => $rubro])
     </div>
 
 </x-layouts.app>

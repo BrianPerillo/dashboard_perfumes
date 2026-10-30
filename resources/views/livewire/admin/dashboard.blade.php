@@ -183,6 +183,64 @@
 
     </div>
 
+    {{-- ══════════════════ ESTADO DE LOS SCRAPERS ══════════════════ --}}
+    <div class="rounded-2xl border border-[var(--c-border)] bg-[var(--c-card)] overflow-hidden">
+        <div class="px-5 py-4 border-b border-[var(--c-border)] flex items-center gap-2">
+            <span class="text-lg">🕷️</span>
+            <p class="font-semibold text-sm text-[var(--c-text)]">Estado de los scrapers</p>
+            <span class="text-[11px] text-[var(--c-muted)]">última corrida de cada rubro y estado por sitio/sección</span>
+        </div>
+        <div class="p-5 space-y-5">
+            @foreach($saludScrapers as $sc)
+            <div>
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                    <p class="text-sm font-semibold text-[var(--c-text)]">{{ $sc['icono'] }} {{ $sc['nombre'] }}</p>
+                    @if(!$sc['corrida'])
+                        <span class="text-[11px] rounded-full px-2 py-0.5 bg-slate-500/15 text-slate-500">sin corridas</span>
+                    @else
+                        <span class="text-[11px] text-[var(--c-muted)]">corrida #{{ $sc['corrida']->id }} · {{ $sc['corrida']->fecha_hora->format('d/m/Y H:i') }}
+                            · hace {{ $sc['horas'] }} h · {{ number_format($sc['corrida']->total_productos, 0, ',', '.') }} productos</span>
+                        @if($sc['vieja'])
+                            <span class="text-[11px] font-semibold rounded-full px-2 py-0.5 bg-red-500/15 text-red-500">⚠ desactualizada (&gt; 36 h)</span>
+                        @elseif($sc['problemas'] > 0)
+                            <span class="text-[11px] font-semibold rounded-full px-2 py-0.5 bg-amber-500/15 text-amber-500">⚠ {{ $sc['problemas'] }} sitio(s) con problemas</span>
+                        @else
+                            <span class="text-[11px] font-semibold rounded-full px-2 py-0.5 bg-emerald-500/15 text-emerald-500">✓ todo ok</span>
+                        @endif
+                    @endif
+                </div>
+                @if($sc['corrida'] && count($sc['sitios']))
+                <div class="overflow-x-auto rounded-lg border border-[var(--c-border)]">
+                    <table class="w-full text-xs">
+                        <thead class="bg-[var(--c-bg)] text-[var(--c-muted)]">
+                            <tr><th class="text-left px-3 py-1.5">Sitio / sección</th><th class="text-left px-3 py-1.5">Plataforma</th>
+                                <th class="text-right px-3 py-1.5">Encontrados</th><th class="text-right px-3 py-1.5">Con desc.</th>
+                                <th class="text-right px-3 py-1.5">Seg.</th><th class="text-left px-3 py-1.5">Estado</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-[var(--c-border)]">
+                            @foreach($sc['sitios'] as $x)
+                            <tr>
+                                <td class="px-3 py-1.5 text-[var(--c-text)]">{{ $x->tienda }}</td>
+                                <td class="px-3 py-1.5 text-[var(--c-muted)]">{{ $x->plataforma }}</td>
+                                <td class="px-3 py-1.5 text-right tabular-nums">{{ $x->total_encontrados }}</td>
+                                <td class="px-3 py-1.5 text-right tabular-nums">{{ $x->con_descuento }}</td>
+                                <td class="px-3 py-1.5 text-right tabular-nums text-[var(--c-muted)]">{{ $x->segundos !== null ? number_format($x->segundos, 0) : '—' }}</td>
+                                <td class="px-3 py-1.5">
+                                    <span class="rounded-full px-2 py-0.5 font-semibold
+                                        {{ $x->estado === 'ok' ? 'bg-emerald-500/15 text-emerald-500' : ($x->estado === 'vacio' ? 'bg-amber-500/15 text-amber-500' : 'bg-red-500/15 text-red-500') }}">{{ $x->estado }}</span>
+                                    @if($x->mensaje)<span class="text-[var(--c-muted)] ml-1">{{ \Illuminate\Support\Str::limit($x->mensaje, 60) }}</span>@endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @endif
+            </div>
+            @endforeach
+        </div>
+    </div>
+
     {{-- ══════════════════ TEST DE INTEGRACIONES ══════════════════ --}}
     <div class="rounded-2xl border border-[var(--c-border)] bg-[var(--c-card)] overflow-hidden">
 
@@ -279,6 +337,36 @@
                 <code class="bg-[var(--c-border)] rounded px-1">https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>
                 — buscá <code class="bg-[var(--c-border)] rounded px-1">"chat":{"id": ...}</code>
             </p>
+
+            {{-- ── Envío manual de alertas ── --}}
+            <div class="rounded-xl border border-[var(--c-border)] bg-[var(--c-bg)] p-4">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-semibold text-[var(--c-text)]">🔔 Enviar alertas a usuarios</p>
+                        <p class="text-[11px] text-[var(--c-muted)] mt-0.5">
+                            Procesa todas las alertas activas y envía las novedades por email o Telegram (igual que el cron automático).
+                        </p>
+                    </div>
+                    <button wire:click="procesarAlertasEmail"
+                            wire:loading.attr="disabled"
+                            wire:target="procesarAlertasEmail"
+                            class="shrink-0 px-4 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer
+                                   bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white disabled:opacity-60">
+                        <span wire:loading.remove wire:target="procesarAlertasEmail">Enviar ahora</span>
+                        <span wire:loading wire:target="procesarAlertasEmail">Procesando…</span>
+                    </button>
+                </div>
+
+                @if($mensajeAlertas)
+                <div class="mt-3">
+                    <pre class="text-[11px] leading-relaxed whitespace-pre-wrap rounded-lg p-3
+                        {{ $tipoMensajeAlertas === 'success'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400'
+                            : 'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400' }}">{{ $mensajeAlertas }}</pre>
+                </div>
+                @endif
+            </div>
+
         </div>
     </div>
 

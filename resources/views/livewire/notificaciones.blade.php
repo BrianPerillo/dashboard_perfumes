@@ -1,5 +1,58 @@
 <div class="max-w-2xl mx-auto">
 
+    {{-- ── Toast notifications ── --}}
+    <div x-data="{
+            toasts: [],
+            add(tipo, msg) {
+                const id = Date.now();
+                this.toasts.push({ id, tipo, msg, visible: false });
+                this.$nextTick(() => {
+                    const t = this.toasts.find(t => t.id === id);
+                    if (t) t.visible = true;
+                });
+                setTimeout(() => this.remove(id), 5000);
+            },
+            remove(id) {
+                const t = this.toasts.find(t => t.id === id);
+                if (t) {
+                    t.visible = false;
+                    setTimeout(() => this.toasts = this.toasts.filter(t => t.id !== id), 300);
+                }
+            }
+         }"
+         @toast.window="add($event.detail.tipo, $event.detail.mensaje)"
+         class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"
+         style="max-width: 360px;">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div x-show="toast.visible"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-x-8"
+                 x-transition:enter-end="opacity-100 translate-x-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-x-0"
+                 x-transition:leave-end="opacity-0 translate-x-8"
+                 class="pointer-events-auto flex items-start gap-3 rounded-xl shadow-xl px-4 py-3 text-sm font-medium text-white"
+                 :class="{
+                     'bg-emerald-600': toast.tipo === 'success',
+                     'bg-blue-600':    toast.tipo === 'info',
+                     'bg-red-600':     toast.tipo === 'error',
+                 }">
+                <svg x-show="toast.tipo === 'success'" class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                </svg>
+                <svg x-show="toast.tipo === 'info'" class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span x-text="toast.msg" class="flex-1 leading-snug"></span>
+                <button @click="remove(toast.id)" class="flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity ml-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </template>
+    </div>
+
     {{-- ── Header ── --}}
     <div class="mb-8">
         <div class="flex items-center gap-3 mb-2">
@@ -7,7 +60,7 @@
             <h1 class="text-2xl font-bold text-[var(--c-text)]">Alertas de Descuentos</h1>
         </div>
         <p class="text-sm text-[var(--c-muted)] leading-relaxed">
-            Configurá una alerta y te avisamos por email o Telegram cuando aparezca un descuento
+            Configurá alertas y te avisamos por email o Telegram cuando aparezca un descuento
             en la marca, tienda o perfume que estás buscando.
         </p>
     </div>
@@ -25,49 +78,31 @@
         </div>
         <p class="font-bold text-base text-[var(--c-text)] mb-3">Plan Básico</p>
         <ul class="space-y-1.5 text-sm text-[var(--c-muted)]">
+            @foreach([
+                'Alertas ilimitadas',
+                'Notificaciones por email o Telegram',
+                'Por marca, tienda o perfume específico',
+                'Monitoreo en 12 tiendas argentinas',
+            ] as $item)
             <li class="flex items-center gap-2">
                 <span class="w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center flex-shrink-0">
                     <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                     </svg>
                 </span>
-                1 alerta activa
+                {{ $item }}
             </li>
-            <li class="flex items-center gap-2">
-                <span class="w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-                    </svg>
-                </span>
-                Notificaciones por email o Telegram
-            </li>
-            <li class="flex items-center gap-2">
-                <span class="w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-                    </svg>
-                </span>
-                Por marca, tienda o perfume específico
-            </li>
-            <li class="flex items-center gap-2">
-                <span class="w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center flex-shrink-0">
-                    <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-                    </svg>
-                </span>
-                Monitoreo en 12 tiendas argentinas
-            </li>
+            @endforeach
         </ul>
     </div>
 
-    {{-- ── Guest: must login ── --}}
+    {{-- ── Guest ── --}}
     @guest
     <div class="rounded-2xl border border-[var(--c-border)] bg-[var(--c-card)] p-8 text-center">
         <div class="text-4xl mb-4">🔒</div>
         <h2 class="text-lg font-semibold text-[var(--c-text)] mb-2">Necesitás una cuenta</h2>
         <p class="text-sm text-[var(--c-muted)] mb-6 leading-relaxed">
-            Para activar alertas y recibir notificaciones de descuentos,
-            iniciá sesión o creá tu cuenta gratuita.
+            Para activar alertas y recibir notificaciones, iniciá sesión o creá tu cuenta gratuita.
         </p>
         <div class="flex gap-3 justify-center">
             <a href="{{ route('register') }}"
@@ -86,18 +121,9 @@
 
     {{-- ── Authenticated ── --}}
     @auth
+    <div wire:key="auth-content">
 
-    {{-- Mensajes flash --}}
-    @if($mensajeExito)
-    <div class="flex items-start gap-3 rounded-xl border border-emerald-200 dark:border-emerald-800/40
-                bg-emerald-50 dark:bg-emerald-950/20 px-4 py-3 mb-4 text-sm text-emerald-700 dark:text-emerald-400">
-        <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-        </svg>
-        <span>{{ $mensajeExito }}</span>
-    </div>
-    @endif
-
+    {{-- Error inline --}}
     @if($mensajeError)
     <div class="flex items-start gap-3 rounded-xl border border-red-200 dark:border-red-800/40
                 bg-red-50 dark:bg-red-950/20 px-4 py-3 mb-4 text-sm text-red-700 dark:text-red-400">
@@ -108,246 +134,204 @@
     </div>
     @endif
 
-    {{-- ── Alerta existente (modo visualización) ── --}}
-    @if($alerta && !$editando)
-    <div class="rounded-2xl border border-[var(--c-border)] bg-[var(--c-card)] overflow-hidden mb-4">
+    {{-- ── Lista de alertas existentes ── --}}
+    @if($alertas->isNotEmpty())
+    <div class="space-y-3 mb-4">
+        @foreach($alertas as $alerta)
+        <div wire:key="alert-item-{{ $alerta->id }}">
 
-        <div class="px-5 py-4 border-b border-[var(--c-border)] flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="text-sm font-semibold text-[var(--c-text)]">Alerta activa</span>
-            </div>
-            <span class="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400
-                         bg-emerald-50 dark:bg-emerald-950/30 rounded-full px-2.5 py-1">
-                ACTIVA
-            </span>
+        @if($editandoId === $alerta->id)
+        {{-- Formulario edición: solo en DOM cuando está activo → wire:model.live seguro --}}
+        <div wire:key="alert-edit-{{ $alerta->id }}"
+             class="rounded-2xl border-2 border-violet-500 bg-[var(--c-card)] overflow-hidden">
+            @include('livewire._alerta_form', ['titulo' => 'Editar alerta', 'esEdicion' => true])
         </div>
+        @else
+        <div wire:key="alert-view-{{ $alerta->id }}"
+             x-data="{ open: false }"
+             class="rounded-2xl border border-[var(--c-border)] bg-[var(--c-card)] overflow-hidden">
 
-        <div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-                <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-1">Monitoreo</p>
-                <p class="text-sm font-medium text-[var(--c-text)]">{{ $alerta->tipoLabel() }}</p>
+            {{-- Fila compacta --}}
+            <div class="px-4 py-3 flex items-center gap-3">
+
+                {{-- Dot activa --}}
+                <span class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0 mt-0.5"></span>
+
+                {{-- Resumen (clickable para expandir) --}}
+                <button @click="open = !open" class="flex-1 min-w-0 text-left">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-sm font-semibold text-[var(--c-text)]">
+                            @if($alerta->tipo === 'marca') 🏷️
+                            @elseif($alerta->tipo === 'tienda') 🏪
+                            @else 🧴
+                            @endif
+                            {{ $alerta->valor }}
+                        </span>
+                        @if($alerta->marca_filtro)
+                        <span class="text-[11px] font-medium text-violet-400 bg-violet-400/10 rounded-full px-2 py-0.5">
+                            {{ $alerta->marca_filtro }}
+                        </span>
+                        @endif
+                        @if($alerta->talles)
+                        <span class="text-[11px] font-medium text-emerald-400 bg-emerald-400/10 rounded-full px-2 py-0.5">Talles {{ $alerta->talles }}</span>
+                        @endif
+                        @if($alerta->descuento_min)
+                        <span class="text-[11px] font-medium text-amber-400 bg-amber-400/10 rounded-full px-2 py-0.5">≥ {{ $alerta->descuento_min }}%</span>
+                        @endif
+                        @if($alerta->tamano_ml)
+                        <span class="text-[11px] font-medium text-blue-400 bg-blue-400/10 rounded-full px-2 py-0.5">
+                            {{ $alerta->tamano_ml }}ml
+                        </span>
+                        @endif
+                        @if($alerta->solo_mejoras)
+                        <span class="text-[11px] font-medium text-emerald-500 bg-emerald-500/10 rounded-full px-2 py-0.5">
+                            📉 solo mejoras
+                        </span>
+                        @endif
+                    </div>
+                    <p class="text-xs text-[var(--c-muted)] mt-0.5">
+                        @if($alerta->canal === 'email')
+                        📧 {{ $alerta->email_destino }}
+                        @else
+                        📱 Telegram · {{ $alerta->telegram_chat_id }}
+                        @endif
+                    </p>
+                </button>
+
+                {{-- Botones de acción --}}
+                <div class="flex items-center gap-0.5 flex-shrink-0">
+                    {{-- Expandir --}}
+                    <button @click="open = !open"
+                            class="p-2 rounded-lg hover:bg-[var(--color-primary-50)] dark:hover:bg-white/5
+                                   text-[var(--c-muted)] hover:text-[var(--c-text)] transition-colors cursor-pointer">
+                        <svg class="w-4 h-4 transition-transform duration-200" :class="open ? 'rotate-180' : ''"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    {{-- Editar --}}
+                    <button @click="$wire.activarEdicion({{ $alerta->id }})"
+                            class="p-2 rounded-lg hover:bg-[var(--color-primary-50)] dark:hover:bg-white/5
+                                   text-[var(--c-muted)] hover:text-[var(--c-text)] transition-colors cursor-pointer"
+                            title="Editar">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                    </button>
+                    {{-- Eliminar --}}
+                    <button @click="swalConfirmar({
+                                titulo: '¿Eliminar alerta?',
+                                texto: 'Dejarás de recibir notificaciones para &quot;{{ addslashes($alerta->valor) }}&quot;.',
+                                btnConfirmar: 'Sí, eliminar',
+                            }, () => $wire.eliminar({{ $alerta->id }}))"
+                            class="p-2 rounded-lg hover:bg-red-500/10
+                                   text-[var(--c-muted)] hover:text-red-400 transition-colors cursor-pointer"
+                            title="Eliminar">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
-            <div>
-                <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-1">Buscando</p>
-                <p class="text-sm font-medium text-[var(--c-text)]">{{ $alerta->valor }}</p>
-            </div>
-            <div>
-                <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-1">Canal</p>
-                <p class="text-sm font-medium text-[var(--c-text)]">
-                    @if($alerta->canal === 'email')
-                    📧 {{ $alerta->email_destino }}
-                    @else
-                    📱 Telegram · {{ $alerta->telegram_chat_id }}
+
+            {{-- Detalle expandido --}}
+            <div x-show="open"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="border-t border-[var(--c-border)] px-4 py-4">
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-1">Monitoreo</p>
+                        <p class="text-sm font-medium text-[var(--c-text)]">{{ $alerta->tipoLabel() }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-1">Buscando</p>
+                        <p class="text-sm font-medium text-[var(--c-text)]">{{ $alerta->valor }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-1">Canal</p>
+                        <p class="text-sm font-medium text-[var(--c-text)]">
+                            @if($alerta->canal === 'email') 📧 {{ $alerta->email_destino }}
+                            @else 📱 Telegram · {{ $alerta->telegram_chat_id }}
+                            @endif
+                        </p>
+                    </div>
+                    @if(!in_array($alerta->tipo, ['marca', 'tienda']))
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-1">Marca</p>
+                        <p class="text-sm font-medium text-[var(--c-text)]">{{ $alerta->marca_filtro ?: 'Todas las marcas' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-1">Tamaño</p>
+                        <p class="text-sm font-medium text-[var(--c-text)]">{{ $alerta->tamano_ml ? $alerta->tamano_ml . 'ml' : 'Todos los tamaños' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-1">Modo</p>
+                        <p class="text-sm font-medium text-[var(--c-text)]">
+                            {{ $alerta->solo_mejoras ? '📉 Solo si mejora el precio' : '🔔 Cualquier novedad' }}
+                        </p>
+                    </div>
                     @endif
+                </div>
+
+                @if($alerta->ultima_notificacion_at)
+                <p class="text-xs text-[var(--c-muted)] mb-3">
+                    Última notificación enviada: {{ $alerta->ultima_notificacion_at->diffForHumans() }}
                 </p>
-            </div>
-        </div>
-
-        @if($alerta->ultima_notificacion_at)
-        <div class="px-5 pb-3">
-            <p class="text-xs text-[var(--c-muted)]">
-                Última notificación enviada: {{ $alerta->ultima_notificacion_at->diffForHumans() }}
-            </p>
-        </div>
-        @endif
-
-        <div class="px-5 py-4 border-t border-[var(--c-border)] flex flex-wrap gap-2">
-            <button wire:click="enviarPrueba" wire:loading.attr="disabled"
-                    class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
-                           bg-violet-600 hover:bg-violet-700 text-white transition-colors
-                           disabled:opacity-60">
-                <svg wire:loading wire:target="enviarPrueba" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                <span wire:loading.remove wire:target="enviarPrueba">Enviar prueba</span>
-                <span wire:loading wire:target="enviarPrueba">Enviando…</span>
-            </button>
-            <button wire:click="activarEdicion"
-                    class="px-4 py-2 rounded-lg text-sm font-semibold border border-[var(--c-border)]
-                           bg-[var(--c-card)] hover:bg-[var(--color-primary-50)] dark:hover:bg-white/5
-                           text-[var(--c-text)] transition-colors">
-                Editar
-            </button>
-            <button wire:click="eliminar"
-                    wire:confirm="¿Eliminás esta alerta? Dejarás de recibir notificaciones."
-                    class="px-4 py-2 rounded-lg text-sm font-semibold text-red-500
-                           hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors">
-                Eliminar
-            </button>
-        </div>
-
-    </div>
-    @endif
-
-    {{-- ── Formulario de configuración ── --}}
-    @if(!$alerta || $editando)
-    <div class="rounded-2xl border border-[var(--c-border)] bg-[var(--c-card)] overflow-hidden">
-
-        <div class="px-5 py-4 border-b border-[var(--c-border)]">
-            <p class="text-sm font-semibold text-[var(--c-text)]">
-                {{ $alerta ? 'Editar alerta' : 'Configurar nueva alerta' }}
-            </p>
-        </div>
-
-        <div class="px-5 py-5 space-y-5">
-
-            {{-- Tipo de alerta --}}
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-2">
-                    ¿Qué querés monitorear?
-                </label>
-                <div class="grid grid-cols-3 gap-2">
-                    @foreach([
-                        ['producto', '🧴', 'Perfume', 'Un perfume específico por nombre'],
-                        ['marca',    '🏷️', 'Marca',   'Todos los descuentos de una marca'],
-                        ['tienda',   '🏪', 'Tienda',  'Todos los descuentos de una tienda'],
-                    ] as [$val, $icon, $lbl, $desc])
-                    <label class="relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 cursor-pointer transition-all
-                                  {{ $tipo === $val
-                                     ? 'border-violet-500 bg-violet-50 dark:bg-violet-950/30'
-                                     : 'border-[var(--c-border)] hover:border-violet-300 dark:hover:border-violet-700' }}">
-                        <input type="radio" wire:model.live="tipo" value="{{ $val }}" class="sr-only">
-                        <span class="text-xl">{{ $icon }}</span>
-                        <span class="text-xs font-semibold text-[var(--c-text)]">{{ $lbl }}</span>
-                        <span class="text-[10px] text-[var(--c-muted)] text-center leading-tight">{{ $desc }}</span>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-
-            {{-- Valor --}}
-            <div>
-                <label for="alerta-valor" class="block text-xs font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-2">
-                    @if($tipo === 'producto') ¿Qué perfume?
-                    @elseif($tipo === 'marca') ¿Qué marca?
-                    @else ¿Qué tienda?
-                    @endif
-                </label>
-                <input type="text"
-                       id="alerta-valor"
-                       list="sugerencias-list"
-                       wire:model.live.debounce.350ms="valor"
-                       placeholder="{{ $tipo === 'producto' ? 'Ej: Dylan Blue, Bleu de Chanel…' : ($tipo === 'marca' ? 'Ej: Versace, Chanel, Paco Rabanne…' : 'Ej: Juleriaque, Rouge…') }}"
-                       autocomplete="off"
-                       class="w-full rounded-xl border border-[var(--c-border)] bg-[var(--c-input)]
-                              text-[var(--c-text)] placeholder:text-[var(--c-muted)]
-                              px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400">
-                <datalist id="sugerencias-list">
-                    @foreach($sugerencias as $s)
-                    <option value="{{ $s }}">
-                    @endforeach
-                </datalist>
-                @if($tipo === 'producto')
-                <p class="mt-1.5 text-[11px] text-[var(--c-muted)]">Escribí al menos 3 letras para ver sugerencias.</p>
                 @endif
-                @error('valor')
-                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                @enderror
+
+                @if(!$alerta->prueba_enviada)
+                <button wire:click="enviarPrueba({{ $alerta->id }})" wire:loading.attr="disabled"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold
+                               border border-violet-400/50 text-violet-400 hover:bg-violet-400/10
+                               transition-colors disabled:opacity-60 cursor-pointer">
+                    <svg wire:loading wire:target="enviarPrueba({{ $alerta->id }})" class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    <span wire:loading.remove wire:target="enviarPrueba({{ $alerta->id }})">Enviar prueba</span>
+                    <span wire:loading wire:target="enviarPrueba({{ $alerta->id }})">Enviando…</span>
+                </button>
+                @endif
+
             </div>
+        </div>{{-- alert-view --}}
+        @endif
+        </div>{{-- alert-item --}}
 
-            {{-- Canal --}}
-            <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-2">
-                    ¿Cómo querés que te avisemos?
-                </label>
-                <div class="grid grid-cols-2 gap-2">
-                    @foreach([
-                        ['email',    '📧', 'Email',    'Recibís un email con los descuentos'],
-                        ['telegram', '📱', 'Telegram', 'Mensaje en tu chat de Telegram'],
-                    ] as [$val, $icon, $lbl, $desc])
-                    <label class="relative flex items-start gap-3 rounded-xl border-2 p-3.5 cursor-pointer transition-all
-                                  {{ $canal === $val
-                                     ? 'border-violet-500 bg-violet-50 dark:bg-violet-950/30'
-                                     : 'border-[var(--c-border)] hover:border-violet-300 dark:hover:border-violet-700' }}">
-                        <input type="radio" wire:model.live="canal" value="{{ $val }}" class="mt-0.5 accent-violet-600">
-                        <div>
-                            <span class="text-lg">{{ $icon }}</span>
-                            <p class="text-xs font-semibold text-[var(--c-text)] mt-0.5">{{ $lbl }}</p>
-                            <p class="text-[10px] text-[var(--c-muted)]">{{ $desc }}</p>
-                        </div>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-
-            {{-- Email destino --}}
-            @if($canal === 'email')
-            <div>
-                <label for="email-destino" class="block text-xs font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-2">
-                    Email donde recibir las alertas
-                </label>
-                <input type="email"
-                       id="email-destino"
-                       wire:model="emailDestino"
-                       placeholder="tu@email.com"
-                       class="w-full rounded-xl border border-[var(--c-border)] bg-[var(--c-input)]
-                              text-[var(--c-text)] placeholder:text-[var(--c-muted)]
-                              px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400">
-                @error('emailDestino')
-                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                @enderror
-            </div>
-            @endif
-
-            {{-- Telegram chat ID --}}
-            @if($canal === 'telegram')
-            <div>
-                <label for="tg-chat-id" class="block text-xs font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-2">
-                    Tu Chat ID de Telegram
-                </label>
-                <input type="text"
-                       id="tg-chat-id"
-                       wire:model="telegramChatId"
-                       placeholder="Ej: 123456789"
-                       class="w-full rounded-xl border border-[var(--c-border)] bg-[var(--c-input)]
-                              text-[var(--c-text)] placeholder:text-[var(--c-muted)]
-                              px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400">
-                @error('telegramChatId')
-                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                @enderror
-                <div class="mt-2 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-800/30 px-3 py-2.5 text-xs text-blue-700 dark:text-blue-400">
-                    <p class="font-semibold mb-1">¿Cómo obtengo mi Chat ID?</p>
-                    <ol class="list-decimal list-inside space-y-0.5 text-[11px] leading-relaxed">
-                        <li>Abrí Telegram y buscá <strong>@userinfobot</strong></li>
-                        <li>Mandá cualquier mensaje</li>
-                        <li>El bot te responde con tu ID numérico</li>
-                        <li>También necesitás iniciar una conversación con el bot de alertas</li>
-                    </ol>
-                </div>
-            </div>
-            @endif
-
-        </div>
-
-        {{-- Actions --}}
-        <div class="px-5 py-4 border-t border-[var(--c-border)] flex items-center gap-3">
-            <button wire:click="guardar" wire:loading.attr="disabled"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold
-                           bg-violet-600 hover:bg-violet-700 text-white transition-colors
-                           disabled:opacity-60">
-                <svg wire:loading wire:target="guardar" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                <span wire:loading.remove wire:target="guardar">Activar alerta 🔔</span>
-                <span wire:loading wire:target="guardar">Guardando…</span>
-            </button>
-
-            @if($alerta && $editando)
-            <button wire:click="cancelarEdicion"
-                    class="px-4 py-2.5 rounded-xl text-sm font-semibold border border-[var(--c-border)]
-                           text-[var(--c-muted)] hover:text-[var(--c-text)] transition-colors">
-                Cancelar
-            </button>
-            @endif
-        </div>
-
+        @endforeach
     </div>
     @endif
 
-    {{-- ── Info: cómo funciona ── --}}
+    {{-- ── Formulario nueva alerta ── --}}
+    @if($creandoNueva)
+    <div wire:key="alert-new-form"
+         class="rounded-2xl border border-[var(--c-border)] bg-[var(--c-card)] overflow-hidden {{ $alertas->isNotEmpty() ? 'border-2 border-violet-500' : '' }}">
+        @include('livewire._alerta_form', ['titulo' => $alertas->isEmpty() ? 'Configurar alerta' : 'Nueva alerta', 'esEdicion' => false])
+    </div>
+    @endif
+    {{-- Botón agregar nueva --}}
+    @if(!$creandoNueva)
+    <button wire:click="nuevaAlerta"
+            class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl
+                   border-2 border-dashed border-[var(--c-border)]
+                   hover:border-violet-400 hover:text-violet-400
+                   text-sm font-semibold text-[var(--c-muted)] transition-colors cursor-pointer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+        </svg>
+        Nueva alerta
+    </button>
+    @endif
+
+    {{-- ── Info ── --}}
     <div class="mt-8 rounded-2xl border border-[var(--c-border)] bg-[var(--c-card)] p-5">
         <p class="text-xs font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-3">¿Cómo funciona?</p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
@@ -365,6 +349,7 @@
         </div>
     </div>
 
+    </div>{{-- /x-data entangle --}}
     @endauth
 
 </div>

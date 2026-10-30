@@ -9,7 +9,7 @@
     {{-- Mensaje flash --}}
     @if($mensaje)
     <div class="rounded-xl px-5 py-3 text-sm font-medium
-        {{ $tipoMensaje === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800' }}">
+        {{ $tipoMensaje === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : ($tipoMensaje === 'info' ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800' : 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800') }}">
         {{ $mensaje }}
     </div>
     @endif

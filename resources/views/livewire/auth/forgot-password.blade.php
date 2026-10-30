@@ -33,6 +33,6 @@
     @endif
 
     <p class="text-center text-sm text-[var(--c-muted)] mt-5">
-        <a href="{{ route('login') }}" class="text-[var(--color-primary-600)] font-semibold hover:underline">← Volver al login</a>
+        <a href="{{ route('login') }}" class="text-[var(--color-primary-500)] font-semibold hover:underline">← Volver al login</a>
     </p>
 </div>

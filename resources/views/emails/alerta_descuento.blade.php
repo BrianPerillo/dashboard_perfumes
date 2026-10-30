@@ -96,6 +96,9 @@
           @endif
         </div>
         <span class="discount-badge">{{ round($r->descuento_pct) }}% OFF</span>
+        @if(!empty($r->talles))
+        <p style="margin:8px 0 0;font-size:12px;color:#64748b;">Talles disponibles: {{ $r->talles }}</p>
+        @endif
         @if(!empty($r->url))
         <br><br>
         <a href="{{ $r->url }}" class="btn">Ver en tienda →</a>

@@ -33,7 +33,7 @@ class Register extends Component
             'password' => Hash::make($this->password),
         ]);
 
-        $user->sendEmailVerificationNotification();
+        $user->sendVerificationCode();
 
         Auth::login($user, remember: true);
         session()->regenerate();

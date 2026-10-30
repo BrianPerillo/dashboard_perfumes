@@ -9,7 +9,12 @@ class Tienda extends Model
     protected $table = 'tiendas';
     public $timestamps = false;
 
-    protected $fillable = ['nombre'];
+    protected $fillable = ['nombre', 'rubro'];
+
+    public function scopeDeRubro($query, string $rubro)
+    {
+        return $query->where('rubro', $rubro);
+    }
 
     public function productos()
     {
