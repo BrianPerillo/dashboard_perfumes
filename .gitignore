@@ -26,3 +26,15 @@ Thumbs.db
 *.md
 !README.md
 ngrok-start.bat
+!AGENTS.md
+!CLAUDE.md
+!ai-context/**/*.md
+
+# Scraper: se versiona (descuentos_master.py + su changelog); *.py y *.md siguen ignorados por defecto
+!descuentos_master.py
+!descuentos_master_cambios.md
+__pycache__/
+*.pyc
+!descuentos_ropa.py
+excel_ropa/
+logs_ropa.txt
