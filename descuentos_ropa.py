@@ -102,6 +102,10 @@ SITES.append({
     "name": "prototype", "platform": "tiendanube", "host": "www.prototype.com.ar", "marca": "Prototype", "pag_max": 100, "talle_opcion": 1,
     "secciones": {"descuento": [{"path": "/productos/", "genero": "unisex", "categoria": "ropa", "etiqueta": "catalogo"}]},
 })
+SITES.append({
+    "name": "puma", "platform": "puma", "host": "ar.puma.com", "marca": "Puma", "pag_max": 60,
+    "secciones": {"descuento": [{"path": "/puma-sale", "genero": "unisex", "categoria": "ropa", "etiqueta": "sale"}]},
+})
 # Montagne esta desactivado por defecto ("activo": False): su precio de oferta es "Comunidad Montagne" (usuarios registrados).
 # Se prueba con --solo montagne; ver ai-context/ropa-02 antes de activarlo.
 SITES.append({
@@ -1065,6 +1069,94 @@ def unificar_tipos(items: list) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# Adaptador "puma": ar.puma.com (Salesforce Composable Storefront / PWA Kit tras Cloudflare). Cada pagina del listado
+# /puma-sale?page=N&limit=32 se abre en el navegador y los productos se leen del estado de la app embebido en
+# <script id="mobify-data"> (hits con precio de lista, precio de venta, % y colores). No trae talles ni genero:
+# el genero sale del nombre ("... para hombre") y los talles quedan vacios (la tienda los muestra en la ficha).
+# --------------------------------------------------------------------------- #
+PUMA_LIMITE = 32
+
+
+def _hits_puma(estado) -> tuple[list[dict], int]:
+    """(hits, total) del listado dentro del estado de la app: la consulta de busqueda con mas hits."""
+    mejor: list[dict] = []
+    total = 0
+
+    def recorrer(o):
+        nonlocal mejor, total
+        if isinstance(o, dict):
+            hits = o.get("hits")
+            if isinstance(hits, list) and hits and isinstance(hits[0], dict) and "productId" in hits[0] and len(hits) > len(mejor):
+                mejor, total = hits, int(o.get("total") or 0)
+            for v in o.values():
+                recorrer(v)
+        elif isinstance(o, list):
+            for v in o:
+                recorrer(v)
+
+    recorrer(estado)
+    return mejor, total
+
+
+def _item_puma(h: dict, site: dict, seccion: dict) -> Optional[ItemRopa]:
+    try:
+        actual = float(h.get("c_salePrice") or h.get("price") or 0)
+        lista = float(h.get("c_listPrice") or actual)
+    except (TypeError, ValueError):
+        return None
+    nombre = " ".join((h.get("productName") or "").split())
+    if actual <= 0 or not nombre:
+        return None
+    lista = max(lista, actual)
+    sw = h.get("c_colorSwatches") or []
+    color = next((s.get("name") for s in sw if s.get("selected")), "") or (sw[0].get("name") if sw else "")
+    imgs = (h.get("imageGroups") or [{}])[0].get("images") or []
+    link = h.get("c_canonicalUrl") or ""
+    gen = _genero_de_texto(re.findall(r"para (hombre|mujer|ni[ñn]os?|ni[ñn]as?|beb[ée]s?|unisex)", nombre, re.I)) or _genero_de_texto(nombre) or "unisex"
+    categoria = "calzado" if _RE_CALZADO.search(nombre) else "accesorios" if _RE_ACCESORIOS.search(nombre) else "ropa"
+    return ItemRopa(
+        tienda=site["name"], marca="Puma", nombre=nombre, referencia=str(h.get("c_styleNumber") or h.get("productId") or ""),
+        genero=gen, categoria=categoria, tipo=_cap(nombre.split()[0].lower()), color=_cap((color or "").split("-")[0].strip()),
+        precio_lista=lista, precio_actual=actual, descuento_pct=_dto(lista, actual),
+        url=(f"https://{site['host']}{link}" if link.startswith("/") else link),
+        imagen=(imgs[0].get("link") if imgs else "") or "", seccion=seccion["path"])
+
+
+def scrap_puma(page, site: dict, seccion: dict, max_paginas: int) -> list[ItemRopa]:
+    vistos: dict = {}
+    for pagina in range(1, min(max_paginas, site.get("pag_max", 60)) + 1):
+        url = f"https://{site['host']}{seccion['path']}?page={pagina}&limit={PUMA_LIMITE}"
+        hits, total = [], 0
+        for intento in range(1, 4):
+            time.sleep(random.uniform(4.0, 7.0) * _RITMO["factor"])
+            try:
+                resp = page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                if _es_bloqueo(page.title(), resp.status if resp else 0):
+                    raise RuntimeError("bloqueo")
+                page.wait_for_selector("#mobify-data", state="attached", timeout=25000)
+                estado = json.loads(page.evaluate("() => document.getElementById('mobify-data').textContent"))
+                hits, total = _hits_puma(estado)
+                _ritmo_exito()
+                break
+            except Exception as e:  # noqa: BLE001
+                _ritmo_bloqueo()
+                log.warning("  error/bloqueo en %s: %s (intento %d/3)", url, str(e)[:100], intento)
+                time.sleep(40 * intento)
+        else:
+            raise Bloqueado(url)
+        nuevos = 0
+        for h in hits:
+            it = _item_puma(h, site, seccion)
+            if it and it.clave not in vistos:
+                vistos[it.clave] = it
+                nuevos += 1
+        log.info("  pagina %d: %d productos (%d nuevos) de %s", pagina, len(hits), nuevos, total or "?")
+        if len(hits) < PUMA_LIMITE or nuevos == 0 or (total and pagina * PUMA_LIMITE >= total):
+            break
+    return list(vistos.values())
+
+
+# --------------------------------------------------------------------------- #
 # Salida: Excel / JSON
 # --------------------------------------------------------------------------- #
 def escribir_excel(items: list[ItemRopa], ruta: str) -> str:
@@ -1189,7 +1281,7 @@ def guardar_en_mysql(items: list, fecha_hora: datetime, reporte: list) -> bool:
                      (normalizar_talles(_GENERO_DB.get(it.genero, "unisex"), it.categoria, it.talles)[:255] or None)))
                 prod_id[(it.tienda, nn)] = cur.lastrowid
 
-            fuente_de = {s["name"]: {"vtex_api": "vtex_api", "kevingston": "kevingston_api", "montagne": "html", "wrangler": "html", "sfcc_dexter": "sfcc_html", "tiendanube": "tiendanube"}.get(s["platform"], "vtex_state") for s in SITES}
+            fuente_de = {s["name"]: {"vtex_api": "vtex_api", "kevingston": "kevingston_api", "montagne": "html", "wrangler": "html", "sfcc_dexter": "sfcc_html", "puma": "puma_state", "tiendanube": "tiendanube"}.get(s["platform"], "vtex_state") for s in SITES}
             filas, vistos = [], set()
             for it in items:
                 pid = prod_id[(it.tienda, (it.referencia or it.url).strip().lower()[:255])]
@@ -1256,7 +1348,7 @@ def main() -> int:
         log.error("Ninguna tienda coincide con --solo %s", args.solo)
         return 2
 
-    PLAT_BROWSER = ("vtex_io", "kevingston", "sfcc_dexter")
+    PLAT_BROWSER = ("vtex_io", "kevingston", "sfcc_dexter", "puma")
     necesita_browser = any(s["platform"] in PLAT_BROWSER for s in sitios)
     if necesita_browser:
         try:
@@ -1291,6 +1383,8 @@ def main() -> int:
                 try:
                     if site["platform"] == "kevingston":
                         items = scrap_kevingston(page, site, sec, args.max_paginas)
+                    elif site["platform"] == "puma":
+                        items = scrap_puma(page, site, sec, args.max_paginas)
                     elif site["platform"] == "sfcc_dexter":
                         items = scrap_dexter(page, site, sec, args.max_paginas)
                     elif site["platform"] == "tiendanube":

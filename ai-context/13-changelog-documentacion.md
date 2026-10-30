@@ -12,6 +12,10 @@ Formato:
 
 ---
 
+## 2026-10-30 (noche) — Puma
+
+- Adaptador `puma` en `descuentos_ropa.py` (estado `mobify-data` del listado paginado `?page=N&limit=32`): 1122 productos, 773 con descuento, cargados en la corrida #164. Sin talles ni género explícito (ver [ropa-02](ropa-02-tiendas-y-plataformas.md)).
+
 ## 2026-10-30 (noche) — Vista de tarjetas en Ofertas
 
 - Switch tabla / tarjetas sobre los resultados (por defecto tabla; se recuerda en la sesión). Verificado con Playwright en escritorio, celular y perfumes (detalle en 05). Bug corregido durante la prueba: `Undefined array key "vista"` al restaurar filtros de sesión sin esa clave.
