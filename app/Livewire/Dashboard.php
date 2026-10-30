@@ -45,6 +45,7 @@ class Dashboard extends Component
     // ── Filtros de tabla ──────────────────────────────────────────
     public string $tablaSnapshotTipo   = 'ultimo';
     public array  $tablaFiltroMarcas   = [];
+    public bool   $tallesEquivalentes  = false;     // calzado: al elegir H8 incluir también M9.5 (y viceversa)
     public string $tablaVista          = 'tabla';   // 'tabla' | 'tarjetas' (selector de visualización de Ofertas)
     public string $tablaMarcaBuscar    = '';
     public string $tablaFiltroBuscar   = '';
@@ -281,6 +282,7 @@ class Dashboard extends Component
 
     public function updatedDescMin(): void { $this->guardarFiltrosEnSession(); $this->recargarTodo(); }
     public function updatedDescMax(): void { $this->guardarFiltrosEnSession(); $this->recargarTodo(); }
+    public function updatedTallesEquivalentes(): void { $this->recargarTodo(); }
     public function updatedTablaFiltroBuscar(): void { $this->guardarFiltrosEnSession(); $this->recargarTodo(); }
     public function updatedAgruparColores(): void    { $this->cargarTabla(); }
     public function updatedPrecioMin(): void         { $this->recargarTodo(); }
@@ -1268,6 +1270,7 @@ class Dashboard extends Component
     public function limpiarTallesTipos(): void
     {
         $this->tallesSeleccionados = [];
+        $this->tallesEquivalentes = false;
         $this->tiposExcluidos  = [];
         $this->disciplinasExcluidas = [];
         $this->lineasExcluidas = [];
@@ -1316,13 +1319,35 @@ class Dashboard extends Component
         if (!empty($this->tallesSeleccionados)) {
             // productos.talles = "XS, S, M" (solo talles con stock): se busca el talle entre separadores
             $q->where(function ($w) {
-                foreach ($this->tallesSeleccionados as $t) {
+                foreach ($this->tallesConEquivalentes() as $t) {
                     // talles_norm: calzado normalizado (H10 = talle hombre, M7 = talle mujer); cae a talles si no hay
                     $w->orWhereRaw("CONCAT(', ', COALESCE(p.talles_norm, p.talles), ', ') LIKE ?", ['%, ' . addcslashes($t, '%_\\') . ', %']);
                 }
             });
         }
         return $q;
+    }
+
+    /**
+     * Talles elegidos y, si está activa la opción, sus equivalentes de calzado: el talle de mujer (M) es el de hombre (H)
+     * + 1,5 (H8 = M9.5). Solo para tokens H/M de calzado normalizado (productos.talles_norm).
+     */
+    private function tallesConEquivalentes(): array
+    {
+        $out = $this->tallesSeleccionados;
+        if (!$this->tallesEquivalentes) {
+            return $out;
+        }
+        foreach ($this->tallesSeleccionados as $t) {
+            if (!preg_match('/^([HM])(\d+(?:\.5)?)$/', $t, $m)) {
+                continue;
+            }
+            $n = (float) $m[2] + ($m[1] === 'H' ? 1.5 : -1.5);
+            if ($n > 0) {
+                $out[] = ($m[1] === 'H' ? 'M' : 'H') . rtrim(rtrim(number_format($n, 1, '.', ''), '0'), '.');
+            }
+        }
+        return array_values(array_unique($out));
     }
 
     /**
@@ -1463,6 +1488,7 @@ class Dashboard extends Component
         $this->generosSeleccionados = $this->generosDisponibles;
         $this->categoriaFiltro      = '';
         $this->tallesSeleccionados  = [];
+        $this->tallesEquivalentes   = false;
         $this->tiposExcluidos   = [];
         $this->disciplinasExcluidas = [];
         $this->lineasExcluidas = [];

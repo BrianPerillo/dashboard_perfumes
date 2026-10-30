@@ -185,6 +185,12 @@
                     </div>
                 </div>
                 @endforeach
+                @if(collect($tallesSeleccionados)->contains(fn($t) => preg_match('/^[HM]\d/', $t)))
+                <label class="flex items-start gap-1.5 text-[10px] text-[var(--c-muted)] cursor-pointer" title="El talle de mujer (M) es el de hombre (H) + 1,5: H8 = M9.5">
+                    <input type="checkbox" wire:model.live="tallesEquivalentes" class="mt-0.5 rounded border-[var(--c-border)] accent-violet-600">
+                    <span>Incluir también el talle equivalente (H ↔ M, +1,5)</span>
+                </label>
+                @endif
             </div>
         </div>
     </div>

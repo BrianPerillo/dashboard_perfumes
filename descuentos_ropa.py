@@ -852,7 +852,9 @@ def expandir_rangos(talles: list) -> list:
     """Talles de calzado publicados como rango ("40-40.5") -> sus dos valores ("40", "40.5")."""
     out = []
     for t in talles:
-        m = re.match(r"^(\d+(?:\.5)?)\s*-\s*(\d+(?:\.5)?)$", (t or "").strip())
+        t = (t or "").strip()
+        # "40-40.5", "39/40", "45/46" y "38.39" (dos talles pegados con punto) -> dos valores
+        m = re.match(r"^(\d+(?:\.5)?)\s*[-/]\s*(\d+(?:\.5)?)$", t) or re.match(r"^(\d{2})\.(\d{2})$", t)
         out += [m.group(1), m.group(2)] if m else [t]
     return sorted(set(out), key=_orden_talle)
 
@@ -1066,6 +1068,8 @@ def unificar_tipos(items: list) -> None:
     for it in items:
         it.tipo, it.categoria = normalizar_tipo(it.nombre, it.tipo, it.categoria)
         it.disciplina = normalizar_disciplina(it.nombre, it.disciplina, it.tipo)
+        if it.categoria == "calzado":
+            it.talles = expandir_rangos(it.talles)
 
 
 # --------------------------------------------------------------------------- #
@@ -1221,7 +1225,9 @@ def renormalizar_tipos_en_bd() -> int:
             for pid, nombre, tipo, cat, disc, talles, genero in cur.fetchall():
                 nt, nc = normalizar_tipo(nombre, tipo, cat)
                 nd = normalizar_disciplina(nombre, disc, nt) or None
-                lista = expandir_rangos([x.strip() for x in (talles or "").split(",") if x.strip()])
+                lista = [x.strip() for x in (talles or "").split(",") if x.strip()]
+                if nc == "calzado":
+                    lista = expandir_rangos(lista)
                 ntalles = ", ".join(lista)[:255] or None
                 nnorm = normalizar_talles(genero, nc, lista)[:255] or None
                 cambios.append((nt, nc, nd, ntalles, nnorm, pid))

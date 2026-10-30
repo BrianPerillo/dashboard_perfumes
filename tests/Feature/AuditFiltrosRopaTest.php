@@ -101,4 +101,20 @@ class AuditFiltrosRopaTest extends TestCase
         $c = $this->nuevo()->set('agruparColores', true);
         $this->assertNotEmpty($this->filas($c));
     }
+
+    public function test_talle_equivalente_hombre_mujer(): void
+    {
+        if (config('database.default') !== 'mysql') {
+            $this->markTestSkipped('Auditoría manual contra la base real (ver el otro test).');
+        }
+        $c = $this->nuevo()->set('categoriaFiltro', 'calzado')->set('tallesSeleccionados', ['H8']);
+        $solo = count($this->filas($c));
+        $c = $this->nuevo()->set('categoriaFiltro', 'calzado')->set('tallesSeleccionados', ['H8'])->set('tallesEquivalentes', true);
+        $con = $this->filas($c);
+        $this->assertGreaterThan($solo, count($con), 'con equivalentes debe sumar M9.5');
+        $c = $this->nuevo()->set('categoriaFiltro', 'calzado')->set('tallesSeleccionados', ['M9.5']);
+        $m = count($this->filas($c));
+        $this->assertGreaterThan(0, $m);
+        $this->assertSame(count($con), count($this->filas($this->nuevo()->set('categoriaFiltro', 'calzado')->set('tallesSeleccionados', ['M9.5'])->set('tallesEquivalentes', true))), 'H8 <-> M9.5 simétrico');
+    }
 }

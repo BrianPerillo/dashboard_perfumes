@@ -12,6 +12,10 @@ Formato:
 
 ---
 
+## 2026-10-30 (noche) — Talle equivalente H↔M y rangos de talles
+
+- Checkbox "incluir talle equivalente" en el filtro de talle (05) con test sobre la base real. Rangos de talles de calzado (`40-40.5`, `39/40`, `38.39`) expandidos a valores sueltos en el scraper y en `--renormalizar-tipos` (solo calzado).
+
 ## 2026-10-30 (noche) — Checkpoint y `--reanudar` en el scraper de ropa
 
 - Una corrida cortada ya no pierde las ~2,5 h de lectura: se guarda un checkpoint por sección y `--reanudar` termina el guardado (ver ropa-02). Probado con un checkpoint sintético y `--no-db`.
