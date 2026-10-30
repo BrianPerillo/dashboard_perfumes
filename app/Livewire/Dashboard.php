@@ -45,6 +45,7 @@ class Dashboard extends Component
     // ── Filtros de tabla ──────────────────────────────────────────
     public string $tablaSnapshotTipo   = 'ultimo';
     public array  $tablaFiltroMarcas   = [];
+    public string $tablaVista          = 'tabla';   // 'tabla' | 'tarjetas' (selector de visualización de Ofertas)
     public string $tablaMarcaBuscar    = '';
     public string $tablaFiltroBuscar   = '';
     public array  $tablaFiltroTiendas  = [];
@@ -161,6 +162,7 @@ class Dashboard extends Component
 
         $this->cargarMarcasDisponibles();
         $this->tablaFiltroMarcas = array_values(array_intersect($filtros['marcas'] ?? [], $this->marcasDisponibles));
+        $this->tablaVista = ($filtros['vista'] ?? '') === 'tarjetas' ? 'tarjetas' : 'tabla';
         $this->cargarMlDisponibles();
         $this->mlSeleccionados = $this->mlDisponibles;
         $this->cargarFavoritosLista();
@@ -244,7 +246,15 @@ class Dashboard extends Component
             'descMax' => $this->descMax,
             'buscar'  => $this->tablaFiltroBuscar,
             'marcas'  => $this->tablaFiltroMarcas,
+            'vista'   => $this->tablaVista,
         ]]);
+    }
+
+    /** Selector de visualización de Ofertas: tabla (por defecto) o tarjetas tipo e-commerce. Solo cambia la vista, no recarga datos. */
+    public function setTablaVista(string $vista): void
+    {
+        $this->tablaVista = $vista === 'tarjetas' ? 'tarjetas' : 'tabla';
+        $this->guardarFiltrosEnSession();
     }
 
     private function recargarTodo(): void

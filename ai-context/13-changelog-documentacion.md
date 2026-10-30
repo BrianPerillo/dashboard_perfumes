@@ -12,6 +12,16 @@ Formato:
 
 ---
 
+## 2026-10-30 (noche) — Vista de tarjetas en Ofertas
+
+- Switch tabla / tarjetas sobre los resultados (por defecto tabla; se recuerda en la sesión). Verificado con Playwright en escritorio, celular y perfumes (detalle en 05). Bug corregido durante la prueba: `Undefined array key "vista"` al restaurar filtros de sesión sin esa clave.
+
+## 2026-10-30 (noche) — Talles de Dexter, tipos unificados, zoom de imagen y auditoría de filtros
+
+- Dexter ahora trae talles (ficha de cada producto). La línea de detalle de la tabla se muestra para todas las tiendas.
+- Tipos de producto y deportes unificados entre tiendas (`normalizar_tipo` / `normalizar_disciplina`, `--renormalizar-tipos`): el filtro "Prenda / tipo" pasa de ~130 valores casi repetidos a ~40.
+- Zoom al pasar el cursor sobre la miniatura (visor global en el layout) y test de auditoría de filtros contra la base real. Detalle en 05, 10 y ropa-02.
+
 ## 2026-10-30 (noche) — Kevingston, Dexter, Wrangler, Prototype y Montagne (desactivada)
 
 - Nuevos adaptadores en `descuentos_ropa.py`: `kevingston` (endpoint interno de listado + talles por producto), `sfcc_dexter` (Salesforce, multimarca), `wrangler` (fragmento HTML de LAST CHANCE), `tiendanube` (Prototype) y `montagne` (HTML; **desactivada** por el precio "Comunidad Montagne"). `tipo`/`color`/`disciplina` se normalizan con mayúscula inicial (`_cap`); talles `3XS/2XS` reconocidos (Python + `Dashboard::grupoTalle/ordenTalle`). `SITES` acepta `"activo": False`.

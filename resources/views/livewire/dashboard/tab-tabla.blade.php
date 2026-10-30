@@ -158,7 +158,7 @@
 
     {{-- ── Tabla de resultados ── --}}
     @php $tabla = json_decode($tablaDatosJson, true) ?? []; @endphp
-    <div class="mb-3">
+    <div class="mb-3 flex items-center justify-between gap-3">
         <p class="text-sm text-slate-500">
             @php
                 $n = count($tabla);
@@ -181,8 +181,79 @@
             @endif
             @if($sortDesc) · orden: <span class="text-[var(--color-primary-600)] font-medium">{{ $sortDesc }}</span>@endif
         </p>
-        {{-- fecha del snapshot retirada --}}
+        {{-- Selector de visualización: tabla (por defecto) / tarjetas --}}
+        <div class="shrink-0 inline-flex rounded-lg border border-[var(--c-border)] bg-[var(--c-card)] p-0.5" role="group" aria-label="Visualización">
+            @foreach(['tabla' => ['Tabla', 'M3 6h18M3 12h18M3 18h18'], 'tarjetas' => ['Tarjetas', 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z']] as $v => [$lbl, $path])
+            <button type="button" wire:click="setTablaVista('{{ $v }}')" title="{{ $lbl }}" aria-label="{{ $lbl }}" aria-pressed="{{ $tablaVista === $v ? 'true' : 'false' }}"
+                    class="w-9 h-8 flex items-center justify-center rounded-md transition-colors
+                           {{ $tablaVista === $v ? 'bg-violet-600 text-white' : 'text-[var(--c-muted)] hover:text-[var(--c-text)]' }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="{{ $path }}"/></svg>
+            </button>
+            @endforeach
+        </div>
     </div>
+
+    @if($tablaVista === 'tarjetas')
+    {{-- ── Vista tarjetas (estilo e-commerce): imagen arriba, datos al pie ── --}}
+    @if(empty($tabla))
+    <div class="px-4 py-10 text-center text-slate-400 rounded-xl border border-[var(--c-border)] bg-[var(--c-card)]">Sin productos con esos filtros.</div>
+    @else
+    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4">
+        @foreach($tabla as $row)
+        @php
+            $dto = (float)$row['descuento'];
+            $badgeColor = $dto >= 40 ? '#2ce427' : ($dto >= 20 ? '#b427e4' : '#94a3b8');
+            $badgeText  = $dto >= 40 ? '#1a3300' : '#ffffff';
+            $tallesLista = array_values(array_filter(preg_split('/,\s*/', $row['talles'] ?? '')));
+        @endphp
+        <article class="group flex flex-col overflow-hidden rounded-xl border border-[var(--c-border)] bg-[var(--c-card)] transition hover:-translate-y-0.5 hover:shadow-lg">
+            <a @if($row['url']) href="{{ $row['url'] }}" target="_blank" rel="noopener" @endif class="relative block aspect-square bg-white">
+                @if(!empty($row['imagen']))
+                <img src="{{ $row['imagen'] }}" alt="{{ $row['producto'] }}" loading="lazy" referrerpolicy="no-referrer"
+                     class="h-full w-full object-contain p-2 transition-transform duration-300 group-hover:scale-105">
+                @else
+                <span class="flex h-full w-full items-center justify-center text-4xl text-slate-300">{{ config("rubros.rubros.{$rubro}.icono", "🛍️") }}</span>
+                @endif
+                <span class="absolute left-2 top-2 rounded-full px-2 py-1 text-xs font-bold tabular-nums shadow"
+                      style="background:{{ $badgeColor }};color:{{ $badgeText }}">-{{ $row['descuento'] }}</span>
+            </a>
+            <div class="flex flex-1 flex-col gap-1.5 p-3">
+                <p class="text-[11px] text-[var(--c-muted)] truncate">
+                    <button wire:click="toggleTablaFiltroTiendaTabla('{{ $row['tienda'] }}')" class="hover:text-violet-500 hover:underline underline-offset-2">{{ $row['tienda'] }}</button>
+                    @if($row['marca'])
+                    · <button wire:click="toggleTablaFiltroMarca('{{ addslashes($row['marca']) }}')" class="hover:text-violet-500 hover:underline underline-offset-2">{{ $row['marca'] }}</button>
+                    @endif
+                </p>
+                <a @if($row['url']) href="{{ $row['url'] }}" target="_blank" rel="noopener" @endif
+                   class="line-clamp-2 text-sm font-semibold leading-snug text-[var(--c-text)] hover:text-violet-500" title="{{ $row['producto'] }}">{{ $row['producto'] }}</a>
+                @if(!empty($row['tipo']) || !empty($row['color']) || ($row['variantes'] ?? 1) > 1)
+                <p class="text-[11px] text-[var(--c-muted)] truncate">
+                    {{ $row['tipo'] }}@if(!empty($row['color'])){{ $row['tipo'] ? ' · ' : '' }}{{ $row['color'] }}@endif@if(($row['variantes'] ?? 1) > 1) · <span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span>@endif
+                </p>
+                @endif
+                <div class="flex flex-wrap gap-1">
+                    @forelse(array_slice($tallesLista, 0, 8) as $t)
+                    <span class="rounded border border-[var(--c-border)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--c-text)]">{{ $t }}</span>
+                    @empty
+                    <span class="text-[10px] italic text-[var(--c-muted)]">Talles: consultá en la tienda</span>
+                    @endforelse
+                    @if(count($tallesLista) > 8)
+                    <span class="px-1 py-0.5 text-[10px] text-[var(--c-muted)]" title="{{ implode(', ', $tallesLista) }}">+{{ count($tallesLista) - 8 }}</span>
+                    @endif
+                </div>
+                <div class="mt-auto pt-2">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-base font-bold text-violet-500 dark:text-violet-300">{{ $row['precio_actual'] }}</span>
+                        <span class="text-xs text-slate-400 line-through">{{ $row['precio_lista'] }}</span>
+                    </div>
+                    <p class="text-[11px] font-semibold text-emerald-500 dark:text-emerald-400">Ahorrás {{ $row['ahorro'] }}</p>
+                </div>
+            </div>
+        </article>
+        @endforeach
+    </div>
+    @endif
+    @else
 
     {{-- ── Vista mobile: lista dividida ── --}}
     <div class="lg:hidden mobile-cards-list -mx-5 mt-3 overflow-hidden">
@@ -200,7 +271,7 @@
                     {{ $row['descuento'] }}
                 </span>
                 @if(!empty($row['imagen']))
-                <img src="{{ $row['imagen'] }}" alt="" loading="lazy" referrerpolicy="no-referrer"
+                <img src="{{ $row['imagen'] }}" alt="" loading="lazy" referrerpolicy="no-referrer" x-on:mouseenter="const r = $el.getBoundingClientRect(); $dispatch('img-zoom-show', { src: $el.src, l: r.left, r: r.right, t: r.top, b: r.bottom })" x-on:mouseleave="$dispatch('img-zoom-hide')"
                      class="w-14 h-14 rounded-lg object-cover bg-[var(--c-bg)] shrink-0">
                 @endif
                 {{-- Info producto --}}
@@ -214,9 +285,9 @@
                                   class="hover:text-violet-500 hover:underline underline-offset-2 transition-colors">{{ $row['marca'] }}</button>
                         @endif
                     </p>
-                    @if(!empty($row['talles']))
+                    @if(!empty($row['talles']) || !empty($row['tipo']) || !empty($row['color']))
                     <p class="text-[11px] text-[var(--c-muted)] mt-0.5">
-                        {{ $row['tipo'] ? $row['tipo'] . ' · ' : '' }}@if(($row['variantes'] ?? 1) > 1)<span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span> · @endif{{ $row['color'] ? $row['color'] . ' · ' : '' }}Talles: {{ $row['talles'] }}
+                        {{ $row['tipo'] ? $row['tipo'] . ' · ' : '' }}@if(($row['variantes'] ?? 1) > 1)<span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span> · @endif{{ $row['color'] ? $row['color'] . ' · ' : '' }}@if(!empty($row['talles']))Talles: {{ $row['talles'] }}@else<span class="italic">Talles: consultá en la tienda</span>@endif
                     </p>
                     @endif
                 </div>
@@ -283,12 +354,12 @@
                     </td>
                     <td class="px-3 py-2 font-medium text-[var(--c-text)]">
                         @if(!empty($row['imagen']))
-                        <img src="{{ $row['imagen'] }}" alt="" loading="lazy" referrerpolicy="no-referrer"
+                        <img src="{{ $row['imagen'] }}" alt="" loading="lazy" referrerpolicy="no-referrer" x-on:mouseenter="const r = $el.getBoundingClientRect(); $dispatch('img-zoom-show', { src: $el.src, l: r.left, r: r.right, t: r.top, b: r.bottom })" x-on:mouseleave="$dispatch('img-zoom-hide')"
                              class="inline-block w-9 h-9 rounded object-cover bg-[var(--c-bg)] mr-2 align-middle">
                         @endif
                         {{ $row['producto'] }}
-                        @if(!empty($row['talles']))
-                        <span class="block text-[11px] font-normal text-[var(--c-muted)]">{{ $row['tipo'] ? $row['tipo'] . ' · ' : '' }}@if(($row['variantes'] ?? 1) > 1)<span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span> · @endif{{ $row['color'] ? $row['color'] . ' · ' : '' }}Talles: {{ $row['talles'] }}</span>
+                        @if(!empty($row['talles']) || !empty($row['tipo']) || !empty($row['color']))
+                        <span class="block text-[11px] font-normal text-[var(--c-muted)]">{{ $row['tipo'] ? $row['tipo'] . ' · ' : '' }}@if(($row['variantes'] ?? 1) > 1)<span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span> · @endif{{ $row['color'] ? $row['color'] . ' · ' : '' }}@if(!empty($row['talles']))Talles: {{ $row['talles'] }}@else<span class="italic">Talles: consultá en la tienda</span>@endif</span>
                         @endif
                     </td>
                     <td class="px-3 py-2 text-right text-slate-400 text-xs line-through">{{ $row['precio_lista'] }}</td>
@@ -305,6 +376,7 @@
             </tbody>
         </table>
     </div>
+    @endif
 
     {{-- ── Infinite scroll: sentinel + estados ── --}}
     <div id="tabla-sentinel" class="py-1" aria-hidden="true"></div>

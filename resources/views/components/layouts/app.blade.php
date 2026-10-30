@@ -668,5 +668,16 @@
 @stack('scripts')
 
 
+{{-- Zoom de imágenes de producto: las miniaturas (tabla de ofertas) emiten img-zoom-show / img-zoom-hide al pasar el cursor --}}
+<div x-data="{ src: '', open: false, x: 0, y: 0,
+               mostrar(d) { const w = 320, h = 320; let x = d.r + 12; if (x + w > innerWidth - 8) x = d.l - w - 12;
+                            this.x = Math.max(8, x); this.y = Math.max(8, Math.min(d.t + (d.b - d.t) / 2 - h / 2, innerHeight - h - 8));
+                            this.src = d.src; this.open = true; } }"
+     @img-zoom-show.window="mostrar($event.detail)" @img-zoom-hide.window="open = false" @scroll.window="open = false"
+     x-show="open" x-cloak x-transition.opacity.duration.100ms
+     :style="`position:fixed;left:${x}px;top:${y}px;width:320px;height:320px;z-index:70`"
+     class="pointer-events-none rounded-xl overflow-hidden shadow-2xl border border-[var(--c-border)] bg-white">
+    <img :src="src" alt="" referrerpolicy="no-referrer" class="w-full h-full object-contain">
+</div>
 </body>
 </html>

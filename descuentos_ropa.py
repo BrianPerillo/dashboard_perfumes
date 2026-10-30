@@ -838,7 +838,48 @@ def scrap_dexter(page, site: dict, seccion: dict, max_paginas: int) -> list[Item
             time.sleep(30 * intento)
         if not html:
             raise Bloqueado(url)
-    return list(vistos.values())
+    lista = list(vistos.values())
+    if seccion.get("talles", True):
+        _talles_dexter(page, lista)
+    return lista
+
+
+def expandir_rangos(talles: list) -> list:
+    """Talles de calzado publicados como rango ("40-40.5") -> sus dos valores ("40", "40.5")."""
+    out = []
+    for t in talles:
+        m = re.match(r"^(\d+(?:\.5)?)\s*-\s*(\d+(?:\.5)?)$", (t or "").strip())
+        out += [m.group(1), m.group(2)] if m else [t]
+    return sorted(set(out), key=_orden_talle)
+
+
+def _talles_dexter(page, items: list[ItemRopa]) -> None:
+    """Talles con stock: se baja el HTML de la ficha de cada producto (mismo origen, sin renderizar) y se leen los
+    <li class="variation-attribute-size"> que NO tienen la clase 'disabled'. ~1 s por producto."""
+    from bs4 import BeautifulSoup
+    log.info("  pidiendo talles de %d productos…", len(items))
+    fallos = 0
+    for n, it in enumerate(items, 1):
+        path = it.url.split("dexter.com.ar", 1)[-1]
+        time.sleep(random.uniform(0.6, 1.1) * _RITMO["factor"])
+        try:
+            html = page.evaluate(_JS_FETCH_TXT, path)
+        except Exception as e:  # noqa: BLE001
+            html = ""
+            log.warning("  error pidiendo %s: %s", path, str(e)[:80])
+        if not html:
+            fallos += 1
+            _ritmo_bloqueo()
+            if fallos >= 15:
+                log.warning("  demasiados fallos pidiendo talles de Dexter: dejo los que faltan sin talles")
+                return
+            continue
+        _ritmo_exito()
+        lis = BeautifulSoup(html, "html.parser").select("li.variation-attribute-size")
+        it.talles = expandir_rangos([(li.get("data-attr-value") or "").strip() for li in lis
+                                     if "disabled" not in (li.get("class") or []) and li.get("data-attr-value")])
+        if n % 200 == 0:
+            log.info("    talles %d/%d", n, len(items))
 
 
 # --------------------------------------------------------------------------- #
@@ -930,6 +971,100 @@ def scrap_tiendanube_ropa(sesion, site: dict, seccion: dict, max_paginas: int) -
 
 
 # --------------------------------------------------------------------------- #
+# Tipos de producto unificados entre tiendas
+# --------------------------------------------------------------------------- #
+# Cada tienda publica el tipo a su manera ("Remera", "Remeras y polos", "Remeras"; "Calzado" / "Zapatillas";
+# "Shorts-bermudas"...). Para que el filtro "Prenda / tipo" funcione igual con todas las tiendas se asigna un tipo
+# canonico (y la categoria que le corresponde) mirando el nombre y el tipo crudo. El primer patron que coincide gana:
+# el orden importa (p. ej. "traje de baño" antes que "traje").
+_TIPOS = [
+    (r"\b(edt|edp|perfume|eau de|fragancia|colonia)\b", "Perfumería", "accesorios"),
+    (r"bicicleta|shimano|knog|vairo|\bcasco\b|\bfreno\b|herramienta", "Ciclismo", "accesorios"),
+    (r"\bbotin(es)?\b", "Botines", "calzado"),
+    (r"ojota|sandalia|\bslides?\b|chancl", "Sandalias y ojotas", "calzado"),
+    (r"\bzuecos?\b", "Zuecos", "calzado"),
+    (r"zapatill|\bzapatos?\b|borcego|mocasin|\bcalzado\b|footwear", "Zapatillas", "calzado"),
+    (r"traje de ba|short de ba|malla|bikini|\bbaño\b", "Traje de baño", "ropa"),
+    (r"\bjeans?\b", "Jean", "ropa"),
+    (r"jogg", "Jogging", "ropa"),
+    (r"\bcalzas?\b|leggin", "Calza", "ropa"),
+    (r"short|bermuda", "Short / Bermuda", "ropa"),
+    (r"pantal|\bchino\b|trouser|bombacha|babucha|\bcargo\b", "Pantalón", "ropa"),
+    (r"musculosa", "Musculosa", "ropa"),
+    (r"remera|polera|t-?shirt|\btee\b", "Remera", "ropa"),
+    (r"\btops?\b|corpi|bralette|tops-deportivos|\bbody\b", "Top", "ropa"),
+    (r"chomba|\bpolo\b", "Chomba", "ropa"),
+    (r"camiseta", "Camiseta", "ropa"),
+    (r"camis|blusa", "Camisa", "ropa"),
+    (r"buzo|hoodie|canguro|zipthru|sudadera", "Buzo", "ropa"),
+    (r"campera|chaqueta|parka|anorak|puffer|gaban|montgomery|cortaviento|rompevientos|jacket|\bsaco\b|abrigo", "Campera", "ropa"),
+    (r"chaleco|\bvest\b", "Chaleco", "ropa"),
+    (r"sweater|cardigan|pullover|tejido", "Sweater", "ropa"),
+    (r"vestido", "Vestido", "ropa"),
+    (r"pollera|falda", "Pollera", "ropa"),
+    (r"conjunto|\bambo\b|pijama|\btraje\b", "Conjunto", "ropa"),
+    (r"medias|soquete", "Medias", "ropa"),
+    (r"boxer|bóxer|\bslip\b|ropa interior", "Ropa interior", "ropa"),
+    (r"gorra|gorro|beanie|piluso|vincha|sombrero|\bcap\b", "Gorras y gorros", "accesorios"),
+    (r"mochila|bolso|bolsa|riñonera|rinonera|bandolera|valija|matera|necesser|neceser|totebag|canasta|morral", "Mochilas y bolsos", "accesorios"),
+    (r"billetera|tarjetero|cartera|monedero", "Billeteras", "accesorios"),
+    (r"\bcintos?\b|cintur", "Cinturones", "accesorios"),
+    (r"pelota|balón|\bbalon\b", "Pelotas", "accesorios"),
+    (r"guante", "Guantes", "accesorios"),
+    (r"lentes|gafas|anteojo", "Lentes", "accesorios"),
+    (r"bufanda|corbata|pañuelo|panuelo|\bcuello\b", "Bufandas y pañuelos", "accesorios"),
+    (r"canillera|rodillera|muñequera|munequera|\bgrip\b|\bpalo\b|soporte|protector", "Protecciones y deporte", "accesorios"),
+]
+_TIPOS_RE = [(re.compile(rx, re.I), tipo, cat) for rx, tipo, cat in _TIPOS]
+
+
+def normalizar_tipo(nombre: str, tipo_crudo: str, categoria: str) -> tuple[str, str]:
+    """(tipo canonico, categoria) a partir del nombre, el tipo publicado por la tienda y la categoria detectada."""
+    texto = f"{tipo_crudo or ''} {nombre or ''}"
+    for rx, tipo, cat in _TIPOS_RE:
+        if rx.search(texto):
+            return tipo, cat
+    if categoria == "calzado":
+        return "Zapatillas", "calzado"
+    if categoria == "accesorios":
+        return "Otros accesorios", "accesorios"
+    return "Otras prendas", categoria or "ropa"
+
+
+# Deportes: se usan los nombres de Nike como canonicos. Se unifica lo que publica cada tienda y, si no trae deporte,
+# se deduce del nombre (sin dato = NULL = el filtro "Deporte" no lo excluye).
+_DISCIPLINA_MAP = {"training": "Entrenamiento", "basketball": "Basquet", "básquet": "Basquet", "tenis": "Tenis y Pádel",
+                   "futbol": "Fútbol", "casual": "Moda", "inspiracion-deportiva": "Moda", "urbano": "Moda", "deportivo": ""}
+_DISCIPLINA_NOMBRE = [(re.compile(rx, re.I), d) for rx, d in [
+    (r"f[úu]tbol|botines", "Fútbol"), (r"running|run|correr", "Running"), (r"tenis|p[áa]del", "Tenis y Pádel"),
+    (r"b[áa]squet|basket|nba", "Basquet"), (r"nataci|piscina|traje de ba|malla", "Natación"),
+    (r"training|entrenamiento|gym|crossfit", "Entrenamiento"), (r"trekking|outdoor|monta[ñn]a", "Outdoor")]]
+
+
+def normalizar_disciplina(nombre: str, disciplina: str, tipo: str) -> str:
+    d = (disciplina or "").strip()
+    d = _DISCIPLINA_MAP.get(d.lower(), d)
+    if d:
+        return d
+    if tipo == "Ciclismo":
+        return "Ciclismo"
+    for rx, nombre_disc in _DISCIPLINA_NOMBRE:
+        if rx.search(nombre or ""):
+            return nombre_disc
+    return ""
+
+
+_RE_EXCLUIR = re.compile(r"gift ?card|tarjeta de regalo|^null$", re.I)     # no son productos de ropa
+
+
+def unificar_tipos(items: list) -> None:
+    """Tipo/categoria y deporte unificados entre tiendas (ver normalizar_tipo / normalizar_disciplina)."""
+    for it in items:
+        it.tipo, it.categoria = normalizar_tipo(it.nombre, it.tipo, it.categoria)
+        it.disciplina = normalizar_disciplina(it.nombre, it.disciplina, it.tipo)
+
+
+# --------------------------------------------------------------------------- #
 # Salida: Excel / JSON
 # --------------------------------------------------------------------------- #
 def escribir_excel(items: list[ItemRopa], ruta: str) -> str:
@@ -971,6 +1106,33 @@ DB_CONFIG = {
 }
 # productos.genero de perfumes usa masculino/femenino/unisex: ropa se mapea a esos valores (+ 'ninos')
 _GENERO_DB = {"hombre": "masculino", "mujer": "femenino", "ninos": "ninos", "unisex": "unisex"}
+
+
+def renormalizar_tipos_en_bd() -> int:
+    """Aplica normalizar_tipo a los productos de ropa ya guardados (datos derivados: se pueden recalcular)."""
+    import pymysql
+    conn = pymysql.connect(charset="utf8mb4", autocommit=False, **DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT p.id, p.nombre, p.tipo, p.categoria, p.disciplina, p.talles, p.genero FROM productos p JOIN tiendas t ON t.id = p.tienda_id WHERE t.rubro = %s", (RUBRO,))
+            cambios = []
+            for pid, nombre, tipo, cat, disc, talles, genero in cur.fetchall():
+                nt, nc = normalizar_tipo(nombre, tipo, cat)
+                nd = normalizar_disciplina(nombre, disc, nt) or None
+                lista = expandir_rangos([x.strip() for x in (talles or "").split(",") if x.strip()])
+                ntalles = ", ".join(lista)[:255] or None
+                nnorm = normalizar_talles(genero, nc, lista)[:255] or None
+                cambios.append((nt, nc, nd, ntalles, nnorm, pid))
+            cur.executemany("UPDATE productos SET tipo = %s, categoria = %s, disciplina = %s, talles = %s, talles_norm = %s WHERE id = %s", cambios)
+        conn.commit()
+        log.info("Tipos, deportes y talles renormalizados: %d productos revisados.", len(cambios))
+        return 0
+    except Exception as e:  # noqa: BLE001
+        conn.rollback()
+        log.error("Error renormalizando (rollback): %s", e)
+        return 4
+    finally:
+        conn.close()
 
 
 def guardar_en_mysql(items: list, fecha_hora: datetime, reporte: list) -> bool:
@@ -1082,9 +1244,12 @@ def main() -> int:
     ap.add_argument("--force-db", action="store_true", help="guardar aunque la corrida este incompleta (secciones bloqueadas/vacias)")
     ap.add_argument("--umbral-secciones", type=float, default=0.7, help="fraccion minima de secciones con datos para guardar en MySQL")
     ap.add_argument("--headful", action="store_true")
+    ap.add_argument("--renormalizar-tipos", action="store_true", help="recalcula tipo/categoria de los productos de ropa YA guardados (sin scrapear)")
     ap.add_argument("--json", metavar="RUTA", help="ademas volcar todos los items a JSON")
     args = ap.parse_args()
 
+    if args.renormalizar_tipos:
+        return renormalizar_tipos_en_bd()
     ahora = datetime.fromisoformat(args.fecha) if args.fecha else datetime.now()
     sitios = [s for s in SITES if (s["name"] in args.solo if args.solo else s.get("activo", True))]
     if not sitios:
@@ -1138,6 +1303,8 @@ def main() -> int:
                         items = scrap_seccion(page, site, sec, args.max_paginas)
                     else:
                         items = scrap_seccion_api(sesion, site, sec, args.max_paginas)
+                    items = [i for i in items if not _RE_EXCLUIR.search(i.nombre)]
+                    unificar_tipos(items)
                     con = sum(1 for i in items if i.descuento_pct > 0)
                     for it in items:
                         todos.setdefault(it.clave, it)

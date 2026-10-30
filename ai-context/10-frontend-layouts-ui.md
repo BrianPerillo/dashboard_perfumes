@@ -50,3 +50,6 @@ Tarjeta centrada con logo 🧴, mismo sistema de tema oscuro, `{{ $slot }}` y li
 4. El diseño es mobile-first en el sentido de que hay variantes móviles (`lg:` breakpoint = 1024px para sidebar).
 
 * La barra de búsqueda global (producto + marcas) está arriba del contenido, debajo de "Indicadores" (no en el sidebar): ver [05](05-dashboard-secciones.md).
+
+## Zoom de imágenes de producto (2026-10-30)
+Las miniaturas de la tabla de ofertas (`dashboard/tab-tabla.blade.php`, vista de escritorio y de tarjetas) emiten `img-zoom-show` / `img-zoom-hide` (`x-on:mouseenter` / `mouseleave` con `$dispatch`). Un único visor Alpine al final de `<body>` en `components/layouts/app.blade.php` muestra la imagen a 320 px junto al cursor (se invierte de lado si no entra, se oculta al hacer scroll). Solo con mouse. La línea de detalle bajo el nombre (tipo · color · talles) se muestra siempre que haya tipo, color o talles; sin talles dice "Talles: consultá en la tienda".
