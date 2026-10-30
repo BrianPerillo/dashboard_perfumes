@@ -1109,9 +1109,14 @@ class Dashboard extends Component
             ->tap(fn($q) => $this->filtrosBusqueda($q))
             ->when(!empty($this->mlDisponibles) && count($this->mlSeleccionados) < count($this->mlDisponibles),
                 fn($q) => empty($this->mlSeleccionados) ? $q->whereRaw('1 = 0') : $q->whereIn('p.tamano_ml', $this->mlSeleccionados))
-            ->selectRaw('t.nombre AS tienda, p.marca, LOWER(p.nombre) AS prod_norm, p.nombre AS producto, o.precio_actual, o.descuento_pct, p.url')
+            ->selectRaw('t.nombre AS tienda, p.marca, LOWER(p.nombre) AS prod_norm, p.nombre AS producto, o.precio_actual, o.descuento_pct, p.url, p.referencia, p.talles, p.imagen')
             ->orderBy('o.precio_actual')
             ->get();
+
+        if ($this->rubro === 'ropa') {
+            $this->compararJson = json_encode($this->compararRopa($rows));
+            return;
+        }
 
         $resultado = [];
         foreach ($rows->groupBy('prod_norm') as $norm => $group) {
@@ -1136,6 +1141,44 @@ class Dashboard extends Component
 
         usort($resultado, fn($a, $b) => $b['ahorro'] <=> $a['ahorro']);
         $this->compararJson = json_encode(array_slice($resultado, 0, 60));
+    }
+
+    /**
+     * Ropa: el mismo modelo (Support\Modelo::clave sobre productos.referencia) en 2+ tiendas, con el precio y los talles
+     * de cada una. Solo se listan los que tienen diferencia de precio.
+     */
+    private function compararRopa($rows): array
+    {
+        $resultado = [];
+        foreach ($rows->groupBy(fn($r) => \App\Support\Modelo::clave($r->tienda, $r->referencia)) as $clave => $group) {
+            if ($clave === '' || $group->pluck('tienda')->unique()->count() < 2) {
+                continue;
+            }
+            $porTienda = $group->groupBy('tienda')->map(fn($g) => $g->sortBy('precio_actual')->first())->sortBy('precio_actual')->values();
+            $min = $porTienda->first();
+            $max = $porTienda->max('precio_actual');
+            if ($max - $min->precio_actual <= 0) {
+                continue;
+            }
+            $resultado[] = [
+                'producto'   => $min->producto,
+                'marca'      => $min->marca ?? '',
+                'imagen'     => $min->imagen ?? '',
+                'tiendas'    => $porTienda->count(),
+                'precio_min' => round($min->precio_actual),
+                'tienda_min' => $min->tienda,
+                'precio_max' => round($max),
+                'ahorro'     => round($max - $min->precio_actual),
+                'spread_pct' => round(($max - $min->precio_actual) / $max * 100, 1),
+                'url'        => $min->url ?? '',
+                'detalle'    => $porTienda->map(fn($r) => [
+                    'tienda' => $r->tienda, 'precio' => round($r->precio_actual), 'dto' => round($r->descuento_pct),
+                    'talles' => $this->unirTalles($r->talles ?? ''), 'url' => $r->url ?? '',
+                ])->all(),
+            ];
+        }
+        usort($resultado, fn($a, $b) => $b['ahorro'] <=> $a['ahorro']);
+        return array_slice($resultado, 0, 100);
     }
 
     // ── Transferencia ─────────────────────────────────────────────

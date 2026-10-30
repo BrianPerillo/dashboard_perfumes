@@ -22,6 +22,7 @@
                 <tr>
                     <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase min-w-44">Producto</th>
                     <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase">Marca</th>
+                    @if($rubro === 'ropa')<th class="px-3 py-2.5 text-left text-xs font-semibold uppercase min-w-56">Precio por tienda</th>@endif
                     <th class="px-3 py-2.5 text-center text-xs font-semibold uppercase"># Tiendas</th>
                     <th class="px-3 py-2.5 text-left text-xs font-semibold uppercase">Más barata en</th>
                     <th class="px-3 py-2.5 text-right text-xs font-semibold uppercase">Mín.</th>
@@ -33,8 +34,24 @@
             <tbody class="divide-y divide-[var(--c-border)]">
                 @foreach($comparar as $i => $r)
                 <tr class="hover:bg-[var(--color-primary-50)] dark:hover:bg-white/5">
-                    <td class="px-3 py-2 font-medium text-[var(--c-text)]">{{ $r['producto'] }}</td>
+                    <td class="px-3 py-2 font-medium text-[var(--c-text)]">
+                        @if(!empty($r['imagen']))
+                        <img src="{{ $r['imagen'] }}" alt="" loading="lazy" referrerpolicy="no-referrer" class="inline-block w-9 h-9 rounded object-cover bg-[var(--c-bg)] mr-2 align-middle">
+                        @endif
+                        {{ $r['producto'] }}
+                    </td>
                     <td class="px-3 py-2 text-slate-500 text-xs">{{ $r['marca'] }}</td>
+                    @if($rubro === 'ropa')
+                    <td class="px-3 py-2 text-xs">
+                        @foreach($r['detalle'] ?? [] as $k => $d)
+                        <div class="whitespace-nowrap {{ $k === 0 ? 'font-bold text-emerald-500 dark:text-emerald-400' : 'text-[var(--c-muted)]' }}">
+                            @if($d['url'])<a href="{{ $d['url'] }}" target="_blank" rel="noopener" class="hover:underline">{{ $d['tienda'] }}</a>@else{{ $d['tienda'] }}@endif
+                            ${{ number_format($d['precio'], 0, ',', '.') }} <span class="opacity-70">(-{{ $d['dto'] }}%)</span>
+                            @if(!empty($d['talles']))<span class="opacity-70">· {{ $d['talles'] }}</span>@endif
+                        </div>
+                        @endforeach
+                    </td>
+                    @endif
                     <td class="px-3 py-2 text-center text-[var(--c-muted)]">{{ $r['tiendas'] }}</td>
                     <td class="px-3 py-2 text-xs font-medium text-violet-500 dark:text-violet-300">{{ $r['tienda_min'] }}</td>
                     <td class="px-3 py-2 text-right font-bold text-emerald-500 dark:text-emerald-400">${{ number_format($r['precio_min'], 0, ',', '.') }}</td>
