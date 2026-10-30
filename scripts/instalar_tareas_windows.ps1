@@ -75,7 +75,7 @@ $nombreRopa = 'descuentos_ropa'
 $accionRopa  = Nueva-Accion 'descuentos_ropa.bat'
 $triggerRopa = New-ScheduledTaskTrigger -Daily -At '15:00'
 $settingsRopa = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew `
-                  -ExecutionTimeLimit (New-TimeSpan -Hours 2) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+                  -ExecutionTimeLimit (New-TimeSpan -Hours 5) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 $principalRopa = New-ScheduledTaskPrincipal -UserId $usuario -LogonType Interactive -RunLevel Limited
 Register-ScheduledTask -TaskName $nombreRopa -Action $accionRopa -Trigger $triggerRopa -Settings $settingsRopa `
     -Principal $principalRopa -Force | Out-Null

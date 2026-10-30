@@ -58,3 +58,6 @@ Cada tienda publica el tipo distinto ("Remera" / "Remeras y polos"; "Calzado" / 
 **Resultado 2026-10-30:** Dexter 2157 productos con talles (14 sin talles) en 3733 s; los talles publicados como rango (`40-40.5`) se expanden a sus dos valores (`expandir_rangos`, también en `--renormalizar-tipos`, que además recalcula `talles_norm`). Tras unificar, el filtro "Prenda / tipo" tiene 38 valores (antes ~130).
 
 **Puma (2026-10-30):** corrida #164 ahora con 8 tiendas. Con Puma la corrida diaria suma ~7 min más.
+
+## Checkpoint y `--reanudar` (2026-10-30)
+El guardado en MySQL es **al final** de la corrida (para no mostrar una corrida a medias). Como la corrida completa dura ~2,5 h, en las corridas completas (sin `--solo`, `--seccion`, `--fecha` ni `--no-db`) se escribe `excel_ropa/checkpoint_ropa.json` (fecha, reporte por sección e items) después de cada sección. Si el proceso se corta, `python descuentos_ropa.py --reanudar` guarda en MySQL lo ya leído (misma `fecha_hora`) sin volver a scrapear; el checkpoint se borra al guardar bien. Las secciones que no llegaron a leerse se pueden completar después con `--solo <tienda> --fecha <la misma>`.

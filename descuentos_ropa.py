@@ -1200,6 +1200,16 @@ DB_CONFIG = {
 _GENERO_DB = {"hombre": "masculino", "mujer": "femenino", "ninos": "ninos", "unisex": "unisex"}
 
 
+def _guardar_checkpoint(ruta: str, fecha: datetime, todos: dict, reporte: list) -> None:
+    """Vuelca lo leido hasta ahora para poder terminar la corrida con --reanudar si se corta (el guardado en MySQL es al final)."""
+    try:
+        os.makedirs(os.path.dirname(os.path.abspath(ruta)), exist_ok=True)
+        with open(ruta, "w", encoding="utf-8") as f:
+            json.dump({"fecha": fecha.isoformat(), "reporte": reporte, "items": [asdict(i) for i in todos.values()]}, f, ensure_ascii=False)
+    except Exception as e:  # noqa: BLE001
+        log.warning("No pude escribir el checkpoint: %s", e)
+
+
 def renormalizar_tipos_en_bd() -> int:
     """Aplica normalizar_tipo a los productos de ropa ya guardados (datos derivados: se pueden recalcular)."""
     import pymysql
@@ -1336,6 +1346,7 @@ def main() -> int:
     ap.add_argument("--force-db", action="store_true", help="guardar aunque la corrida este incompleta (secciones bloqueadas/vacias)")
     ap.add_argument("--umbral-secciones", type=float, default=0.7, help="fraccion minima de secciones con datos para guardar en MySQL")
     ap.add_argument("--headful", action="store_true")
+    ap.add_argument("--reanudar", action="store_true", help="guardar en MySQL lo ya leido por una corrida cortada (excel_ropa/checkpoint_ropa.json), sin volver a scrapear")
     ap.add_argument("--renormalizar-tipos", action="store_true", help="recalcula tipo/categoria de los productos de ropa YA guardados (sin scrapear)")
     ap.add_argument("--json", metavar="RUTA", help="ademas volcar todos los items a JSON")
     args = ap.parse_args()
@@ -1348,74 +1359,86 @@ def main() -> int:
         log.error("Ninguna tienda coincide con --solo %s", args.solo)
         return 2
 
-    PLAT_BROWSER = ("vtex_io", "kevingston", "sfcc_dexter", "puma")
-    necesita_browser = any(s["platform"] in PLAT_BROWSER for s in sitios)
-    if necesita_browser:
-        try:
-            from playwright.sync_api import sync_playwright
-        except ImportError:
-            log.error("Falta Playwright: pip install playwright && playwright install chromium")
-            return 2
-    import contextlib
-    import requests
-
     todos: dict = {}
-    reporte = []
-    with contextlib.ExitStack() as stack:
-        ctx = None
+    reporte: list = []
+    usar_ckpt = not (args.no_db or args.fecha or args.solo or args.seccion)      # solo en corridas completas
+    ckpt = os.path.join(os.path.dirname(os.path.abspath(__file__)), "excel_ropa", "checkpoint_ropa.json")
+    if args.reanudar:
+        with open(ckpt, encoding="utf-8") as f:
+            cp = json.load(f)
+        ahora = datetime.fromisoformat(cp["fecha"])
+        reporte = cp["reporte"]
+        todos = {(d["tienda"], d["referencia"] or d["url"]): ItemRopa(**d) for d in cp["items"]}
+        log.info("Reanudando desde %s: %d productos, %d secciones ya leidas (corrida %s).", ckpt, len(todos), len(reporte), ahora)
+    else:
+        PLAT_BROWSER = ("vtex_io", "kevingston", "sfcc_dexter", "puma")
+        necesita_browser = any(s["platform"] in PLAT_BROWSER for s in sitios)
         if necesita_browser:
-            browser = stack.enter_context(sync_playwright()).chromium.launch(headless=not args.headful)
-            stack.callback(browser.close)
-            ctx = browser.new_context(user_agent=USER_AGENT, locale="es-AR")
-            # no descargar imagenes/fuentes/media: menos carga para el sitio y para nosotros
-            ctx.route("**/*", lambda r: r.abort() if r.request.resource_type in ("image", "media", "font") else r.continue_())
-        sesion = requests.Session()
-        sesion.headers.update({"User-Agent": USER_AGENT, "Accept": "application/json", "Accept-Language": "es-AR,es;q=0.9"})
-        for site in sitios:
-            secciones = site["secciones"][args.modo]
-            if args.seccion:
-                secciones = [s for s in secciones if any(t in s["path"] for t in args.seccion)]
-            for sec in secciones:
-                log.info("== %s %s ==", site["name"], sec["path"])
-                t0 = time.time()
-                nombre_rep = f"{site['name']}_{sec.get('etiqueta') or (sec['genero'] + '_' + sec['categoria'])}"
-                page = ctx.new_page() if site["platform"] in PLAT_BROWSER else None
-                try:
-                    if site["platform"] == "kevingston":
-                        items = scrap_kevingston(page, site, sec, args.max_paginas)
-                    elif site["platform"] == "puma":
-                        items = scrap_puma(page, site, sec, args.max_paginas)
-                    elif site["platform"] == "sfcc_dexter":
-                        items = scrap_dexter(page, site, sec, args.max_paginas)
-                    elif site["platform"] == "tiendanube":
-                        items = scrap_tiendanube_ropa(sesion, site, sec, args.max_paginas)
-                    elif site["platform"] == "wrangler":
-                        items = scrap_wrangler(sesion, site, sec, args.max_paginas)
-                    elif site["platform"] == "montagne":
-                        items = scrap_montagne(sesion, site, sec, args.max_paginas)
-                    elif page is not None:
-                        items = scrap_seccion(page, site, sec, args.max_paginas)
-                    else:
-                        items = scrap_seccion_api(sesion, site, sec, args.max_paginas)
-                    items = [i for i in items if not _RE_EXCLUIR.search(i.nombre)]
-                    unificar_tipos(items)
-                    con = sum(1 for i in items if i.descuento_pct > 0)
-                    for it in items:
-                        todos.setdefault(it.clave, it)
-                    log.info("  -> %d productos (%d con descuento)", len(items), con)
-                    estado = "ok" if items else "vacio"
-                except Bloqueado as e:
-                    log.error("  BLOQUEADO: %s (dejo la seccion y sigo)", e)
-                    items, con, estado = [], 0, "bloqueado"
-                except Exception as e:  # noqa: BLE001
-                    log.error("  fallo: %s", e)
-                    items, con, estado = [], 0, "error"
-                finally:
-                    if page is not None:
-                        page.close()
-                reporte.append({"tienda": nombre_rep, "plataforma": site["platform"], "total": len(items), "con": con,
-                                "estado": estado, "segundos": round(time.time() - t0, 1)})
-                time.sleep(random.uniform(8, 14))
+            try:
+                from playwright.sync_api import sync_playwright
+            except ImportError:
+                log.error("Falta Playwright: pip install playwright && playwright install chromium")
+                return 2
+        import contextlib
+        import requests
+
+        with contextlib.ExitStack() as stack:
+            ctx = None
+            if necesita_browser:
+                browser = stack.enter_context(sync_playwright()).chromium.launch(headless=not args.headful)
+                stack.callback(browser.close)
+                ctx = browser.new_context(user_agent=USER_AGENT, locale="es-AR")
+                # no descargar imagenes/fuentes/media: menos carga para el sitio y para nosotros
+                ctx.route("**/*", lambda r: r.abort() if r.request.resource_type in ("image", "media", "font") else r.continue_())
+            sesion = requests.Session()
+            sesion.headers.update({"User-Agent": USER_AGENT, "Accept": "application/json", "Accept-Language": "es-AR,es;q=0.9"})
+            for site in sitios:
+                secciones = site["secciones"][args.modo]
+                if args.seccion:
+                    secciones = [s for s in secciones if any(t in s["path"] for t in args.seccion)]
+                for sec in secciones:
+                    log.info("== %s %s ==", site["name"], sec["path"])
+                    t0 = time.time()
+                    nombre_rep = f"{site['name']}_{sec.get('etiqueta') or (sec['genero'] + '_' + sec['categoria'])}"
+                    page = ctx.new_page() if site["platform"] in PLAT_BROWSER else None
+                    try:
+                        if site["platform"] == "kevingston":
+                            items = scrap_kevingston(page, site, sec, args.max_paginas)
+                        elif site["platform"] == "puma":
+                            items = scrap_puma(page, site, sec, args.max_paginas)
+                        elif site["platform"] == "sfcc_dexter":
+                            items = scrap_dexter(page, site, sec, args.max_paginas)
+                        elif site["platform"] == "tiendanube":
+                            items = scrap_tiendanube_ropa(sesion, site, sec, args.max_paginas)
+                        elif site["platform"] == "wrangler":
+                            items = scrap_wrangler(sesion, site, sec, args.max_paginas)
+                        elif site["platform"] == "montagne":
+                            items = scrap_montagne(sesion, site, sec, args.max_paginas)
+                        elif page is not None:
+                            items = scrap_seccion(page, site, sec, args.max_paginas)
+                        else:
+                            items = scrap_seccion_api(sesion, site, sec, args.max_paginas)
+                        items = [i for i in items if not _RE_EXCLUIR.search(i.nombre)]
+                        unificar_tipos(items)
+                        con = sum(1 for i in items if i.descuento_pct > 0)
+                        for it in items:
+                            todos.setdefault(it.clave, it)
+                        log.info("  -> %d productos (%d con descuento)", len(items), con)
+                        estado = "ok" if items else "vacio"
+                    except Bloqueado as e:
+                        log.error("  BLOQUEADO: %s (dejo la seccion y sigo)", e)
+                        items, con, estado = [], 0, "bloqueado"
+                    except Exception as e:  # noqa: BLE001
+                        log.error("  fallo: %s", e)
+                        items, con, estado = [], 0, "error"
+                    finally:
+                        if page is not None:
+                            page.close()
+                    reporte.append({"tienda": nombre_rep, "plataforma": site["platform"], "total": len(items), "con": con,
+                                    "estado": estado, "segundos": round(time.time() - t0, 1)})
+                    time.sleep(random.uniform(8, 14))
+                    if usar_ckpt:
+                        _guardar_checkpoint(ckpt, ahora, todos, reporte)
 
     items = list(todos.values())
     con_desc = [i for i in items if i.descuento_pct > max(args.min_descuento, 0.0)]
@@ -1448,6 +1471,8 @@ def main() -> int:
             return 3
         if not guardar_en_mysql(items, ahora, reporte):
             return 4
+        if os.path.exists(ckpt):
+            os.remove(ckpt)
     return 0 if items else 1
 
 

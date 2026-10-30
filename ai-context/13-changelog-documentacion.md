@@ -12,6 +12,14 @@ Formato:
 
 ---
 
+## 2026-10-30 (noche) — Checkpoint y `--reanudar` en el scraper de ropa
+
+- Una corrida cortada ya no pierde las ~2,5 h de lectura: se guarda un checkpoint por sección y `--reanudar` termina el guardado (ver ropa-02). Probado con un checkpoint sintético y `--no-db`.
+
+## 2026-10-30 (noche) — Límite de la tarea de ropa a 5 h
+
+- La corrida de ropa con 8 tiendas dura ~2,5 h (Nike 32 min, Kevingston 40, Dexter 62, Puma 7, Prototype 4, Levi's/Topper 3). Se subió el límite de la tarea `descuentos_ropa` de 2 h a 5 h (`Set-ScheduledTask`, tarea Interactive que creamos nosotros) y en `scripts/instalar_tareas_windows.ps1`. Nota: el guardado en MySQL se hace al final; si la corrida se corta, no se guarda nada.
+
 ## 2026-10-30 (noche) — Puma
 
 - Adaptador `puma` en `descuentos_ropa.py` (estado `mobify-data` del listado paginado `?page=N&limit=32`): 1122 productos, 773 con descuento, cargados en la corrida #164. Sin talles ni género explícito (ver [ropa-02](ropa-02-tiendas-y-plataformas.md)).
