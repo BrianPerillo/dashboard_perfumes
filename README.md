@@ -1,59 +1,37 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Descuentos · Perfumes ARG
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Dashboard web que muestra, analiza y alerta sobre **descuentos de perfumes en tiendas online argentinas**. Un scraper en Python recopila periódicamente los precios (cada ejecución es una *corrida*), los guarda en MySQL y esta aplicación Laravel los presenta en 11 secciones analíticas, con cuentas de usuario, alertas por email/Telegram, planes de suscripción (MercadoPago) y panel de administración (Google Analytics).
 
-## About Laravel
+**Stack:** PHP 8.2 · Laravel 12 · Livewire 4 · Alpine.js · Tailwind CSS v4 · ApexCharts · MySQL · Python (scraper).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Documentación
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Toda la documentación técnica vive en [`ai-context/`](ai-context/README.md) (índice completo allí):
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+* [Visión general](ai-context/01-vision-general.md) · [Arquitectura](ai-context/02-arquitectura-y-stack.md) · [Base de datos](ai-context/03-base-de-datos.md)
+* [Rutas](ai-context/04-rutas-y-navegacion.md) · [Dashboard](ai-context/05-dashboard-secciones.md) · [Autenticación](ai-context/06-autenticacion.md)
+* [Alertas](ai-context/07-alertas-y-notificaciones.md) · [Planes y pagos](ai-context/08-planes-y-pagos.md) · [Admin y Analytics](ai-context/09-panel-admin-y-analytics.md)
+* [Scraper](ai-context/scraper-01-descripcion-y-ejecucion.md) · [Entorno y despliegue](ai-context/11-entorno-config-despliegue.md) · [Problemas conocidos](ai-context/12-problemas-conocidos-y-pendientes.md)
 
-## Learning Laravel
+Las reglas para IAs y colaboradores (incluida la obligación de mantener la documentación actualizada) están en [`AGENTS.md`](AGENTS.md).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Puesta en marcha rápida (local, XAMPP)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+composer install
+cp .env.example .env        # completar DB (mysql: perfumes_descuentos), mail, etc.
+php artisan key:generate
+php artisan migrate
+php artisan db:seed --class=PlanesSeeder
+npm install && npm run build
+php artisan serve           # o abrir http://localhost/perfumes-dashboard/public
+```
 
-## Laravel Sponsors
+Las tablas de datos de scraping (`tiendas`, `productos`, `observaciones`, `corridas`, …) las crea y llena el scraper (`descuentos_master.py`); ver [ai-context/03-base-de-datos.md](ai-context/03-base-de-datos.md) y la documentación del scraper.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Comandos propios
 
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan alertas:procesar [--dry-run]   # envía alertas de descuento (email/Telegram)
+php artisan admin:grant {email}            # alterna rol admin de un usuario
+```

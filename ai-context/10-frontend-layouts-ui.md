@@ -1,0 +1,51 @@
+# 10 · Frontend: layouts, componentes UI, tema y convenciones
+
+## Layouts
+
+| Layout | Archivo | Se usa en |
+|---|---|---|
+| `components.layouts.app` | `resources/views/components/layouts/app.blade.php` (~700 líneas) | Dashboard (`<x-layouts.app>` en `dashboard.blade.php`), `Notificaciones`, `Planes`, `Admin\Dashboard`, vistas `pago/*` |
+| `components.layouts.auth` | `resources/views/components/layouts/auth.blade.php` | `Login`, `Register`, `VerifyEmail`, `ForgotPassword`, `ResetPassword` |
+
+### Layout `app` — anatomía
+* `@props(['activeTab' => 'joyas'])`; calcula `$verifiedUser` / `$unverifiedUser`.
+* `<html>` con `x-data` Alpine global: `dark` (persistido en `localStorage.dark`, **por defecto oscuro** salvo que valga `'false'`), `sidebar`, `sidebarCollapsed`, `mobileMenuOpen`, `filterCount`. Un script síncrono en `<head>` agrega la clase `dark` antes del primer paint (evita parpadeo); un overlay `#theme-flash` suaviza el cambio de tema.
+* `<head>`: fuente Inter, gtag.js (si hay `GOOGLE_ANALYTICS_ID`), `@vite(['resources/css/app.css','resources/js/app.js'])`, `@livewireStyles`, SweetAlert2 CSS y estilos de ApexCharts para modo oscuro.
+* **Sidebar** `<aside class="app-sidebar">` (desktop fijo 240px, colapsable con el botón ☰ de la navbar; en móvil off-canvas). Desde 2026-10-30 **solo contiene**: selector de rubro, el contenedor `<div id="sidebar-filters">` (cada página teleporta ahí su panel de filtros con `x-teleport`; si la página no tiene filtros — planes, alertas, admin, marcas, distribución — muestra un aviso) y, abajo, cuenta de usuario + tema. **Sin logo y sin lista de pestañas**: la navegación entre secciones está únicamente en el header.
+* **Navbar** sticky `glass-nav`: tabs en desktop, botón Alertas, Admin, login/logout; en móvil, menú hamburguesa + `#mobile-filters`.
+* Final: `@livewireScripts`, SweetAlert2 JS (helper `window.swalConfirmar({titulo,texto,btnConfirmar,icono}, onConfirm)`), ApexCharts 3 (CDN), `@stack('scripts')`.
+* Las pestañas de los menús (sidebar, navbar, barra móvil) salen de `config/rubros.php` (`tabs`) y hay un selector de rubro; el layout recibe el prop `rubro`. Ver [14](14-multirubro.md).
+
+### Layout `auth`
+Tarjeta centrada con logo 🧴, mismo sistema de tema oscuro, `{{ $slot }}` y link para volver al dashboard / cerrar sesión.
+
+## Sistema de diseño (`resources/css/app.css`)
+* Tailwind v4: `@import 'tailwindcss'`, `@custom-variant dark (&:where(.dark, .dark *))` (dark mode **por clase**).
+* `@theme`: fuente Inter, escala `--color-primary-50…900` (violeta/magenta, 600 = `#8a1caf`), `--color-accent-*` (dorado), `--color-good-600`, `--color-bad-600`, `--color-surface`, `--color-border`.
+* Variables de tema usadas en todas las vistas como `bg-[var(--c-card)]`, `text-[var(--c-text)]`, `border-[var(--c-border)]`, `text-[var(--c-muted)]`, `bg-[var(--c-bg)]`, `--c-sidebar`, `--c-nav`, `--c-input` (redefinidas bajo `html.dark`).
+* Utilidades custom en `app.css`: `[x-cloak]`, `.scrollbar-none`, `.app-sidebar/.app-content` (colapso del sidebar), `.filter-section-closed`. Otras clases propias están definidas en el `<style>` inline del layout `app.blade.php`: `.collapsible-wrap/.is-open/.collapsible-inner` (KPI panel plegable), `.tab-animate-in` (animación de cambio de pestaña), `.glass-nav` (navbar), `.card-nuevos-oferta` y overrides de ApexCharts para dark mode.
+* `@source` incluye blade, js, vendor de Livewire y vistas compiladas.
+* Estilo visual dominante: tarjetas redondeadas (`rounded-2xl`, `border`, `bg-[var(--c-card)]`), acentos `violet-500/600`, modo oscuro con fondo `#0d0f1a`.
+
+## Interactividad
+* **Livewire**: `wire:click`, `wire:model.live.debounce.400ms`, `wire:loading` (overlay con spinner en el dashboard), `@entangle('tabActiva')`.
+* **Alpine**: estado de UI (`x-data`), `x-show`, `x-teleport` (filtros al sidebar/móvil), `x-cloak`.
+* **Eventos de ventana** usados: `charts-refresh`, `seguir-refresh`, `tab-changed`, `filter-count-changed` (dashboard ↔ layout); `toast` (Notificaciones: componente local de toasts, `tipo` + `mensaje`); `login-failed` (Login).
+* **ApexCharts** se instancian desde Alpine leyendo `$wire.<prop>Json`; siempre destruir (`_destroy(id)`) antes de recrear; colores dependen de `html.dark`.
+* **SweetAlert2** para confirmaciones destructivas (p. ej. eliminar alerta).
+
+## JS / build
+* `resources/js/app.js` solo importa `bootstrap.js` (axios global con `X-Requested-With`). **Livewire 4 inyecta Alpine por sí mismo**: no hay `Alpine.start()` propio.
+* Build: `npm run dev` (Vite + HMR) / `npm run build` (genera `public/build`, ignorado por git → hay que buildear en el servidor o subir el build).
+
+## Vistas de emails (`resources/views/emails/`)
+* `alerta_descuento.blade.php` — HTML con estilos inline/`<style>`; tres modos según `$resultados`: `true` (prueba), `Collection` con resultados reales, o vacío/ejemplo; muestra tarjetas con precio lista/actual/% y botón de URL; pie distinto para `@guest`/`@auth`.
+* `verificacion_codigo.blade.php` — código de 6 dígitos.
+
+## Reglas prácticas al tocar la UI
+1. Usar los tokens `var(--c-*)` en lugar de colores fijos para que funcione el modo oscuro; probar ambos temas.
+2. Al agregar/quitar una pestaña: agregarla en `config/rubros.php` (`tabs` y `tabs_rutas`; las rutas y los menús se generan solos), el `match` de `cargarDatosParaTab()` y `recargarTodo()` en `Dashboard.php`, el `@include` en `livewire/dashboard.blade.php` y esta documentación.
+3. Al agregar un filtro global: tocar los dos bloques teleportados (`#sidebar-filters` y `#mobile-filters`) y el contador `$_fc`.
+4. El diseño es mobile-first en el sentido de que hay variantes móviles (`lg:` breakpoint = 1024px para sidebar).
+
+* La barra de búsqueda global (producto + marcas) está arriba del contenido, debajo de "Indicadores" (no en el sidebar): ver [05](05-dashboard-secciones.md).
