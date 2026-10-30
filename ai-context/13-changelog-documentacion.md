@@ -12,6 +12,10 @@ Formato:
 
 ---
 
+## 2026-10-30 (noche) — Filtros en celular: botón "Filtros" y "Ver resultados"
+
+- Al probarlo en un navegador real (Playwright, 390 px) los filtros quedaban ocultos tras ☰. Se agregó el botón **⚙️ Filtros** con contador en la barra de búsqueda (solo móvil), el botón **Ver resultados** al final del panel móvil y `whitespace-nowrap` en los `ver →`. Se recompiló el CSS (`npm run build`). Detalle en 10.
+
 ## 2026-10-30 (noche) — Auditoría de documentación
 
 - Verificación cruzada automática (migraciones, modelos/componentes/comandos, scripts, vistas y tests vs. docs): todo estaba mencionado salvo `app/Support/Talles.php`. Se agregó al mapa de carpetas (02), el **esquema vigente de `productos`** y de las columnas `rubro` (03, contrastado con `information_schema`) y el comportamiento de las tareas con MySQL/XAMPP (11). Índice (README) y changelog al día.

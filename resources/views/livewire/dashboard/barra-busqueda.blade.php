@@ -3,6 +3,14 @@
      Estado: tablaFiltroBuscar (texto) y tablaFiltroMarcas (varias marcas). --}}
 <div class="mb-4">
     <div class="flex flex-wrap items-center gap-2">
+        {{-- Celular: los filtros viven en el menú ☰; este botón lo abre directamente (el contador lo publica Dashboard) --}}
+        <button type="button" @click.stop="mobileMenuOpen = true"
+                class="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--c-border)] bg-[var(--c-input)] text-sm font-medium text-[var(--c-text)]">
+            ⚙️ Filtros
+            <span x-show="filterCount > 0" x-cloak x-text="filterCount"
+                  class="font-bold bg-red-500 text-white rounded-full min-w-4 h-4 px-1 text-[10px] flex items-center justify-center"></span>
+        </button>
+
         {{-- Producto --}}
         <div class="relative w-full sm:w-72">
             <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--c-muted)] text-sm">🔍</span>

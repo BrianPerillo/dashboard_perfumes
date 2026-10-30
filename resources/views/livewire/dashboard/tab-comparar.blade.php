@@ -41,7 +41,7 @@
                     <td class="px-3 py-2 text-right text-slate-400 text-xs line-through">${{ number_format($r['precio_max'], 0, ',', '.') }}</td>
                     <td class="px-3 py-2 text-right"><span class="font-bold text-emerald-500 dark:text-emerald-400">${{ number_format($r['ahorro'], 0, ',', '.') }}</span><span class="text-xs text-slate-400 ml-1">({{ $r['spread_pct'] }}%)</span></td>
                     <td class="px-3 py-2 text-center">
-                        @if($r['url'])<a href="{{ $r['url'] }}" target="_blank" rel="noopener" class="text-xs text-violet-500 dark:text-violet-400 underline underline-offset-2">ver →</a>@endif
+                        @if($r['url'])<a href="{{ $r['url'] }}" target="_blank" rel="noopener" class="text-xs whitespace-nowrap text-violet-500 dark:text-violet-400 underline underline-offset-2">ver →</a>@endif
                     </td>
                 </tr>
                 @endforeach

@@ -545,7 +545,13 @@
     </div>
     @endif
 
-    <div class="pb-2"></div>
+    {{-- Pie fijo: cierra el menú y vuelve a los resultados --}}
+    <div class="sticky bottom-0 px-3 py-2.5 border-t border-[var(--c-border)] bg-[var(--c-nav)]">
+        <button type="button" @click="mobileMenuOpen = false"
+                class="w-full px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-colors">
+            Ver resultados{{ $_fc > 0 ? " ({$_fc} filtro" . ($_fc > 1 ? 's' : '') . ')' : '' }}
+        </button>
+    </div>
 </div>
 </template>
 

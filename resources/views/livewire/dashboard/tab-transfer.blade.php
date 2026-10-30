@@ -27,7 +27,7 @@
                 </div>
                 @if($r['url'])
                 <a href="{{ $r['url'] }}" target="_blank" rel="noopener"
-                   class="shrink-0 text-xs font-semibold text-violet-500 dark:text-violet-400 hover:underline">ver →</a>
+                   class="shrink-0 whitespace-nowrap text-xs font-semibold text-violet-500 dark:text-violet-400 hover:underline">ver →</a>
                 @endif
             </div>
             <div class="flex items-baseline gap-3 mt-3">
@@ -63,7 +63,7 @@
                     <td class="px-3 py-2 text-right font-bold text-emerald-500 dark:text-emerald-400">{{ $r['precio_transf'] }}</td>
                     <td class="px-3 py-2 text-right"><span class="text-xs font-bold text-emerald-500 dark:text-emerald-400">{{ $r['ahorro_pct'] }}%</span></td>
                     <td class="px-3 py-2 text-center">
-                        @if($r['url'])<a href="{{ $r['url'] }}" target="_blank" rel="noopener" class="text-xs text-violet-500 dark:text-violet-400 underline underline-offset-2">ver →</a>@endif
+                        @if($r['url'])<a href="{{ $r['url'] }}" target="_blank" rel="noopener" class="text-xs whitespace-nowrap text-violet-500 dark:text-violet-400 underline underline-offset-2">ver →</a>@endif
                     </td>
                 </tr>
                 @endforeach

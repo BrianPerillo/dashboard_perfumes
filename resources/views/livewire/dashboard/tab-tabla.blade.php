@@ -223,7 +223,7 @@
                 {{-- Link --}}
                 @if($row['url'])
                 <a href="{{ $row['url'] }}" target="_blank" rel="noopener"
-                   class="shrink-0 text-xs font-semibold text-violet-500 dark:text-violet-400 hover:underline">ver →</a>
+                   class="shrink-0 whitespace-nowrap text-xs font-semibold text-violet-500 dark:text-violet-400 hover:underline">ver →</a>
                 @endif
             </div>
             <div class="flex items-baseline gap-3 mt-3">
@@ -296,7 +296,7 @@
                     <td class="px-3 py-2 text-right text-emerald-500 dark:text-emerald-400 font-medium text-xs">{{ $row['ahorro'] }}</td>
                     <td class="px-3 py-2 text-xs text-slate-400">{{ $row['fuente'] }}</td>
                     <td class="px-3 py-2 text-center">
-                        @if($row['url'])<a href="{{ $row['url'] }}" target="_blank" rel="noopener" class="text-xs text-violet-500 dark:text-violet-400 underline underline-offset-2">ver →</a>@endif
+                        @if($row['url'])<a href="{{ $row['url'] }}" target="_blank" rel="noopener" class="text-xs whitespace-nowrap text-violet-500 dark:text-violet-400 underline underline-offset-2">ver →</a>@endif
                     </td>
                 </tr>
                 @empty
