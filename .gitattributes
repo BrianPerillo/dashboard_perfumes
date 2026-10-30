@@ -9,3 +9,7 @@
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
+
+# Lanzadores de Windows: conservar CRLF
+*.bat text eol=crlf
+*.ps1 text eol=crlf
