@@ -12,6 +12,10 @@ Formato:
 
 ---
 
+## 2026-10-31 — Sidebar: el filtro abierto usa todo el alto y talles sin ceros
+
+- Con un filtro abierto también se pliegan las cabeceras de los otros (y se quita su relleno): el abierto usa todo el alto. Para cambiar de filtro se cierra y se abre otro. Talles numéricos con cero a la izquierda (`05`) se unifican con `5` en el scraper y en `--renormalizar-tipos` (`sin_ceros`). Detalle en 10.
+
 ## 2026-10-31 — Menú lateral: acordeón a pantalla completa y opciones más legibles
 
 - Al abrir un filtro del sidebar (p. ej. Talle) ocupa todo el alto disponible con scroll propio y al cerrarlo vuelve todo; corrige además el recorte por `max-height: 800px`. Chips y títulos con tipografía mayor. Verificado con Playwright (abrir/cerrar, sin errores de consola). Detalle en 10.

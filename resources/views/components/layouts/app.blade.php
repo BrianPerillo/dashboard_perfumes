@@ -208,10 +208,16 @@
         .sidebar-filter-panel > * { flex: 0 0 auto; }
         .sidebar-filter-panel > :not(.acc-sec) {
             max-height: 700px; overflow: hidden;
-            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, padding 0.3s ease;
         }
-        .sidebar-filter-panel:has(> .acc-sec-open) > :not(.acc-sec) { max-height: 0; opacity: 0; pointer-events: none; border-width: 0; }
+        .sidebar-filter-panel:has(> .acc-sec-open) > :not(.acc-sec) { max-height: 0; opacity: 0; pointer-events: none; border-width: 0; padding-top: 0; padding-bottom: 0; }
         .sidebar-filter-panel > .acc-sec { transition: flex-grow 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* los otros acordeones (cerrados) también se pliegan mientras uno está abierto: el abierto usa todo el alto */
+        .sidebar-filter-panel > .acc-sec:not(.acc-sec-open) {
+            max-height: 80px; overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, padding 0.3s ease;
+        }
+        .sidebar-filter-panel:has(> .acc-sec-open) > .acc-sec:not(.acc-sec-open) { max-height: 0; opacity: 0; pointer-events: none; border-width: 0; padding-top: 0; padding-bottom: 0; }
         .sidebar-filter-panel > .acc-sec.acc-sec-open { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
         .sidebar-filter-panel > .acc-sec.acc-sec-open > .collapsible-wrap { flex: 1 1 0; min-height: 0; }
         .sidebar-filter-panel > .acc-sec.acc-sec-open > .collapsible-wrap > .collapsible-inner { min-height: 0; overflow-y: auto; }

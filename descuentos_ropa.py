@@ -848,6 +848,11 @@ def scrap_dexter(page, site: dict, seccion: dict, max_paginas: int) -> list[Item
     return lista
 
 
+def sin_ceros(talles: list) -> list:
+    """"05" -> "5" (algunas tiendas publican talles numericos con cero a la izquierda y salian duplicados en el filtro)."""
+    return sorted({re.sub(r"^0+(?=\d)", "", (t or "").strip()) for t in talles if (t or "").strip()}, key=_orden_talle)
+
+
 def expandir_rangos(talles: list) -> list:
     """Talles de calzado publicados como rango ("40-40.5") -> sus dos valores ("40", "40.5")."""
     out = []
@@ -1068,6 +1073,7 @@ def unificar_tipos(items: list) -> None:
     for it in items:
         it.tipo, it.categoria = normalizar_tipo(it.nombre, it.tipo, it.categoria)
         it.disciplina = normalizar_disciplina(it.nombre, it.disciplina, it.tipo)
+        it.talles = sin_ceros(it.talles)
         if it.categoria == "calzado":
             it.talles = expandir_rangos(it.talles)
 
@@ -1225,7 +1231,7 @@ def renormalizar_tipos_en_bd() -> int:
             for pid, nombre, tipo, cat, disc, talles, genero in cur.fetchall():
                 nt, nc = normalizar_tipo(nombre, tipo, cat)
                 nd = normalizar_disciplina(nombre, disc, nt) or None
-                lista = [x.strip() for x in (talles or "").split(",") if x.strip()]
+                lista = sin_ceros([x.strip() for x in (talles or "").split(",") if x.strip()])
                 if nc == "calzado":
                     lista = expandir_rangos(lista)
                 ntalles = ", ".join(lista)[:255] or None
