@@ -12,6 +12,10 @@ Formato:
 
 ---
 
+## 2026-10-31 — Menú lateral: acordeón a pantalla completa y opciones más legibles
+
+- Al abrir un filtro del sidebar (p. ej. Talle) ocupa todo el alto disponible con scroll propio y al cerrarlo vuelve todo; corrige además el recorte por `max-height: 800px`. Chips y títulos con tipografía mayor. Verificado con Playwright (abrir/cerrar, sin errores de consola). Detalle en 10.
+
 ## 2026-10-30 (noche) — Comparador entre tiendas en ropa
 
 - Pestaña "Comparar tiendas" en ropa (modelo = código de marca normalizado, `App\Support\Modelo`): ~50 modelos hoy (Nike/Puma/Topper en Dexter vs. la tienda oficial). Detalle en 05. Verificado con Playwright; test unitario nuevo.

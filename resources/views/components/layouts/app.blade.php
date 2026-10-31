@@ -193,21 +193,28 @@
         }
 
         /* ── Sidebar filter panel: animaciones open/close ─── */
-        @keyframes sidebarFilterIn {
-            from { opacity: 0; max-height: 0; }
-            to   { opacity: 1; max-height: 800px; }
-        }
-        @keyframes sidebarFilterOut {
-            from { opacity: 1; max-height: 800px; }
-            to   { opacity: 0; max-height: 0; }
-        }
+        /* ── Panel de filtros del sidebar ──
+           Solo desvanece al entrar (antes limitaba el alto a 800px y cortaba los filtros largos).
+           Cuando un acordeón (.acc-sec.acc-sec-open) está abierto (se detecta con :has) el panel pasa a ocupar todo el alto disponible: los bloques fijos
+           (género, categoría, descuento…) se pliegan, las cabeceras de los otros acordeones quedan visibles y el abierto
+           se estira hasta el final con scroll propio. Al cerrarlo todo vuelve a la normalidad. */
+        @keyframes sidebarFilterIn { from { opacity: 0; } to { opacity: 1; } }
+        #sidebar-filters { height: 100%; }
         .sidebar-filter-panel {
-            overflow: hidden;
-            animation: sidebarFilterIn 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+            display: flex; flex-direction: column; min-height: 100%;
+            animation: sidebarFilterIn 0.22s ease both;
         }
-        .sidebar-filter-panel.closing {
-            animation: sidebarFilterOut 0.18s cubic-bezier(0.4, 0, 1, 1) both;
+        .sidebar-filter-panel:has(> .acc-sec-open) { height: 100%; overflow: hidden; }
+        .sidebar-filter-panel > * { flex: 0 0 auto; }
+        .sidebar-filter-panel > :not(.acc-sec) {
+            max-height: 700px; overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
         }
+        .sidebar-filter-panel:has(> .acc-sec-open) > :not(.acc-sec) { max-height: 0; opacity: 0; pointer-events: none; border-width: 0; }
+        .sidebar-filter-panel > .acc-sec { transition: flex-grow 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-filter-panel > .acc-sec.acc-sec-open { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        .sidebar-filter-panel > .acc-sec.acc-sec-open > .collapsible-wrap { flex: 1 1 0; min-height: 0; }
+        .sidebar-filter-panel > .acc-sec.acc-sec-open > .collapsible-wrap > .collapsible-inner { min-height: 0; overflow-y: auto; }
         .mobile-tab-bar::-webkit-scrollbar { height: 3px; display: block; }
         .mobile-tab-bar::-webkit-scrollbar-track { background: transparent; }
         .mobile-tab-bar::-webkit-scrollbar-thumb { background-color: #a78bfa; border-radius: 9999px; }

@@ -199,7 +199,7 @@
     @if($_fc > 0)
     <div class="px-3 pt-2.5 pb-1">
         <button wire:click="resetearFiltros"
-                class="w-full flex items-center justify-between text-[10px] font-semibold
+                class="w-full flex items-center justify-between text-[11px] font-semibold
                        text-red-500 dark:text-red-400 hover:text-red-600
                        py-1.5 px-2.5 rounded-lg bg-red-50 dark:bg-red-900/20
                        border border-red-200 dark:border-red-800/40 transition-colors">
@@ -214,7 +214,7 @@
         <button @click="open = !open"
                 :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
-            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
                 Género <span class="font-normal normal-case opacity-60">({{ count($generosSeleccionados) }}/{{ count($generosDisponibles) }})</span>
             </p>
             <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
@@ -227,7 +227,7 @@
                     <div class="flex flex-wrap gap-1 mb-2">
                         @foreach(config("rubros.rubros.$rubro.generos") as $gkey => $glabel)
                         <button wire:click="toggleGenero('{{ $gkey }}')"
-                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                class="px-2.5 py-1 rounded text-xs font-semibold border transition-all
                                        {{ in_array($gkey, $generosSeleccionados)
                                            ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
@@ -236,7 +236,7 @@
                         @endforeach
                     </div>
                     <button wire:click="toggleTodosGeneros"
-                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                            class="text-[11px] font-semibold text-[var(--color-primary-600)] hover:underline">
                         {{ count($generosSeleccionados) === count($generosDisponibles) ? '× Ninguno' : '✓ Todos' }}
                     </button>
                 </div>
@@ -246,11 +246,11 @@
 
     {{-- ── Presentación ─────────────────────────────────────── --}}
     @if(config("rubros.rubros.$rubro.filtro_ml") && !empty($mlDisponibles))
-    <div x-data="{ open: false, id: 'ml' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+    <div x-data="{ open: false, id: 'ml' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" :class="{ 'acc-sec-open': open }" class="acc-sec border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
                 :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
-            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
                 Presentación <span class="font-normal normal-case opacity-60">({{ count($mlSeleccionados) }}/{{ count($mlDisponibles) }})</span>
             </p>
             <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
@@ -263,7 +263,7 @@
                     <div class="flex flex-wrap gap-1 mb-2">
                         @foreach($mlDisponibles as $ml)
                         <button wire:click="toggleMl({{ $ml }})"
-                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                class="px-2.5 py-1 rounded text-xs font-semibold border transition-all
                                        {{ in_array($ml, $mlSeleccionados)
                                            ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
@@ -272,7 +272,7 @@
                         @endforeach
                     </div>
                     <button wire:click="toggleTodosMl"
-                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                            class="text-[11px] font-semibold text-[var(--color-primary-600)] hover:underline">
                         {{ count($mlSeleccionados) === count($mlDisponibles) ? '× Ninguno' : '✓ Todos' }}
                     </button>
                 </div>
@@ -284,11 +284,11 @@
     @include('livewire.dashboard.filtros-ropa')
 
     {{-- ── Tiendas ──────────────────────────────────────── --}}
-    <div x-data="{ open: false, id: 'tiendas' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+    <div x-data="{ open: false, id: 'tiendas' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" :class="{ 'acc-sec-open': open }" class="acc-sec border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
                 :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
-            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
                 Tiendas <span class="font-normal normal-case opacity-60">({{ count($tiendasSeleccionadas) }}/{{ count($tiendas) }})</span>
             </p>
             <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
@@ -301,7 +301,7 @@
                     <div class="flex flex-wrap gap-1 mb-2">
                         @foreach($tiendas as $tid => $tnombre)
                         <button wire:click="toggleTienda({{ $tid }})"
-                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                class="px-2.5 py-1 rounded text-xs font-semibold border transition-all
                                        {{ in_array($tid, $tiendasSeleccionadas)
                                            ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
@@ -310,7 +310,7 @@
                         @endforeach
                     </div>
                     <button wire:click="toggleTodasTiendas"
-                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                            class="text-[11px] font-semibold text-[var(--color-primary-600)] hover:underline">
                         {{ count($tiendasSeleccionadas) === count($tiendas) ? '× Ninguna' : '✓ Todas' }}
                     </button>
                 </div>
@@ -321,16 +321,16 @@
     {{-- ── Descuento ─────────────────────────────────────── --}}
     @if(!in_array($tabActiva, ['seguir','cambios','conclusiones','comparar']))
     <div class="px-4 py-2 space-y-1.5 border-t border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Descuento</p>
+        <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Descuento</p>
         <div class="flex items-center gap-2">
-            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Mín</span>
+            <span class="text-[11px] text-[var(--c-muted)] w-6 shrink-0">Mín</span>
             <input type="range" wire:model.live.debounce.400ms="descMin" min="0" max="89" step="1" class="flex-1 accent-[var(--color-primary-600)]">
-            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMin }}%</span>
+            <span class="text-[11px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMin }}%</span>
         </div>
         <div class="flex items-center gap-2">
-            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Máx</span>
+            <span class="text-[11px] text-[var(--c-muted)] w-6 shrink-0">Máx</span>
             <input type="range" wire:model.live.debounce.400ms="descMax" min="1" max="90" step="1" class="flex-1 accent-[var(--color-primary-600)]">
-            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMax }}%</span>
+            <span class="text-[11px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMax }}%</span>
         </div>
     </div>
     @endif
@@ -348,16 +348,16 @@
     {{-- ── Período · Cambios ────────────────────────────── --}}
     @if($tabActiva === 'cambios')
     <div class="px-4 py-2 space-y-2 border-t border-[var(--c-border)]">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Período</p>
+        <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Período</p>
         <div>
-            <label class="text-[10px] text-[var(--c-muted)] block mb-0.5">Desde</label>
+            <label class="text-[11px] text-[var(--c-muted)] block mb-0.5">Desde</label>
             <select wire:model.live="cambiosDesdeCorrida"
                     class="w-full rounded border border-[var(--c-border)] bg-[var(--c-input)] text-[var(--c-text)] px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-300)]">
                 @foreach($corridas as $c)<option value="{{ $c['id'] }}">{{ $c['label'] }}</option>@endforeach
             </select>
         </div>
         <div>
-            <label class="text-[10px] text-[var(--c-muted)] block mb-0.5">Hasta</label>
+            <label class="text-[11px] text-[var(--c-muted)] block mb-0.5">Hasta</label>
             <select wire:model.live="cambiosHastaCorrida"
                     class="w-full rounded border border-[var(--c-border)] bg-[var(--c-input)] text-[var(--c-text)] px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-300)]">
                 @foreach($corridas as $c)<option value="{{ $c['id'] }}">{{ $c['label'] }}</option>@endforeach
@@ -378,7 +378,7 @@
     @if($_fc > 0)
     <div class="px-3 pt-2.5 pb-1">
         <button wire:click="resetearFiltros"
-                class="w-full flex items-center justify-between text-[10px] font-semibold
+                class="w-full flex items-center justify-between text-[11px] font-semibold
                        text-red-500 dark:text-red-400 hover:text-red-600
                        py-1.5 px-2.5 rounded-lg bg-red-50 dark:bg-red-900/20
                        border border-red-200 dark:border-red-800/40 transition-colors">
@@ -393,7 +393,7 @@
         <button @click="open = !open"
                 :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
-            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
                 Género <span class="font-normal normal-case opacity-60">({{ count($generosSeleccionados) }}/{{ count($generosDisponibles) }})</span>
             </p>
             <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
@@ -406,7 +406,7 @@
                     <div class="flex flex-wrap gap-1 mb-2">
                         @foreach(config("rubros.rubros.$rubro.generos") as $gkey => $glabel)
                         <button wire:click="toggleGenero('{{ $gkey }}')"
-                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                class="px-2.5 py-1 rounded text-xs font-semibold border transition-all
                                        {{ in_array($gkey, $generosSeleccionados)
                                            ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
@@ -415,7 +415,7 @@
                         @endforeach
                     </div>
                     <button wire:click="toggleTodosGeneros"
-                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                            class="text-[11px] font-semibold text-[var(--color-primary-600)] hover:underline">
                         {{ count($generosSeleccionados) === count($generosDisponibles) ? '× Ninguno' : '✓ Todos' }}
                     </button>
                 </div>
@@ -425,11 +425,11 @@
 
     {{-- ── Presentación ─────────────────────────────────────── --}}
     @if(config("rubros.rubros.$rubro.filtro_ml") && !empty($mlDisponibles))
-    <div x-data="{ open: false, id: 'ml' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+    <div x-data="{ open: false, id: 'ml' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" :class="{ 'acc-sec-open': open }" class="acc-sec border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
                 :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
-            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
                 Presentación <span class="font-normal normal-case opacity-60">({{ count($mlSeleccionados) }}/{{ count($mlDisponibles) }})</span>
             </p>
             <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
@@ -442,7 +442,7 @@
                     <div class="flex flex-wrap gap-1 mb-2">
                         @foreach($mlDisponibles as $ml)
                         <button wire:click="toggleMl({{ $ml }})"
-                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                class="px-2.5 py-1 rounded text-xs font-semibold border transition-all
                                        {{ in_array($ml, $mlSeleccionados)
                                            ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
@@ -451,7 +451,7 @@
                         @endforeach
                     </div>
                     <button wire:click="toggleTodosMl"
-                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                            class="text-[11px] font-semibold text-[var(--color-primary-600)] hover:underline">
                         {{ count($mlSeleccionados) === count($mlDisponibles) ? '× Ninguno' : '✓ Todos' }}
                     </button>
                 </div>
@@ -463,11 +463,11 @@
     @include('livewire.dashboard.filtros-ropa')
 
     {{-- ── Tiendas ──────────────────────────────────────── --}}
-    <div x-data="{ open: false, id: 'tiendas' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
+    <div x-data="{ open: false, id: 'tiendas' }" @acc-abrir.window="if ($event.detail !== id) open = false" x-effect="if (open) $dispatch('acc-abrir', id)" :class="{ 'acc-sec-open': open }" class="acc-sec border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
                 :class="!open ? 'filter-section-closed' : ''"
                 class="w-full flex items-center justify-between px-4 pt-3 pb-2 group">
-            <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
                 Tiendas <span class="font-normal normal-case opacity-60">({{ count($tiendasSeleccionadas) }}/{{ count($tiendas) }})</span>
             </p>
             <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
@@ -480,7 +480,7 @@
                     <div class="flex flex-wrap gap-1 mb-2">
                         @foreach($tiendas as $tid => $tnombre)
                         <button wire:click="toggleTienda({{ $tid }})"
-                                class="px-2 py-0.5 rounded text-[10px] font-semibold border transition-all
+                                class="px-2.5 py-1 rounded text-xs font-semibold border transition-all
                                        {{ in_array($tid, $tiendasSeleccionadas)
                                            ? 'bg-[var(--color-primary-600)] hover:bg-[var(--color-primary-700)] text-white border-[var(--color-primary-600)] hover:border-[var(--color-primary-700)]'
                                            : 'text-[var(--c-muted)] border-[var(--c-border)] hover:border-[var(--color-primary-400)] hover:text-[var(--color-primary-600)]' }}">
@@ -489,7 +489,7 @@
                         @endforeach
                     </div>
                     <button wire:click="toggleTodasTiendas"
-                            class="text-[10px] font-semibold text-[var(--color-primary-600)] hover:underline">
+                            class="text-[11px] font-semibold text-[var(--color-primary-600)] hover:underline">
                         {{ count($tiendasSeleccionadas) === count($tiendas) ? '× Ninguna' : '✓ Todas' }}
                     </button>
                 </div>
@@ -500,16 +500,16 @@
     {{-- ── Descuento ─────────────────────────────────────── --}}
     @if(!in_array($tabActiva, ['seguir','cambios','conclusiones','comparar']))
     <div class="px-4 py-2 space-y-1.5 border-t border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Descuento</p>
+        <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Descuento</p>
         <div class="flex items-center gap-2">
-            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Mín</span>
+            <span class="text-[11px] text-[var(--c-muted)] w-6 shrink-0">Mín</span>
             <input type="range" wire:model.live.debounce.400ms="descMin" min="0" max="89" step="1" class="flex-1 accent-[var(--color-primary-600)]">
-            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMin }}%</span>
+            <span class="text-[11px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMin }}%</span>
         </div>
         <div class="flex items-center gap-2">
-            <span class="text-[10px] text-[var(--c-muted)] w-6 shrink-0">Máx</span>
+            <span class="text-[11px] text-[var(--c-muted)] w-6 shrink-0">Máx</span>
             <input type="range" wire:model.live.debounce.400ms="descMax" min="1" max="90" step="1" class="flex-1 accent-[var(--color-primary-600)]">
-            <span class="text-[10px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMax }}%</span>
+            <span class="text-[11px] font-bold text-violet-500 dark:text-violet-300 w-7 text-right">{{ $descMax }}%</span>
         </div>
     </div>
     @endif
@@ -527,16 +527,16 @@
     {{-- ── Período · Cambios ────────────────────────────── --}}
     @if($tabActiva === 'cambios')
     <div class="px-4 py-2 space-y-2 border-t border-[var(--c-border)]">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Período</p>
+        <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">Período</p>
         <div>
-            <label class="text-[10px] text-[var(--c-muted)] block mb-0.5">Desde</label>
+            <label class="text-[11px] text-[var(--c-muted)] block mb-0.5">Desde</label>
             <select wire:model.live="cambiosDesdeCorrida"
                     class="w-full rounded border border-[var(--c-border)] bg-[var(--c-input)] text-[var(--c-text)] px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-300)]">
                 @foreach($corridas as $c)<option value="{{ $c['id'] }}">{{ $c['label'] }}</option>@endforeach
             </select>
         </div>
         <div>
-            <label class="text-[10px] text-[var(--c-muted)] block mb-0.5">Hasta</label>
+            <label class="text-[11px] text-[var(--c-muted)] block mb-0.5">Hasta</label>
             <select wire:model.live="cambiosHastaCorrida"
                     class="w-full rounded border border-[var(--c-border)] bg-[var(--c-input)] text-[var(--c-text)] px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[var(--color-primary-300)]">
                 @foreach($corridas as $c)<option value="{{ $c['id'] }}">{{ $c['label'] }}</option>@endforeach
