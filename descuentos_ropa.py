@@ -1249,10 +1249,12 @@ def renormalizar_tipos_en_bd() -> int:
         conn.close()
 
 
-def guardar_en_mysql(items: list, fecha_hora: datetime, reporte: list) -> bool:
+def guardar_en_mysql(items: list, fecha_hora: datetime, reporte: list, estado_inicial: str = "completa") -> bool:
     """Inserta la corrida (rubro ropa), hace UPSERT de tiendas/productos y agrega las observaciones.
     Guarda TODOS los productos vistos: con descuento -> tipo 'rebaja'; sin descuento -> 'ninguno' (el
-    dashboard solo muestra 'rebaja', pero asi se conserva el catalogo y el historial de precios)."""
+    dashboard solo muestra 'rebaja', pero asi se conserva el catalogo y el historial de precios).
+    Es idempotente por (rubro, fecha_hora): se la llama una vez por tienda con estado_inicial='en_curso' y la corrida
+    se cierra al final con cerrar_corrida(). El estado solo se fija al CREAR la corrida; si ya existe no se toca."""
     try:
         import pymysql
     except ImportError:
@@ -1270,11 +1272,14 @@ def guardar_en_mysql(items: list, fecha_hora: datetime, reporte: list) -> bool:
                 log.error("Falta la migracion multi-rubro (columna corridas.rubro). Ejecuta: php artisan migrate")
                 return False
             pcts = [i.descuento_pct for i in items if i.descuento_pct > 0]
+            cur.execute("SHOW COLUMNS FROM corridas LIKE 'estado'")
+            tiene_estado = cur.fetchone() is not None          # migracion 2026_11_01: sin ella se guarda como antes (todo a la vez)
             cur.execute(
-                "INSERT INTO corridas (rubro, fecha_hora, total_productos, min_descuento, max_descuento) "
-                "VALUES (%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE total_productos=VALUES(total_productos), "
+                "INSERT INTO corridas (rubro, fecha_hora, total_productos, min_descuento, max_descuento" + (", estado" if tiene_estado else "") + ") "
+                "VALUES (%s,%s,%s,%s,%s" + (",%s" if tiene_estado else "") + ") ON DUPLICATE KEY UPDATE total_productos=VALUES(total_productos), "
                 "min_descuento=VALUES(min_descuento), max_descuento=VALUES(max_descuento), id=LAST_INSERT_ID(id)",
-                (RUBRO, fecha_hora, len(items), round(min(pcts), 2) if pcts else None, round(max(pcts), 2) if pcts else None))
+                (RUBRO, fecha_hora, len(items), round(min(pcts), 2) if pcts else None, round(max(pcts), 2) if pcts else None)
+                + ((estado_inicial,) if tiene_estado else ()))
             corrida_id = cur.lastrowid
 
             tienda_id = {}
@@ -1341,6 +1346,29 @@ def guardar_en_mysql(items: list, fecha_hora: datetime, reporte: list) -> bool:
         conn.close()
 
 
+def cerrar_corrida(fecha_hora: datetime, estado: str) -> bool:
+    """Fija el estado final de la corrida: 'completa' (la lee el sitio) o 'incompleta' (no paso el control de calidad)."""
+    try:
+        import pymysql
+        conn = pymysql.connect(charset="utf8mb4", autocommit=True, **DB_CONFIG)
+    except Exception as e:  # noqa: BLE001
+        log.error("No pude conectar a MySQL para cerrar la corrida (%s).", e)
+        return False
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SHOW COLUMNS FROM corridas LIKE 'estado'")
+            if not cur.fetchone():
+                return True                                  # sin la migracion no hay estado: la corrida ya es valida
+            cur.execute("UPDATE corridas SET estado=%s WHERE rubro=%s AND fecha_hora=%s", (estado, RUBRO, fecha_hora))
+        log.info("Corrida %s (ropa) marcada '%s'.", fecha_hora, estado)
+        return True
+    except Exception as e:  # noqa: BLE001
+        log.error("Error cerrando la corrida: %s", e)
+        return False
+    finally:
+        conn.close()
+
+
 # --------------------------------------------------------------------------- #
 # Main
 # --------------------------------------------------------------------------- #
@@ -1374,6 +1402,10 @@ def main() -> int:
     todos: dict = {}
     reporte: list = []
     usar_ckpt = not (args.no_db or args.fecha or args.solo or args.seccion)      # solo en corridas completas
+    # Guardado tienda por tienda: la corrida queda 'en_curso' (invisible para el sitio) hasta cerrarla al final.
+    # Con --fecha (completar una corrida existente) o --reanudar se guarda todo al final, como antes.
+    guardar_inc = not (args.no_db or args.fecha or args.reanudar)
+    inc_ok = True
     ckpt = os.path.join(os.path.dirname(os.path.abspath(__file__)), "excel_ropa", "checkpoint_ropa.json")
     if args.reanudar:
         with open(ckpt, encoding="utf-8") as f:
@@ -1408,6 +1440,8 @@ def main() -> int:
                 secciones = site["secciones"][args.modo]
                 if args.seccion:
                     secciones = [s for s in secciones if any(t in s["path"] for t in args.seccion)]
+                items_tienda: list = []
+                rep_ini = len(reporte)
                 for sec in secciones:
                     log.info("== %s %s ==", site["name"], sec["path"])
                     t0 = time.time()
@@ -1434,7 +1468,9 @@ def main() -> int:
                         unificar_tipos(items)
                         con = sum(1 for i in items if i.descuento_pct > 0)
                         for it in items:
-                            todos.setdefault(it.clave, it)
+                            if it.clave not in todos:
+                                todos[it.clave] = it
+                                items_tienda.append(it)
                         log.info("  -> %d productos (%d con descuento)", len(items), con)
                         estado = "ok" if items else "vacio"
                     except Bloqueado as e:
@@ -1451,6 +1487,11 @@ def main() -> int:
                     time.sleep(random.uniform(8, 14))
                     if usar_ckpt:
                         _guardar_checkpoint(ckpt, ahora, todos, reporte)
+                if guardar_inc and len(reporte) > rep_ini:
+                    log.info("== %s completa: guardo la tienda en MySQL (%d productos) ==", site["name"], len(items_tienda))
+                    if not guardar_en_mysql(items_tienda, ahora, reporte[rep_ini:], "en_curso"):
+                        inc_ok = False
+                        log.warning("No pude guardar %s ahora; se reintenta con todo al final de la corrida.", site["name"])
 
     items = list(todos.values())
     con_desc = [i for i in items if i.descuento_pct > max(args.min_descuento, 0.0)]
@@ -1477,12 +1518,21 @@ def main() -> int:
         if vacias:
             log.warning("Secciones vacias (sin ofertas hoy o cambio del sitio): %s", ", ".join(vacias))
         if not items or ok_ratio < args.umbral_secciones and not args.force_db:
-            log.error("CORRIDA INCOMPLETA: %d de %d secciones bloqueadas/con error (minimo %.0f%% sin fallar). NO guardo en MySQL "
-                      "para no tapar el ultimo snapshot bueno. Usa --force-db para guardar igual.",
+            log.error("CORRIDA INCOMPLETA: %d de %d secciones bloqueadas/con error (minimo %.0f%% sin fallar). No la publico para no "
+                      "tapar el ultimo snapshot bueno (queda 'incompleta' en la base). Usa --force-db para publicarla igual.",
                       len(fallidas), len(reporte), args.umbral_secciones * 100)
+            if guardar_inc and inc_ok:
+                cerrar_corrida(ahora, "incompleta")
             return 3
-        if not guardar_en_mysql(items, ahora, reporte):
-            return 4
+        if guardar_inc and inc_ok:
+            if not cerrar_corrida(ahora, "completa"):
+                return 4
+        else:
+            # Sin guardado por tienda (--fecha / --reanudar) o si alguna tienda no se pudo guardar: se vuelca todo (idempotente)
+            if not guardar_en_mysql(items, ahora, reporte, "completa" if args.fecha else "en_curso"):
+                return 4
+            if not args.fecha and not cerrar_corrida(ahora, "completa"):
+                return 4
         if os.path.exists(ckpt):
             os.remove(ckpt)
     return 0 if items else 1

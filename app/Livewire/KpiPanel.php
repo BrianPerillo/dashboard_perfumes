@@ -24,7 +24,7 @@ class KpiPanel extends Component
     private function cargarKpis(): void
     {
         // Las dos corridas más recientes
-        $corridas = Corrida::deRubro($this->rubro)->orderByDesc('fecha_hora')->limit(2)->pluck('id', 'fecha_hora');
+        $corridas = Corrida::deRubro($this->rubro)->completas()->orderByDesc('fecha_hora')->limit(2)->pluck('id', 'fecha_hora');
 
         if ($corridas->isEmpty()) {
             return;

@@ -55,6 +55,7 @@ Leyenda: 🔴 funcional/crítico · 🟠 importante · 🟡 menor · ⚪ nota.
 | R19 ⚪ | `TRUSTED_PROXIES` fijo en `'*'` | `bootstrap/app.php` lee `TRUSTED_PROXIES` (default `*`) |
 | R20 ⚪ | `ExampleTest` esperaba 200 en `/` (redirige) y `APP_URL` con subcarpeta daba 404 en tests | Test corregido, `phpunit.xml` fija `APP_URL`; +tests nuevos (8 pasan) |
 | R21 ⚪ | `AlertaDescuento` "no encolado" listado como bug | **No es bug**: es sincrónico a propósito (no hay `queue:work`); si se encola hay que levantar un worker |
+| R22 ⚪ | La corrida de ropa se guardaba entera al final (~3 h sin datos nuevos; un corte perdía todo salvo el checkpoint) | Guardado por tienda en corrida `en_curso`, oculta hasta cerrarla; ver ropa-02 (2026-11-01) |
 
 ## Ideas de mejora para el rubro ropa
 

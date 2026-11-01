@@ -61,7 +61,8 @@ Algoritmo (`ProcesarAlertas::procesarAlerta`):
    * Con `ultima_notificacion_at`: solo corridas posteriores (`c.fecha_hora > ultima_notificacion_at`) y dedupe:
      * `solo_mejoras && tipo=producto`: excluye observaciones si ya existía (en corridas hasta la última notificación) una con `precio_actual <= actual` para ese producto (solo avisa si el precio es **estrictamente menor** a todo lo visto).
      * resto: excluye si ya hubo una observación del mismo producto con precio ≈ igual (`|Δ| < 1`) en corridas previas a la última notificación (evita repetir el mismo producto al mismo precio).
-   * Sin `ultima_notificacion_at` (primera vez): toma solo la **corrida más reciente** (`MAX(corridas.id)`).
+   * Sin `ultima_notificacion_at` (primera vez): toma solo la **corrida completa más reciente** (`MAX(corridas.id)` con `estado = 'completa'`).
+   * Desde 2026-11-01 la query base filtra `c.estado = 'completa'`: nunca se notifica por una corrida de ropa `en_curso`/`incompleta` (el scraper guarda tienda por tienda).
 5. Filtro por tipo: `marca` → `p.marca LIKE %valor%`; `tienda` → `t.nombre LIKE %valor%`; `producto` → `p.nombre LIKE %valor%` (+ `marca_filtro` → `p.marca LIKE %…%`).
 6. Orden `descuento_pct DESC`, `LIMIT 10`.
 7. Si hay resultados y no es dry-run:

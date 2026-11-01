@@ -12,6 +12,12 @@ Formato:
 
 ---
 
+## 2026-11-01 — Ropa: guardado tienda por tienda con estado de corrida
+
+- Nueva columna `corridas.estado` (`en_curso`/`incompleta`/`completa`, default `completa`; migración defensiva `2026_11_01_000000_add_estado_to_corridas`, aplicada). `descuentos_ropa.py` guarda cada tienda al terminarla en una corrida `en_curso` y la cierra al final (`cerrar_corrida`) según el control de calidad. Sitio y alertas leen solo corridas `completa`: `Corrida::completas()`/`ultima()`, `KpiPanel`, `Dashboard` (selector de corridas, evolución, frecuencia/primera fecha de joyas, seguir producto), `ProcesarAlertas`. Perfumes no cambia.
+- Verificado con corridas de prueba de Wrangler (2099 → incompleta, 2000 → completa; se borraron y se restauró `productos.ultima_vez`), suite (24 pasan, 2 skip) y auditoría de filtros de ropa contra MySQL. Corrida real de ropa del 2026-11-01: #173, 8 tiendas, 8066 productos (Dexter 69 min).
+- Docs actualizados: 03, 05, 07, 11, 12, ropa-02.
+
 ## 2026-10-31 — Sidebar: el filtro abierto usa todo el alto y talles sin ceros
 
 - Con un filtro abierto también se pliegan las cabeceras de los otros (y se quita su relleno): el abierto usa todo el alto. Para cambiar de filtro se cierra y se abre otro. Talles numéricos con cero a la izquierda (`05`) se unifican con `5` en el scraper y en `--renormalizar-tipos` (`sin_ceros`). Detalle en 10.

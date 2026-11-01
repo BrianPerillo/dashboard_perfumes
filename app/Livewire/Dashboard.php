@@ -147,7 +147,7 @@ class Dashboard extends Component
         $this->descMax = $filtros['descMax'] ?? 90;
 
         // Cargar todas las corridas existentes
-        $corridas = Corrida::deRubro($this->rubro)->orderByDesc('fecha_hora')->get();
+        $corridas = Corrida::deRubro($this->rubro)->completas()->orderByDesc('fecha_hora')->get();
         $this->corridas = $corridas->map(fn($c) => [
             'id'    => $c->id,
             'label' => Carbon::parse($c->fecha_hora)->format('d/m/Y H:i'),
@@ -353,6 +353,7 @@ class Dashboard extends Component
         $rows = DB::table('observaciones as o')
             ->join('productos as p', 'p.id', '=', 'o.producto_id')
             ->join('corridas as c',  'c.id', '=', 'o.corrida_id')
+            ->where('c.estado', 'completa')
             ->where('o.tipo_descuento', 'rebaja')
             ->tap(fn($q) => Observacion::filtrarFuentesValidas($q, 'o.fuente'))
             ->whereBetween('o.descuento_pct', [$this->descMin, $this->descMax])
@@ -617,13 +618,14 @@ class Dashboard extends Component
         $matched = $this->matchJoyas($rows, $this->joyasUmbral);
 
         // Frecuencia y antigüedad dentro de la ventana visible (ayer → hoy)
-        $totalCorridas = DB::table('corridas')->where('rubro', $this->rubro)->count();
+        $totalCorridas = DB::table('corridas')->where('rubro', $this->rubro)->where('estado', 'completa')->count();
         if ($totalCorridas > 0 && !empty($matched)) {
             $prodNombres = array_unique(array_map(fn($j) => mb_strtolower($j['producto']), $matched));
 
             $freqData = DB::table('observaciones as o')
                 ->join('productos as p', 'p.id', '=', 'o.producto_id')
                 ->whereIn(DB::raw('LOWER(p.nombre)'), $prodNombres)
+                ->whereIn('o.corrida_id', DB::table('corridas')->where('estado', 'completa')->select('id'))
                 ->where('o.tipo_descuento', 'rebaja')
                 ->tap(fn($q) => Observacion::filtrarFuentesValidas($q, 'o.fuente'))
                 ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
@@ -635,6 +637,7 @@ class Dashboard extends Component
             $primerFechaData = DB::table('observaciones as o')
                 ->join('productos as p', 'p.id', '=', 'o.producto_id')
                 ->join('corridas as c', 'c.id', '=', 'o.corrida_id')
+                ->where('c.estado', 'completa')
                 ->whereIn(DB::raw('LOWER(p.nombre)'), $prodNombres)
                 ->where('o.tipo_descuento', 'rebaja')
                 ->tap(fn($q) => Observacion::filtrarFuentesValidas($q, 'o.fuente'))
@@ -1071,6 +1074,7 @@ class Dashboard extends Component
             ->join('productos as p', 'p.id', '=', 'o.producto_id')
             ->join('tiendas as t',   't.id', '=', 'p.tienda_id')
             ->join('corridas as c',  'c.id', '=', 'o.corrida_id')
+            ->where('c.estado', 'completa')
             ->where('o.tipo_descuento', 'rebaja')
             ->tap(fn($q) => Observacion::filtrarFuentesValidas($q, 'o.fuente'))
             ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))

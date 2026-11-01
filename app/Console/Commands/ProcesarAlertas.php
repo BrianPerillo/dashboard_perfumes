@@ -59,6 +59,7 @@ class ProcesarAlertas extends Command
             ->join('tiendas as t',   't.id', '=', 'p.tienda_id')
             ->join('corridas as c',  'c.id', '=', 'o.corrida_id')
             ->where('c.rubro', $alerta->rubro ?: 'perfumes')   // cada alerta solo mira corridas de su rubro
+            ->where('c.estado', 'completa')                     // ignora corridas a medias (ropa guarda tienda por tienda)
             ->where('o.tipo_descuento', 'rebaja')
             ->whereBetween('o.descuento_pct', [max(5, (int) $alerta->descuento_min), 100])
             ->selectRaw('p.nombre as producto, p.marca, p.url, t.nombre as tienda,
@@ -119,7 +120,7 @@ class ProcesarAlertas extends Command
             }
         } else {
             // Primera vez: tomar la corrida más reciente
-            $ultimaCorrida = DB::table('corridas')->where('rubro', $alerta->rubro ?: 'perfumes')->max('id');
+            $ultimaCorrida = DB::table('corridas')->where('rubro', $alerta->rubro ?: 'perfumes')->where('estado', 'completa')->max('id');
             if ($ultimaCorrida) {
                 $query->where('o.corrida_id', $ultimaCorrida);
             }

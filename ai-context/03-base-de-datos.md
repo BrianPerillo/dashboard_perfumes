@@ -111,14 +111,18 @@ Clave única: `(tienda_id, nombre_norm)` → un producto por tienda y nombre nor
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | int PK AI | |
-| `fecha_hora` | datetime **UNIQUE** | momento de la corrida |
+| `rubro` | varchar(20) default `'perfumes'` | la unicidad real es `(rubro, fecha_hora)` (`uq_corrida_rubro_fecha`) |
+| `estado` | varchar(12) default `'completa'` | `en_curso` / `incompleta` / `completa` (migración `2026_11_01_000000_add_estado_to_corridas`, aplicada 2026-11-01). El sitio y las alertas leen **solo `completa`** (`Corrida::completas()`, `Corrida::ultima()`); el scraper de ropa guarda tienda por tienda con la corrida `en_curso` |
+| `fecha_hora` | datetime | momento de la corrida |
 | `total_productos` | int default 0 | |
 | `min_descuento`/`max_descuento` | decimal(5,2) null | |
 | `creado_en` | timestamp default now | |
 
 > `min_descuento`/`max_descuento`: hasta la corrida 156 guardaban los argumentos CLI (0 y 90); desde 2026-10-29 el scraper guarda los valores reales de las rebajas de cada corrida.
 
-131 corridas entre 2026-06-26 y 2026-10-29 (último id 156; hay saltos de id por corridas incompletas eliminadas). Modelo: `Corrida` (`hasMany CorridaSitio`, `hasMany Observacion`, `Corrida::ultima()`).
+131 corridas entre 2026-06-26 y 2026-10-29 (último id 156; hay saltos de id por corridas incompletas eliminadas). Modelo: `Corrida` (`hasMany CorridaSitio`, `hasMany Observacion`, `Corrida::ultima()`, scope `completas()`).
+
+> **Regla (2026-11-01):** toda consulta que elija "la última corrida" o recorra corridas debe filtrar `estado = 'completa'` (modelo: `->completas()`; con joins: `->where('c.estado', 'completa')`). `descuentos_master.py` (perfumes) no cambió: inserta sin `estado` y queda `completa` por el DEFAULT. La vista `v_descuentos` (solo la usa el Streamlit legacy) **no** filtra por estado.
 
 ### `corrida_sitios`
 Resultado del scraping **por sitio/categoría** en cada corrida (telemetría).

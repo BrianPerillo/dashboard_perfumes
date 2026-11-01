@@ -32,8 +32,14 @@ class Corrida extends Model
         return $query->where('rubro', $rubro);
     }
 
+    /** Solo corridas válidas: el scraper de ropa guarda tienda por tienda y deja la corrida 'en_curso' hasta cerrarla (ver migración estado). */
+    public function scopeCompletas($query)
+    {
+        return $query->where('estado', 'completa');
+    }
+
     public static function ultima(string $rubro = 'perfumes'): ?self
     {
-        return static::deRubro($rubro)->orderByDesc('fecha_hora')->first();
+        return static::deRubro($rubro)->completas()->orderByDesc('fecha_hora')->first();
     }
 }

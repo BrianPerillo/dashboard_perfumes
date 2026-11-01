@@ -45,7 +45,7 @@ Cualquier cambio global llama `recargarTodo()`: vacía los JSON cacheados en pro
 
 ## KPI Panel (`KpiPanel` + `kpi-panel.blade.php`)
 
-Plegable ("Indicadores"). Compara las **2 últimas corridas**: perfumes en oferta (+delta), descuento promedio (+delta en pts), descuento máximo, tiendas activas (incluye observaciones de transferencia). Muestra rango "datos desde … hasta …" (primera y última corrida).
+Plegable ("Indicadores"). Compara las **2 últimas corridas completas** (`estado = 'completa'`: una corrida de ropa `en_curso` se ignora hasta que el scraper la cierra): perfumes en oferta (+delta), descuento promedio (+delta en pts), descuento máximo, tiendas activas (incluye observaciones de transferencia). Muestra rango "datos desde … hasta …" (primera y última corrida).
 
 ## Pestañas
 
