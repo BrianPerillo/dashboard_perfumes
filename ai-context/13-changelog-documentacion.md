@@ -12,6 +12,12 @@ Formato:
 
 ---
 
+## 2026-11-01 — Spinner de carga siempre visible y configuración de rendimiento aplicada
+
+- El overlay de carga del dashboard (`livewire/dashboard.blade.php`) pasa a `position: sticky; top: 42vh` para la ruedita: aparece centrada en la pantalla aunque el usuario haya scrolleado (antes quedaba a 30vh del inicio de la card y se veía solo arriba). Verificado con Playwright (request lenta, scroll al fondo): spinner centrado en `/tabla`, `/joyas` y `/ropa/tabla`.
+- Aplicado lo pendiente de rendimiento: `innodb_buffer_pool_size=256M` en `my.ini` (sin reiniciar MySQL) y `opcache` en `php.ini` con Apache reiniciado; respaldos `*.bak-20261101`. Tiempos vía Apache: `/tabla` 1,4 → 0,25 s, `/ropa/tabla` 1,9 → 0,7 s, `/cambios` 1,5 → 0,5 s, `/joyas` 2,5 → 1,3 s.
+- Docs actualizados: 10, 11, 15.
+
 ## 2026-11-01 — Rendimiento: Destacados, Evolución, Seguir y tabla
 
 - Auditoría de velocidad (nuevo [15-rendimiento.md](15-rendimiento.md)). `/joyas` 10,9 s → 0,8 s (frecuencia/antigüedad por `producto_id` en `statsJoyas`; cards con scroll infinito de a 30: HTML 897 → 371 KB); `/seguir` 8,6 s y 4,6 MB → 0,9 s y 183 KB (búsqueda en el servidor, `buscarSeguir`); `/evolucion` y la tabla con caché por consulta + última corrida (`Dashboard::cacheado`); marcas/ml disponibles cacheados. Verificado: mismos valores que la versión anterior (415/415 nombres), suite (24 ok), auditoría de filtros de ropa contra MySQL (pasa, 63 s vs 150 s) y navegador (scroll infinito, búsqueda, sin errores nuevos).

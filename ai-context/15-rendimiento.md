@@ -12,7 +12,7 @@ Auditoría de velocidad de las pantallas del 2026-11-01 (medida con requests rea
 | `/ropa/tabla` | 1,4 s | 1,35 s → **0,48 s** | caché de total y páginas |
 | `/tabla`, `/cambios`, `/marcas`, `/distribucion`, `/tiendas` | 0,25–0,3 s | sin cambio | ya eran rápidas |
 
-(El "piso" por request vía Apache es ~0,6 s: ver "Pendiente de configuración".)
+(Tiempos medidos en proceso, sin opcache. Con opcache y buffer pool persistentes la request vía Apache baja bastante más: ver "Configuración aplicada".)
 
 ## Causas encontradas
 
@@ -30,11 +30,16 @@ Auditoría de velocidad de las pantallas del 2026-11-01 (medida con requests rea
   * Seguir: `SEGUIR_OPCIONES = 40`, `queryOpcionesSeguir()`, `buscarSeguir($texto)` (`#[Renderless]`; 2 pasos: texto y luego "tuvo rebaja"). `tab-seguir.blade.php` busca con `$wire.buscarSeguir` y pausa de 250 ms al tipear.
 * Caché: driver `file` (`CACHE_STORE`); la primera visita tras una corrida nueva paga la consulta pesada, el resto no. No hay "calentamiento" automático (pendiente, ver abajo).
 
-## Pendiente de configuración (no aplicado: requiere reiniciar servicios de XAMPP)
+## Configuración aplicada (2026-11-01)
 
-1. **MySQL**: en `C:\xampp\mysql\bin\my.ini` fijar `innodb_buffer_pool_size=256M` (hoy `16M`) para que el cambio sobreviva a reinicios. No cambiar `innodb_log_file_size` sin vaciar los logs. Reinicio con el procedimiento seguro de `11-…` (nunca arrancar MySQL dos veces).
-2. **PHP**: `opcache` está desactivado en `C:\xampp\php\php.ini` (`;zend_extension=opcache`, `;opcache.enable=1`). Activarlo (`zend_extension=opcache`, `opcache.enable=1`, `opcache.memory_consumption=128`, `opcache.max_accelerated_files=10000`) suele recortar bastante el ~0,6 s base de cada request de Laravel. Requiere reiniciar Apache. No medido todavía.
-3. **Apache**: `mod_deflate` desactivado (`#LoadModule deflate_module` en `httpd.conf`); en local no importa, en un servidor real conviene comprimir (las páginas pesan 0,2–1,3 MB).
+Respaldos junto a cada archivo: `my.ini.bak-20261101`, `php.ini.bak-20261101`.
+
+1. **MySQL** (`C:\xampp\mysql\bin\my.ini`): `innodb_buffer_pool_size=256M` (era `16M`). Ya estaba aplicado en caliente (`SET GLOBAL`); el archivo hace que **sobreviva a reinicios**. Se validó el archivo con `mysqld --print-defaults`; **no se reinició MySQL** (no hizo falta y evita el riesgo del incidente de `11-…`). No se tocó `innodb_log_file_size`.
+2. **PHP** (`C:\xampp\php\php.ini`): `zend_extension=opcache`, `opcache.enable=1`, `memory_consumption=128`, `interned_strings_buffer=8`, `max_accelerated_files=10000`, `validate_timestamps=1`, `revalidate_freq=2` (en desarrollo los cambios de código se ven a los ~2 s). Para producción conviene `validate_timestamps=0` y reiniciar Apache en cada despliegue.
+3. **Apache** reiniciado a mano (`httpd -k restart` no sirve: corre desde el panel de XAMPP, no como servicio): se detuvo el `httpd.exe` padre y se lanzó `C:\xampp\apache\bin\httpd.exe` oculto. Verificado `opcache_get_status`: activo. Si el panel de XAMPP lo muestra como detenido, usar Stop/Start desde el panel. **Siempre que se edite `php.ini` hay que reiniciar Apache**.
+4. `mod_deflate` sigue desactivado (en local no aporta; en un servidor real conviene activarlo: las páginas pesan 0,2–1,3 MB).
+
+Efecto del opcache en el tiempo de request vía Apache (mediana de 3, `curl`): `/tabla` 1,4 → 0,25 s · `/cambios` 1,5 → 0,5 s · `/ropa/tabla` 1,9 → 0,7 s · `/joyas` 2,5 → 1,3 s.
 
 ## Otras ideas (no hechas)
 

@@ -29,7 +29,7 @@ Tarjeta centrada con logo 🧴, mismo sistema de tema oscuro, `{{ $slot }}` y li
 * Estilo visual dominante: tarjetas redondeadas (`rounded-2xl`, `border`, `bg-[var(--c-card)]`), acentos `violet-500/600`, modo oscuro con fondo `#0d0f1a`.
 
 ## Interactividad
-* **Livewire**: `wire:click`, `wire:model.live.debounce.400ms`, `wire:loading` (overlay con spinner en el dashboard), `@entangle('tabActiva')`.
+* **Livewire**: `wire:click`, `wire:model.live.debounce.400ms`, `wire:loading` (overlay con spinner en el dashboard: cubre toda la card y la ruedita es `position: sticky; top: 42vh`, así que queda **siempre centrada en lo que ve el usuario**, también tras scrollear con el scroll infinito de la tabla/Destacados), `@entangle('tabActiva')`.
 * **Alpine**: estado de UI (`x-data`), `x-show`, `x-teleport` (filtros al sidebar/móvil), `x-cloak`.
 * **Eventos de ventana** usados: `charts-refresh`, `seguir-refresh`, `tab-changed`, `filter-count-changed` (dashboard ↔ layout); `toast` (Notificaciones: componente local de toasts, `tipo` + `mensaje`); `login-failed` (Login).
 * **ApexCharts** se instancian desde Alpine leyendo `$wire.<prop>Json`; siempre destruir (`_destroy(id)`) antes de recrear; colores dependen de `html.dark`.

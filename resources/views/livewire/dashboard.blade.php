@@ -142,11 +142,12 @@
 <div class="rounded-2xl border border-[var(--c-border)] bg-white dark:bg-[var(--c-card)] shadow-sm">
     <div class="p-5 relative">
 
-    {{-- Loading overlay: glass + spinner centrado en el viewport --}}
+    {{-- Loading overlay: glass cubriendo toda la card + spinner siempre centrado en lo que ve el usuario
+         (sticky: aunque se haya scrolleado hacia abajo, la ruedita acompaña al viewport mientras dure la carga) --}}
     <div wire:loading.delay
          class="absolute inset-0 z-30 rounded-2xl flex items-start justify-center pointer-events-none"
          style="background: color-mix(in srgb, var(--c-card) 80%, transparent); backdrop-filter: blur(2px);">
-        <div style="margin-top:30vh;display:flex;flex-direction:column;align-items:center;gap:14px;">
+        <div style="position:sticky;top:42vh;margin-top:30vh;display:flex;flex-direction:column;align-items:center;gap:14px;">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                  width="52" height="52"
                  style="animation:spin 1s linear infinite;flex-shrink:0;">
