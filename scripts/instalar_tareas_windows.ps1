@@ -20,6 +20,13 @@ function Nueva-Accion($bat) {
     New-ScheduledTaskAction -Execute (Join-Path $scripts $bat) -WorkingDirectory (Split-Path $scripts -Parent)
 }
 
+# Las tareas "Interactive" abren una consola en el escritorio: se lanzan a traves de ejecutar_oculto.vbs (sin ventana, espera el fin)
+function Nueva-AccionOculta($bat) {
+    $vbs = Join-Path $scripts 'ejecutar_oculto.vbs'
+    New-ScheduledTaskAction -Execute 'wscript.exe' -Argument "//B //Nologo `"$vbs`" `"$(Join-Path $scripts $bat)`"" `
+        -WorkingDirectory (Split-Path $scripts -Parent)
+}
+
 # ── 1. Scraper ───────────────────────────────────────────────────────────────
 $nombreScraper = 'descuentos_master_perfumes'
 $existente = Get-ScheduledTask -TaskName $nombreScraper -ErrorAction SilentlyContinue
@@ -50,7 +57,7 @@ if ($existente) {
 
 # ── 2. Alertas cada 3 horas (primera a las 14:00, 30 min despues del scraper) ─
 $nombreAlertas = 'alertas_perfumes'
-$accion    = Nueva-Accion 'alertas_procesar.bat'
+$accion    = Nueva-AccionOculta 'alertas_procesar.bat'
 $trigger   = New-ScheduledTaskTrigger -Once -At '14:00' -RepetitionInterval (New-TimeSpan -Hours 3) `
                 -RepetitionDuration (New-TimeSpan -Days 3650)
 $settings  = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew `
@@ -72,7 +79,7 @@ Write-Host "Tarea '$nombreAlertas' registrada (cada 3 horas, desde las 14:00) - 
 
 # ── 3. Scraper de ropa (Nike...): diario 15:00, lejos del de perfumes (13:00) ─
 $nombreRopa = 'descuentos_ropa'
-$accionRopa  = Nueva-Accion 'descuentos_ropa.bat'
+$accionRopa  = Nueva-AccionOculta 'descuentos_ropa.bat'
 $triggerRopa = New-ScheduledTaskTrigger -Daily -At '15:00'
 $settingsRopa = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew `
                   -ExecutionTimeLimit (New-TimeSpan -Hours 5) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries

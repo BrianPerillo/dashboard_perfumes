@@ -12,6 +12,11 @@ Formato:
 
 ---
 
+## 2026-11-01 — Tareas de Windows sin ventana de consola
+
+- Las tareas `alertas_perfumes` (cada 3 h) y `descuentos_ropa` (Interactive) abrían una consola negra en el escritorio. Nuevo `scripts/ejecutar_oculto.vbs` (estilo de ventana 0, espera el fin, propaga el código de salida); ambas tareas ahora ejecutan `wscript.exe //B //Nologo ejecutar_oculto.vbs <bat>` (se cambió solo la acción; límites y horarios iguales) y `instalar_tareas_windows.ps1` registra así las dos. Probado: código de salida 3 propagado, argumentos pasados y `alertas_procesar.bat --dry-run` escribiendo en `storage\logs\alertas_cron.log` sin ventana. `descuentos_master_perfumes` no se tocó (Password: no abre ventana).
+- Docs actualizados: 11.
+
 ## 2026-11-01 — Ropa: guardado tienda por tienda con estado de corrida
 
 - Nueva columna `corridas.estado` (`en_curso`/`incompleta`/`completa`, default `completa`; migración defensiva `2026_11_01_000000_add_estado_to_corridas`, aplicada). `descuentos_ropa.py` guarda cada tienda al terminarla en una corrida `en_curso` y la cierra al final (`cerrar_corrida`) según el control de calidad. Sitio y alertas leen solo corridas `completa`: `Corrida::completas()`/`ultima()`, `KpiPanel`, `Dashboard` (selector de corridas, evolución, frecuencia/primera fecha de joyas, seguir producto), `ProcesarAlertas`. Perfumes no cambia.
