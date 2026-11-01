@@ -11,10 +11,19 @@
              open: false,
              selected: @js($seguirOpciones ? collect($seguirOpciones)->firstWhere('key', $seguirProdKey)['label'] ?? '' : ''),
              opciones: @js($seguirOpciones ?? []),
-             get filtradas() {
-                 const q = this.query.toLowerCase();
-                 if (!q) return this.opciones;
-                 return this.opciones.filter(o => o.label.toLowerCase().includes(q));
+             inicial: @js($seguirOpciones ?? []),
+             buscando: false,
+             _t: null,
+             get filtradas() { return this.opciones; },
+             // La lista completa tiene miles de productos: se busca en el servidor (con pausa al tipear)
+             buscar() {
+                 clearTimeout(this._t);
+                 const q = this.query.trim();
+                 if (!q) { this.opciones = this.inicial; return; }
+                 this._t = setTimeout(() => {
+                     this.buscando = true;
+                     $wire.buscarSeguir(q).then(r => { if (q === this.query.trim()) this.opciones = r; }).finally(() => this.buscando = false);
+                 }, 250);
              },
              elegir(op) {
                  this.selected = op.label;
@@ -29,7 +38,7 @@
             <input type="text"
                    x-model="query"
                    @focus="open = true"
-                   @input="open = true"
+                   @input="open = true; buscar()"
                    :placeholder="selected || 'Buscar perfume…'"
                    class="w-full rounded-lg border border-[var(--c-border)] bg-[var(--c-input)] text-[var(--c-text)] px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-300)] placeholder:text-[var(--c-muted)]">
             <span class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--c-muted)]">
@@ -50,7 +59,8 @@
                         x-text="op.label">
                     </li>
                 </template>
-                <li x-show="filtradas.length === 0" class="px-3 py-2 text-sm text-[var(--c-muted)]">Sin resultados</li>
+                <li x-show="filtradas.length === 0 && !buscando" class="px-3 py-2 text-sm text-[var(--c-muted)]">Sin resultados</li>
+                <li x-show="buscando" class="px-3 py-2 text-sm text-[var(--c-muted)]">Buscando…</li>
             </ul>
         </div>
     </div>

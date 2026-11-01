@@ -68,6 +68,7 @@ Plegable ("Indicadores"). Compara las **2 últimas corridas completas** (`estado
 ### Joyas / Destacados (`/joyas`)
 
 * **Catálogo curado** hardcodeado en `Dashboard::CATALOGO`: ~17 marcas (Versace, Dior, Chanel, Armani, YSL, Rabanne, Carolina Herrera, Jean Paul Gaultier, Dolce & Gabbana, Calvin Klein, Hugo Boss, Montblanc, Azzaro, Givenchy, Lancôme, Issey Miyake, Bvlgari, Guerlain), cada una con `tokens` (para reconocer la marca en nombre/marca del producto) y `lineas` (nombre de línea → palabras clave que deben aparecer en el nombre del producto).
+* **Scroll infinito (2026-11-01):** solo se renderizan las primeras `JOYAS_POR_PAGINA` (30) cards (`$joyasVisibles`); `#joyas-sentinel` + `IntersectionObserver` llaman a `cargarMasJoyas()` al acercarse al final. Los KPI usan el total. Frecuencia/antigüedad: `statsJoyas()` (por `producto_id`). Ver [15-rendimiento.md](15-rendimiento.md).
 * `matchJoyas()` cruza las filas en rebaja contra el catálogo; deduplica por `producto|tienda`; aplica umbral (`joyasUmbral`, default 30%).
 * Orden: por prioridad de marca (`brandPriority`: Versace 1, YSL 2, Armani 3, Dior 4, Chanel 5, D&G 6, Hugo Boss 7, Rabanne 8, JPG 9, Givenchy 10, Montblanc 11, Carolina Herrera 12; resto 99), luego % desc descendente. **Hay una copia de este orden también en `tab-joyas.blade.php`** (`$joyasBrandOrder`): al cambiarlo, tocar ambos.
 * Enriquece cada joya con `freq_pct` (% de corridas totales donde estuvo en rebaja) y `dias_en_oferta` (días desde la primera vez en rebaja). Badges en la card: `⚠️ siempre en oferta` (≥365 días), `📌 habitualmente en oferta` (≥30), `🆕 oferta reciente` (<7), o `en oferta X% del tiempo`.
@@ -97,7 +98,7 @@ Agrupa por nombre normalizado (`LOWER(p.nombre)`) en la corrida actual; solo pro
 
 ### Seguir (`/seguir`)
 
-Selector de producto (opciones = todas las combinaciones tienda||producto que alguna vez estuvieron en rebaja) → serie histórica de precio lista, precio actual y % descuento (gráfico `chart-seguir`, evento `seguir-refresh`).
+Selector de producto con **búsqueda en el servidor** (desde 2026-11-01: se muestran las primeras 40 opciones y `buscarSeguir($texto)` busca entre todas las combinaciones que alguna vez estuvieron en rebaja; antes se enviaban ~21.000 opciones y la pantalla tardaba ~9 s) → serie histórica de precio lista, precio actual y % descuento (gráfico `chart-seguir`, evento `seguir-refresh`).
 
 ### Tiendas / Distribución / Marcas
 

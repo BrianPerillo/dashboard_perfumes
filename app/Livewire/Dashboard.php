@@ -6,6 +6,7 @@ use App\Models\Corrida;
 use App\Models\Observacion;
 use App\Models\Tienda;
 use Livewire\Component;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -70,6 +71,7 @@ class Dashboard extends Component
     public float  $joyasUmbral = 30;
     public string $joyasTiendaFiltro = '';
     public bool   $joyasOcultarFreq  = false;
+    public int    $joyasVisibles     = self::JOYAS_POR_PAGINA;   // cards renderizadas; el resto se agrega al scrollear (cargarMasJoyas)
 
     // ── Cambios entre corridas ────────────────────────────────────
     public int    $cambiosDesdeCorrida = 0;
@@ -121,6 +123,8 @@ class Dashboard extends Component
         'Bvlgari'           => ['tokens' => ['bvlgari', 'bulgari'],                'lineas' => ['Man in Black' => ['man in black'], 'Aqva' => ['aqva'], 'Omnia' => ['omnia'], 'Rose Goldea' => ['goldea', 'rose goldea'], 'Splendida' => ['splendida']]],
         'Guerlain'          => ['tokens' => ['guerlain'],                          'lineas' => ["L'Homme Idéal" => ['ideal', 'idéal'], 'Shalimar' => ['shalimar'], 'Mon Guerlain' => ['mon guerlain'], 'Insolence' => ['insolence'], 'La Petite Robe Noire' => ['petite robe'], 'Aqua Allegoria' => ['aqua allegoria']]],
     ];
+
+    public const JOYAS_POR_PAGINA = 30;
 
     // ─────────────────────────────────────────────────────────────
     public function mount(string $activeTab = 'joyas', string $rubro = 'perfumes'): void
@@ -364,8 +368,11 @@ class Dashboard extends Component
             ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
             ->groupBy('o.corrida_id', 'c.fecha_hora')
             ->orderBy('c.fecha_hora')
-            ->selectRaw('c.fecha_hora, COUNT(*) AS total, AVG(o.descuento_pct) AS desc_prom, MAX(o.descuento_pct) AS desc_max, SUM(o.ahorro) AS ahorro_total, COUNT(DISTINCT p.tienda_id) AS tiendas_n')
-            ->get();
+            ->selectRaw('c.fecha_hora, COUNT(*) AS total, AVG(o.descuento_pct) AS desc_prom, MAX(o.descuento_pct) AS desc_max, SUM(o.ahorro) AS ahorro_total, COUNT(DISTINCT p.tienda_id) AS tiendas_n');
+
+        // Recorre todo el historial (~4 s): se cachea por filtros y última corrida (una corrida nueva cambia la clave)
+        $rows = Cache::remember('evolucion:' . md5($rows->toSql() . json_encode($rows->getBindings()) . (Corrida::ultima($this->rubro)?->id ?? 0)), 21600, fn() => $rows->get()->all());
+        $rows = collect($rows);
 
         $this->serieEvolucionJson = $rows->map(fn($r) => [
             'fecha'         => Carbon::parse($r->fecha_hora)->format('d/m H:i'),
@@ -449,12 +456,11 @@ class Dashboard extends Component
         $this->tablaPagina = 1;
         $q = $this->buildTablaQuery();
 
-        $this->tablaTotalCount = DB::query()->fromSub(clone $q, 'x')->count();
+        $total = DB::query()->fromSub(clone $q, 'x');
+        $this->tablaTotalCount = $this->cacheado($total, 'tabla-n', fn() => $total->count());
 
-        $rows = (clone $q)
-            ->limit(self::TABLA_POR_PAGINA)
-            ->offset(0)
-            ->get();
+        $pagina = (clone $q)->limit(self::TABLA_POR_PAGINA)->offset(0);
+        $rows = collect($this->cacheado($pagina, 'tabla-p', fn() => $pagina->get()->all()));
 
         $mapped = $rows->map(fn($r) => $this->mapTablaRow($r))->toArray();
         $this->tablaDatosJson = json_encode($mapped);
@@ -468,15 +474,23 @@ class Dashboard extends Component
         $this->tablaPagina++;
         $offset = ($this->tablaPagina - 1) * self::TABLA_POR_PAGINA;
 
-        $rows = $this->buildTablaQuery()
-            ->limit(self::TABLA_POR_PAGINA)
-            ->offset($offset)
-            ->get();
+        $pagina = $this->buildTablaQuery()->limit(self::TABLA_POR_PAGINA)->offset($offset);
+        $rows = collect($this->cacheado($pagina, 'tabla-p', fn() => $pagina->get()->all()));
 
         $mapped    = $rows->map(fn($r) => $this->mapTablaRow($r))->toArray();
         $existente = json_decode($this->tablaDatosJson, true) ?? [];
         $this->tablaDatosJson = json_encode(array_merge($existente, $mapped));
         $this->tablaTieneMas  = count($mapped) >= self::TABLA_POR_PAGINA;
+    }
+
+    /**
+     * Cachea el resultado de una consulta pesada por (SQL + parámetros + última corrida completa): los filtros ya forman parte
+     * del SQL y una corrida nueva cambia la clave, así que nunca se sirven datos viejos. TTL 6 h solo para limpiar.
+     */
+    private function cacheado($query, string $tipo, \Closure $fn)
+    {
+        $clave = "q:{$tipo}:{$this->rubro}:" . md5($query->toSql() . json_encode($query->getBindings()) . (Corrida::ultima($this->rubro)?->id ?? 0));
+        return Cache::remember($clave, 21600, $fn);
     }
 
     private function buildTablaQuery(): \Illuminate\Database\Query\Builder
@@ -618,37 +632,15 @@ class Dashboard extends Component
         $matched = $this->matchJoyas($rows, $this->joyasUmbral);
 
         // Frecuencia y antigüedad dentro de la ventana visible (ayer → hoy)
-        $totalCorridas = DB::table('corridas')->where('rubro', $this->rubro)->where('estado', 'completa')->count();
+        $corridaFechas = DB::table('corridas')->where('rubro', $this->rubro)->where('estado', 'completa')->pluck('fecha_hora', 'id');
+        $totalCorridas = $corridaFechas->count();
         if ($totalCorridas > 0 && !empty($matched)) {
             $prodNombres = array_unique(array_map(fn($j) => mb_strtolower($j['producto']), $matched));
-
-            $freqData = DB::table('observaciones as o')
-                ->join('productos as p', 'p.id', '=', 'o.producto_id')
-                ->whereIn(DB::raw('LOWER(p.nombre)'), $prodNombres)
-                ->whereIn('o.corrida_id', DB::table('corridas')->where('estado', 'completa')->select('id'))
-                ->where('o.tipo_descuento', 'rebaja')
-                ->tap(fn($q) => Observacion::filtrarFuentesValidas($q, 'o.fuente'))
-                ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
-                ->selectRaw('LOWER(p.nombre) AS pnorm, COUNT(DISTINCT o.corrida_id) AS cnt')
-                ->groupBy('pnorm')
-                ->pluck('cnt', 'pnorm')
-                ->toArray();
-
-            $primerFechaData = DB::table('observaciones as o')
-                ->join('productos as p', 'p.id', '=', 'o.producto_id')
-                ->join('corridas as c', 'c.id', '=', 'o.corrida_id')
-                ->where('c.estado', 'completa')
-                ->whereIn(DB::raw('LOWER(p.nombre)'), $prodNombres)
-                ->where('o.tipo_descuento', 'rebaja')
-                ->tap(fn($q) => Observacion::filtrarFuentesValidas($q, 'o.fuente'))
-                ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
-                ->selectRaw('LOWER(p.nombre) AS pnorm, MIN(c.fecha_hora) AS primera_fecha')
-                ->groupBy('pnorm')
-                ->pluck('primera_fecha', 'pnorm')
-                ->toArray();
+            [$freqData, $primeraCorrida] = $this->statsJoyas($prodNombres, $corridaFechas->keys()->all());
+            $primerFechaData = array_map(fn($id) => $corridaFechas[$id] ?? null, $primeraCorrida);
 
             foreach ($matched as &$item) {
-                $pnorm = mb_strtolower($item['producto']);
+                $pnorm = $this->claveNombre($item['producto']);
                 $cnt = $freqData[$pnorm] ?? 0;
                 $item['freq_pct'] = (int) round($cnt / $totalCorridas * 100);
                 $primeraFecha = $primerFechaData[$pnorm] ?? null;
@@ -663,7 +655,59 @@ class Dashboard extends Component
             }
         }
 
+        $this->joyasVisibles = self::JOYAS_POR_PAGINA;
         $this->joyasJson = json_encode(array_values($matched));
+    }
+
+    /** Scroll infinito de Destacados: agrega otra tanda de cards (la vista renderiza solo las primeras $joyasVisibles). */
+    public function cargarMasJoyas(): void
+    {
+        $this->joyasVisibles += self::JOYAS_POR_PAGINA;
+    }
+
+    /**
+     * En cuántas corridas completas apareció en rebaja cada producto (por nombre, entre tiendas) y en cuál fue la primera.
+     * Se consulta por producto_id (índice idx_obs_producto): la versión anterior filtraba LOWER(p.nombre) y recorría toda
+     * la tabla de observaciones (~5 s por consulta). Devuelve [clave => nº de corridas, clave => id de la primera corrida];
+     * la clave es claveNombre() (sin mayúsculas ni acentos: "Rosé" y "rose" son el mismo producto, como en la colación de MySQL).
+     */
+    private function statsJoyas(array $nombres, array $corridaIds): array
+    {
+        $prods = DB::table('productos as p')
+            ->whereIn(DB::raw('LOWER(p.nombre)'), $nombres)
+            ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
+            ->pluck('p.nombre', 'p.id');
+        if ($prods->isEmpty() || empty($corridaIds)) {
+            return [[], []];
+        }
+
+        $corridasPorClave = [];
+        foreach ($prods->keys()->chunk(1000) as $chunk) {
+            $pares = DB::table('observaciones as o')
+                ->whereIn('o.producto_id', $chunk->all())
+                ->whereIn('o.corrida_id', $corridaIds)
+                ->where('o.tipo_descuento', 'rebaja')
+                ->tap(fn($q) => Observacion::filtrarFuentesValidas($q, 'o.fuente'))
+                ->select('o.producto_id', 'o.corrida_id')
+                ->distinct()
+                ->get();
+            foreach ($pares as $r) {
+                $corridasPorClave[$this->claveNombre($prods[$r->producto_id])][$r->corrida_id] = true;
+            }
+        }
+
+        $freq = [];
+        $primera = [];
+        foreach ($corridasPorClave as $clave => $ids) {
+            $freq[$clave] = count($ids);
+            $primera[$clave] = min(array_keys($ids));
+        }
+        return [$freq, $primera];
+    }
+
+    private function claveNombre(?string $nombre): string
+    {
+        return \Illuminate\Support\Str::ascii(mb_strtolower(trim((string) $nombre)));
     }
 
     private function cargarConclusiones(): void
@@ -1037,31 +1081,66 @@ class Dashboard extends Component
         return $this->rubro !== config('rubros.default') && $c !== '' ? $r->producto . ' · ' . $c : $r->producto;
     }
 
-    private function cargarSeguirOpciones(): void
+    /**
+     * Opciones del selector "Seguir producto". Antes se enviaban TODOS los productos con alguna rebaja (~21.000: 8 s de SQL y
+     * ~4,6 MB de HTML/snapshot); ahora solo las primeras SEGUIR_OPCIONES y el resto se busca en el servidor (buscarSeguir).
+     */
+    public const SEGUIR_OPCIONES = 40;
+
+    /** Productos que tuvieron alguna rebaja y cumplen los filtros actuales (tiendas, género, ropa, búsqueda); opcionalmente filtrados por texto. */
+    private function queryOpcionesSeguir(string $texto = '', bool $exigirRebaja = true): \Illuminate\Database\Query\Builder
     {
         $tiendaIds = $this->tiendaIds();
+        $etiqueta = $this->etiquetaProducto();
 
-        $rows = DB::table('productos as p')
+        return DB::table('productos as p')
             ->join('tiendas as t', 't.id', '=', 'p.tienda_id')
-            ->join('observaciones as o', 'o.producto_id', '=', 'p.id')
-            ->where('o.tipo_descuento', 'rebaja')
-            ->tap(fn($q) => Observacion::filtrarFuentesValidas($q, 'o.fuente'))
+            ->when($exigirRebaja, fn($q) => $q->whereExists(fn($sub) => $sub->select(DB::raw(1))->from('observaciones as o')
+                ->whereColumn('o.producto_id', 'p.id')
+                ->where('o.tipo_descuento', 'rebaja')
+                ->tap(fn($q2) => Observacion::filtrarFuentesValidas($q2, 'o.fuente'))))
             ->when(!empty($tiendaIds), fn($q) => $q->whereIn('p.tienda_id', $tiendaIds))
             ->when(count($this->generosSeleccionados) < count($this->generosDisponibles), fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
             ->tap(fn($q) => $this->filtrosRopa($q))
             ->tap(fn($q) => $this->filtrosBusqueda($q))
             ->when(!empty(self::MARCAS_EXCLUIDAS), fn($q) => $q->where(fn($q2) => $q2->whereNull('p.marca')->orWhereNotIn(DB::raw('LOWER(p.marca)'), self::MARCAS_EXCLUIDAS)))
-            ->selectRaw($this->claveProducto() . ' AS pk, ' . $this->etiquetaProducto() . ' AS etiqueta')
-            ->groupBy('pk', 'etiqueta')
+            ->when($texto !== '', fn($q) => $q->whereRaw("$etiqueta LIKE ?", ['%' . addcslashes($texto, '%_\\') . '%']))
+            ->selectRaw('p.id AS pid, ' . $this->claveProducto() . ' AS pk, ' . $etiqueta . ' AS etiqueta')
             ->orderBy('p.nombre')
-            ->get();
+            ->limit(self::SEGUIR_OPCIONES);
+    }
 
-        $this->seguirOpciones = $rows->map(fn($r) => ['key' => $r->pk, 'label' => $r->etiqueta])->toArray();
+    private function cargarSeguirOpciones(): void
+    {
+        // Primeras opciones (sin texto): se cachean por filtros y última corrida; recorrer ~24.000 productos con EXISTS cuesta ~0,8 s
+        $q = $this->queryOpcionesSeguir();
+        $this->seguirOpciones = Cache::remember('seguir:' . md5($q->toSql() . json_encode($q->getBindings()) . (Corrida::ultima($this->rubro)?->id ?? 0)), 21600,
+            fn() => $q->get()->map(fn($r) => ['key' => $r->pk, 'label' => $r->etiqueta])->toArray());
 
         if (!$this->seguirProdKey && !empty($this->seguirOpciones)) {
             $this->seguirProdKey = $this->seguirOpciones[0]['key'];
         }
         $this->cargarSeguir();
+    }
+
+    /** Búsqueda del selector "Seguir producto" (la llama Alpine con $wire.buscarSeguir). No re-renderiza el componente. */
+    #[\Livewire\Attributes\Renderless]
+    public function buscarSeguir(string $texto): array
+    {
+        // Dos pasos: primero el texto (barato), después cuáles de esos tuvieron rebaja (idx_obs_producto). Evita evaluar el
+        // EXISTS sobre los ~24.000 productos (~0,7 s por tecla).
+        $candidatos = $this->queryOpcionesSeguir(trim(mb_substr($texto, 0, 80)), false)->limit(400)->get();
+        if ($candidatos->isEmpty()) {
+            return [];
+        }
+        $conRebaja = DB::table('observaciones as o')
+            ->whereIn('o.producto_id', $candidatos->pluck('pid')->all())
+            ->where('o.tipo_descuento', 'rebaja')
+            ->tap(fn($q) => Observacion::filtrarFuentesValidas($q, 'o.fuente'))
+            ->distinct()->pluck('o.producto_id')->flip();
+
+        return $candidatos->filter(fn($r) => $conRebaja->has($r->pid))->take(self::SEGUIR_OPCIONES)
+            ->map(fn($r) => ['key' => $r->pk, 'label' => $r->etiqueta])->values()->all();
     }
 
     private function cargarSeguir(): void
@@ -1627,7 +1706,7 @@ class Dashboard extends Component
 
     private function cargarMarcasDisponibles(): void
     {
-        $this->marcasDisponibles = DB::table('productos')
+        $this->marcasDisponibles = Cache::remember($this->claveDisponibles('marcas'), 3600, fn() => DB::table('productos')
             ->whereIn('tienda_id', array_keys($this->tiendas))
             ->whereNotNull('marca')
             ->where('marca', '!=', '')
@@ -1635,12 +1714,18 @@ class Dashboard extends Component
             ->distinct()
             ->orderBy('marca')
             ->pluck('marca')
-            ->toArray();
+            ->toArray());
+    }
+
+    /** Clave de caché de los listados de marcas/ml: tiendas del rubro + última corrida (si hay corrida nueva, se recalculan). */
+    private function claveDisponibles(string $que): string
+    {
+        return "disp:{$que}:{$this->rubro}:" . (Corrida::ultima($this->rubro)?->id ?? 0);
     }
 
     private function cargarMlDisponibles(): void
     {
-        $this->mlDisponibles = DB::table('productos')
+        $this->mlDisponibles = Cache::remember($this->claveDisponibles('ml'), 3600, fn() => DB::table('productos')
             ->whereIn('tienda_id', array_keys($this->tiendas))
             ->whereNotNull('tamano_ml')
             ->where('tamano_ml', '>', 0)
@@ -1648,7 +1733,7 @@ class Dashboard extends Component
             ->orderBy('tamano_ml')
             ->pluck('tamano_ml')
             ->map(fn($v) => (int) $v)
-            ->toArray();
+            ->toArray());
     }
 
     // ─────────────────────────────────────────────────────────────

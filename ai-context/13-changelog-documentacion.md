@@ -12,6 +12,12 @@ Formato:
 
 ---
 
+## 2026-11-01 — Rendimiento: Destacados, Evolución, Seguir y tabla
+
+- Auditoría de velocidad (nuevo [15-rendimiento.md](15-rendimiento.md)). `/joyas` 10,9 s → 0,8 s (frecuencia/antigüedad por `producto_id` en `statsJoyas`; cards con scroll infinito de a 30: HTML 897 → 371 KB); `/seguir` 8,6 s y 4,6 MB → 0,9 s y 183 KB (búsqueda en el servidor, `buscarSeguir`); `/evolucion` y la tabla con caché por consulta + última corrida (`Dashboard::cacheado`); marcas/ml disponibles cacheados. Verificado: mismos valores que la versión anterior (415/415 nombres), suite (24 ok), auditoría de filtros de ropa contra MySQL (pasa, 63 s vs 150 s) y navegador (scroll infinito, búsqueda, sin errores nuevos).
+- Causa de fondo: `innodb_buffer_pool_size` de 16 MB; subido en caliente a 256 MB (no persistente). **Pendiente (requiere reiniciar servicios):** fijarlo en `my.ini` y activar opcache.
+- Docs actualizados: 05, 11, 15 (nuevo) y README.
+
 ## 2026-11-01 — Tareas de Windows sin ventana de consola
 
 - Las tareas `alertas_perfumes` (cada 3 h) y `descuentos_ropa` (Interactive) abrían una consola negra en el escritorio. Nuevo `scripts/ejecutar_oculto.vbs` (estilo de ventana 0, espera el fin, propaga el código de salida); ambas tareas ahora ejecutan `wscript.exe //B //Nologo ejecutar_oculto.vbs <bat>` (se cambió solo la acción; límites y horarios iguales) y `instalar_tareas_windows.ps1` registra así las dos. Probado: código de salida 3 propagado, argumentos pasados y `alertas_procesar.bat --dry-run` escribiendo en `storage\logs\alertas_cron.log` sin ventana. `descuentos_master_perfumes` no se tocó (Password: no abre ventana).

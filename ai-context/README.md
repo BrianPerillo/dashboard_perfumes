@@ -34,6 +34,7 @@ Esta carpeta es la **fuente de verdad** sobre cómo funciona *Descuentos Perfume
 | [11-entorno-config-despliegue.md](11-entorno-config-despliegue.md) | Setup, variables de entorno, comandos, programación de tareas, producción |
 | [12-problemas-conocidos-y-pendientes.md](12-problemas-conocidos-y-pendientes.md) | Bugs, deuda técnica, ideas pendientes |
 | [13-changelog-documentacion.md](13-changelog-documentacion.md) | Registro cronológico de cambios al sistema/documentación |
+| [15-rendimiento.md](15-rendimiento.md) | Auditoría de velocidad (2026-11-01): cuellos de botella, caché, scroll infinito en Destacados, búsqueda en Seguir, pendientes de configuración (buffer pool, opcache) |
 | [14-multirubro.md](14-multirubro.md) | Arquitectura multi-rubro (perfumes, ropa…): config, datos, rutas, selector, cómo sumar un rubro |
 | [ropa-01-scraper-nike.md](ropa-01-scraper-nike.md) | Scraper de ropa: cómo es Nike Argentina, cómo se lee, uso, límites |
 | [ropa-02-tiendas-y-plataformas.md](ropa-02-tiendas-y-plataformas.md) | Tiendas de ropa: plataforma de cada sitio, adaptadores `vtex_io`/`vtex_api` (Levi's, Topper), bloqueos (Lacoste/Adidas) |

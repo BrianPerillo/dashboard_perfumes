@@ -76,6 +76,9 @@ Estado verificado el 2026-10-29: `alertas_perfumes` creada (modo Interactive, pr
 
 `ARQUITECTURA.md` (jun-2026, parcialmente desactualizado: describe verificación por link firmado, no por código), `notificaciones.md` (setup Gmail/Telegram/cron — sigue vigente), `mercadopago.md` (guía MP), `Mejoras.md` (ideas/bugs pendientes), `Cambios_Realizar_Antes_Subir_Produccion.md` (checklist), `descuentos_master_cambios.md` (changelog del scraper). **La fuente de verdad es ahora `ai-context/`**; si hay contradicción, manda `ai-context/` (y el código).
 
+## Rendimiento de MySQL/PHP/Apache (2026-11-01)
+`innodb_buffer_pool_size` estaba en 16 MB (default de XAMPP) y los datos+índices de scraping suman ~76 MB; se subió **en caliente** a 256 MB (`SET GLOBAL`, se pierde al reiniciar MySQL). Para que persista hay que editar `C:\xampp\mysql\bin\my.ini`; además `opcache` de PHP está desactivado. Detalle, medidas y pasos en [15-rendimiento.md](15-rendimiento.md). La caché de la app usa el driver `file` (`storage/framework/cache`).
+
 ## Scraper de ropa y su tarea
 `scripts/descuentos_ropa.bat` ejecuta `python descuentos_ropa.py` (log `logs_ropa.txt`). Guardado en MySQL **validado** y, desde 2026-11-01, **tienda por tienda** en una corrida `en_curso` que se publica (`completa`) al final (ver [ropa-02](ropa-02-tiendas-y-plataformas.md)). La tarea `descuentos_ropa` (diaria 15:00, modo Interactive, **límite 5 h** desde el 2026-10-30: con 8 tiendas la corrida dura ~2,5 h y con el límite anterior de 2 h Windows la habría cortado antes de guardar) está **registrada desde el 2026-10-29** (`scripts/instalar_tareas_windows.ps1`, con autorización del usuario); lanza `scripts\descuentos_ropa.bat`, log en `logs_ropa.txt`. Detalle: [ropa-01-scraper-nike.md](ropa-01-scraper-nike.md).
 

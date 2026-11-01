@@ -18,7 +18,21 @@
         box-shadow: 0 6px 22px rgba(0,0,0,0.55);
     }
 </style>
-<div x-show="tab==='joyas'" x-cloak>
+<div x-show="tab==='joyas'" x-cloak
+     x-data="{ _cargando: false }"
+     x-init="
+         $nextTick(() => {
+             const tryLoad = () => {
+                 const s = document.getElementById('joyas-sentinel');
+                 if (this._cargando || !s || s.dataset.mas !== '1' || s.getBoundingClientRect().top > window.innerHeight + 300) return;
+                 this._cargando = true;
+                 $wire.cargarMasJoyas().then(() => { this._cargando = false; $nextTick(tryLoad); });
+             };
+             const sentinel = document.getElementById('joyas-sentinel');
+             if (sentinel) new IntersectionObserver((e) => { if (e[0].isIntersecting && tab === 'joyas') tryLoad(); }, { rootMargin: '300px' }).observe(sentinel);
+             window.addEventListener('scroll', () => { if (tab === 'joyas') tryLoad(); }, { passive: true });
+         });
+     ">
     @php
         $joyas = json_decode($joyasJson, true) ?? [];
         $marcasConJoyas = collect($joyas)->groupBy('marca');
@@ -27,6 +41,10 @@
             'Chanel'=>5,'Dolce & Gabbana'=>6,'Hugo Boss'=>7,'Rabanne'=>8,
             'Jean Paul Gaultier'=>9,'Givenchy'=>10,'Montblanc'=>11,'Carolina Herrera'=>12,
         ];
+        // Orden de display (marca por prioridad, mayor descuento primero); solo se renderizan las primeras $joyasVisibles
+        $joyasOrden   = $marcasConJoyas->sortBy(fn($g, $m) => $joyasBrandOrder[$m] ?? 99)->flatMap(fn($g) => $g->sortByDesc('descuento_pct')->values());
+        $joyasHayMas  = $joyasOrden->count() > $joyasVisibles;
+        $joyasGrupos  = $joyasOrden->take($joyasVisibles)->groupBy('marca');
     @endphp
 
     @if(empty($joyas))
@@ -51,14 +69,14 @@
         </div>
 
         {{-- Cards por marca --}}
-        @foreach($marcasConJoyas->sortBy(fn($g, $m) => $joyasBrandOrder[$m] ?? 99) as $marca => $items)
+        @foreach($joyasGrupos as $marca => $items)
         <div class="mb-6">
             <h3 class="text-base font-bold text-violet-500 dark:text-violet-300 mb-3 flex items-center gap-2">
                 <span class="inline-block w-1 h-5 rounded-full bg-[var(--color-primary-600)]"></span>
                 {{ $marca }}
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                @foreach($items->sortByDesc('descuento_pct') as $j)
+                @foreach($items as $j)
                 @php
                     $pct  = $j['descuento_pct'];
                     $freq = $j['freq_pct'] ?? 0;
@@ -107,5 +125,9 @@
             </div>
         </div>
         @endforeach
+        {{-- Scroll infinito: al acercarse al final se pide otra tanda de cards --}}
+        <div id="joyas-sentinel" data-mas="{{ $joyasHayMas ? '1' : '0' }}" class="py-4 text-center text-xs text-[var(--c-muted)]" aria-hidden="true">
+            @if($joyasHayMas)Cargando más ofertas…@endif
+        </div>
     @endif
 </div>
