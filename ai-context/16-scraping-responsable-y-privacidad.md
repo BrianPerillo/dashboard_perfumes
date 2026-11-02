@@ -32,7 +32,7 @@ Ritmo total de la corrida de ropa: ~3 h estimadas (límite de la tarea: 5 h). La
 ## `robots.txt` (revisión 2026-11-02)
 
 Se leyó el `robots.txt` de cada sitio (un pedido) y se comprobó que las rutas que pedimos estén permitidas:
-* **Permitido** en todas las perfumerías y en Levi's, Topper, Tascani, Kevingston, Dexter, Prototype, Puma, Catriel, Mistral, Stone, Cueros Mi Campo, Devre, Moov, Briganti, Columbia y Brooksfield. Ninguno declara `Crawl-delay`.
+* **Permitido** en todas las perfumerías y en Levi's, Topper, Tascani, Kevingston, Dexter, Prototype, Puma, Catriel, Mistral, Stone, Cueros Mi Campo, Old Bridge (2026-11-02), Devre, Moov, Briganti, Columbia y Brooksfield. Ninguno declara `Crawl-delay`.
 * **Wrangler: `User-agent: *  Disallow: /`** (solo Googlebot permitido) → **desactivada** (`"activo": False` en `SITES`). Reactivar solo con autorización del sitio.
 * Nike: `robots.txt` devuelve 403 a una petición simple (Cloudflare); se lee con navegador real y pausas largas, sin evasión.
 

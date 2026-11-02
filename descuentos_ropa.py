@@ -150,6 +150,12 @@ SITES.append({
     "name": "cuerosmicampo", "platform": "tiendanube", "host": "www.cuerosmicampo.com.ar", "marca": "Cueros Mi Campo", "pag_max": 30,
     "secciones": {"descuento": [{"path": "/productos/", "genero": "unisex", "categoria": "ropa", "etiqueta": "catalogo"}]},
 })
+# Old Bridge (agregada el 2026-11-02): Tiendanube, ropa de hombre. "/sale/" es una campaña temporal (CYBEROLD), asi que se
+# lee el catalogo completo: el descuento sale del precio anterior/promocional de cada variante.
+SITES.append({
+    "name": "oldbridge", "platform": "tiendanube", "host": "www.oldbridge.com.ar", "marca": "Old Bridge", "pag_max": 60,
+    "secciones": {"descuento": [{"path": "/productos/", "genero": "hombre", "categoria": "ropa", "etiqueta": "catalogo"}]},
+})
 # Devre: Magento 2 (HTML del servidor; cada tarjeta trae el JSON de sus talles y precios). Ropa de hombre.
 SITES.append({
     "name": "devre", "platform": "magento", "host": "www.devre.la", "marca": "Devré", "pag_max": 60,
@@ -1397,7 +1403,7 @@ _TIPOS = [
     (r"\bzuecos?\b", "Zuecos", "calzado"),
     (r"zapatill|\bzapatos?\b|borcego|mocasin|\bcalzado\b|footwear", "Zapatillas", "calzado"),
     (r"traje de ba|short de ba|malla|bikini|\bbaño\b", "Traje de baño", "ropa"),
-    (r"\bjeans?\b", "Jean", "ropa"),
+    (r"\bjeans?\b|\bdenim\b", "Jean", "ropa"),
     (r"jogg", "Jogging", "ropa"),
     (r"\bcalzas?\b|leggin", "Calza", "ropa"),
     (r"short|bermuda", "Short / Bermuda", "ropa"),
@@ -1415,7 +1421,7 @@ _TIPOS = [
     (r"vestido", "Vestido", "ropa"),
     (r"pollera|falda", "Pollera", "ropa"),
     (r"conjunto|\bambo\b|pijama|\btraje\b", "Conjunto", "ropa"),
-    (r"\bmedias?\b|soquete", "Medias", "ropa"),
+    (r"\bmedias?\b|soquete|\bsocks?\b", "Medias", "ropa"),
     (r"boxer|bóxer|\bslip\b|ropa interior|calzoncillo", "Ropa interior", "ropa"),
     (r"gorra|gorro|beanie|piluso|vincha|sombrero|\bcap\b", "Gorras y gorros", "accesorios"),
     (r"mochila|bolso|bolsa|riñonera|rinonera|bandolera|valija|matera|necesser|neceser|totebag|canasta|morral", "Mochilas y bolsos", "accesorios"),

@@ -12,6 +12,13 @@ Formato:
 
 ---
 
+## 2026-11-02 — Ropa: Old Bridge (Tiendanube)
+
+- `descuentos_ropa.py`: nueva entrada `oldbridge` en `SITES` (adaptador `tiendanube` existente, catálogo `/productos/`, género `hombre`, `pag_max` 60) y dos patrones de `_TIPOS` (`denim` → Jean; `sock(s)` → Medias).
+- Prueba y carga: `--solo oldbridge --fecha 2026-11-01T16:31:46` → 293 productos (56 con descuento, 293 con foto) dentro de la corrida visible #173 (total 16.757 → 17.050), sin tocar el resto de las tiendas. En Cambios figura como tienda nueva frente a la corrida anterior.
+- `robots.txt` revisado (permite el catálogo); ritmo de Tiendanube (2,5–4,5 s por página, ~26 pedidos).
+- Docs actualizados: ropa-02, 03, 12, 16.
+
 ## 2026-11-02 — Juleriaque/Parfumerie: diagnóstico corregido, reintento y `--fecha` en el scraper de perfumes
 
 - **Diagnóstico**: Juleriaque nunca dejó de traer datos; Parfumerie dio 0 una sola vez (corrida #176, 2026-11-01 20:24) y por eso no figuraba en el snapshot visible. El A16 inicial ("devuelven 0") era erróneo y se corrigió.

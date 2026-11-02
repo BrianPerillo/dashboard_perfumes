@@ -85,6 +85,7 @@ Ver [11-entorno-config-despliegue.md](11-entorno-config-despliegue.md) y `Cambio
 
 ## Tiendas de ropa: estado (2026-10-30)
 - **Lacoste y Adidas bloqueadas por Akamai (403)**: no se sortea el bloqueo; requiere decisión del usuario (autorización/feed/afiliados). Adidas ya entra vía Dexter. Detalle en [ropa-02](ropa-02-tiendas-y-plataformas.md).
+- **Old Bridge (2026-11-02)**: agregada (Tiendanube, hombre; 293 productos/56 con descuento) y cargada en la corrida #173; **su primera corrida programada (ropa 15:00) aún no observada**.
 - **Tiendas nuevas (2026-11-01)**: Tascani, Catriel, Mistral, Stone, Cueros Mi Campo y Devre agregadas (probadas por tienda y con guardado de prueba; **primera corrida programada completa con ellas aún no observada**). Brooksfield queda desactivada (sin ofertas hoy; lectura de ofertas no verificada).
 - **Wrangler desactivada** (robots.txt `Disallow: /`, 2026-11-02). Briganti: `/products.json` responde 429 a las pruebas repetidas; la primera carga de hoy se reintenta aparte (ver estado en el changelog).
 - Corrida de ropa ~36 min más larga con las tiendas nuevas (ver ropa-02). **Moov** (1.606 productos) y **Briganti** (3.355) se suman a las anteriores; Briganti es la tienda más grande de ropa. Columbia desactivada (el descuento es de colección, no hay precio de lista en el JSON). **Moov sin talles** (pendiente: leerlos de la ficha ≈ 1 h por corrida, o solo de los productos con más descuento).
