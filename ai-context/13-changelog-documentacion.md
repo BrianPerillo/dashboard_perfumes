@@ -12,6 +12,14 @@ Formato:
 
 ---
 
+## 2026-11-01 — Fotos de perfumes (scraper + UI)
+
+- `descuentos_master.py` captura `Item.imagen` en VTEX, Unishop, Tiendanube y el motor HTML (helper `_url_imagen`: https, URL absoluta, sin `data:`; VTEX a 400 px, Tiendanube ≤ 640 px) y la guarda en `productos.imagen` con `COALESCE(VALUES(imagen), imagen)` (una corrida sin foto no borra la que ya hay).
+- Nuevo flag `--rellenar-imagenes`: parche único (sin corrida, observaciones ni Excel) que completa fotos vacías en VTEX/Unishop/Tiendanube por HTTP. Ya se ejecutó acotado sobre la base real (Ambrosia, Fiorani, GetTheLook y Unishop: ~2.300 productos); el resto se completa en la corrida diaria de las 13:00.
+- Destacados muestra la foto en cada card (72×72, `loading="lazy"`, ícono del rubro si falta); las URL se piden solo para las cards visibles (`Dashboard::imagenesProductos`, una consulta por clave primaria). La tabla de perfumes y Comparar muestran la miniatura (`object-contain` sobre blanco). Los mails de alerta ya incluían la foto.
+- Pendiente (A16 en `12`): Juleriaque y Parfumerie devuelven 0 productos (sin foto hasta arreglar el scraper).
+- Docs actualizados: 03, 05, 12, scraper-01, scraper-02, scraper-03.
+
 ## 2026-11-01 — Spinner de carga siempre visible y configuración de rendimiento aplicada
 
 - El overlay de carga del dashboard (`livewire/dashboard.blade.php`) pasa a `position: sticky; top: 42vh` para la ruedita: aparece centrada en la pantalla aunque el usuario haya scrolleado (antes quedaba a 30vh del inicio de la card y se veía solo arriba). Verificado con Playwright (request lenta, scroll al fondo): spinner centrado en `/tabla`, `/joyas` y `/ropa/tabla`.

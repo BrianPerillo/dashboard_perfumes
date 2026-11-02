@@ -56,6 +56,7 @@ python descuentos_master.py --headful               # muestra el navegador (debu
 | `--force-db` | off | Guarda en MySQL aun con `--solo` o con corrida incompleta. |
 | `--umbral-tiendas` | `0.70` | Fraccion minima de tiendas con datos para considerar completa la corrida (`UMBRAL_TIENDAS_OK`, linea 508). |
 | `--sin-chequeo-red` | off | No esperar conectividad al inicio. |
+| `--rellenar-imagenes` | off | (2026-11-01) Solo completa `productos.imagen` vacía leyendo los catálogos **VTEX / Unishop / Tiendanube** (HTTP, sin navegador): no crea corrida, observaciones ni Excel. Se combina con `--solo`. Útil una vez tras agregar las fotos (los sitios HTML las traen solos en la próxima corrida normal). Mismo tráfico que la parte HTTP de una corrida (~10 min para todas las tiendas). |
 
 ### 2.3 Codigos de salida
 

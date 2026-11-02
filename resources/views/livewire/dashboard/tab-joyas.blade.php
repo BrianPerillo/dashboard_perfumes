@@ -45,6 +45,8 @@
         $joyasOrden   = $marcasConJoyas->sortBy(fn($g, $m) => $joyasBrandOrder[$m] ?? 99)->flatMap(fn($g) => $g->sortByDesc('descuento_pct')->values());
         $joyasHayMas  = $joyasOrden->count() > $joyasVisibles;
         $joyasGrupos  = $joyasOrden->take($joyasVisibles)->groupBy('marca');
+        // fotos solo de las cards visibles (una consulta por PK)
+        $joyasFotos   = $this->imagenesProductos($joyasGrupos->flatten(1)->pluck('pid')->all());
     @endphp
 
     @if(empty($joyas))
@@ -103,12 +105,27 @@
                 @endphp
                 <div class="joya-card rounded-xl border border-[var(--c-border)] p-4 bg-[var(--c-card)]"
                      style="border-left: 4px solid {{ $borderColor }}">
-                    <div class="flex justify-between items-start gap-2">
-                        <span class="font-bold text-[var(--c-text)] text-sm leading-tight">{{ $tier }} {{ $j['linea'] }}</span>
-                        <span class="text-lg font-extrabold shrink-0" style="color:{{ $borderColor }}">{{ $pct }}%</span>
+                    @php $foto = $joyasFotos[$j['pid'] ?? 0] ?? ''; @endphp
+                    <div class="flex items-start gap-3">
+                        {{-- Foto (tamaño fijo: el layout no salta al cargar); sin foto, ícono del rubro --}}
+                        <a @if(!empty($j['url'])) href="{{ $j['url'] }}" target="_blank" rel="noopener" @endif
+                           class="shrink-0 flex items-center justify-center overflow-hidden rounded-lg bg-white border border-[var(--c-border)]" style="width:72px;height:72px;">
+                            @if($foto)
+                            <img src="{{ $foto }}" alt="{{ $j['producto'] }}" width="72" height="72" loading="lazy" decoding="async" referrerpolicy="no-referrer"
+                                 class="h-full w-full object-contain p-1">
+                            @else
+                            <span class="text-2xl text-slate-300" aria-hidden="true">{{ config("rubros.rubros.{$rubro}.icono", '🛍️') }}</span>
+                            @endif
+                        </a>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex justify-between items-start gap-2">
+                                <span class="font-bold text-[var(--c-text)] text-sm leading-tight">{{ $tier }} {{ $j['linea'] }}</span>
+                                <span class="text-lg font-extrabold shrink-0" style="color:{{ $borderColor }}">{{ $pct }}%</span>
+                            </div>
+                            <p class="text-sm text-[var(--c-muted)] mt-1"><span class="font-semibold text-[var(--c-text)]">{{ $j['tienda'] }}</span> · ${{ number_format($j['precio_actual'], 0, ',', '.') }}</p>
+                            <p class="text-xs text-[var(--c-muted)] mt-0.5 truncate" title="{{ $j['producto'] }}">{{ $j['producto'] }}</p>
+                        </div>
                     </div>
-                    <p class="text-sm text-[var(--c-muted)] mt-1"><span class="font-semibold text-[var(--c-text)]">{{ $j['tienda'] }}</span> · ${{ number_format($j['precio_actual'], 0, ',', '.') }}</p>
-                    <p class="text-xs text-[var(--c-muted)] mt-0.5 truncate">{{ $j['producto'] }}</p>
                     <div class="flex items-center justify-between mt-2">
                         @if(!empty($j['url']))
                         <a href="{{ $j['url'] }}" target="_blank" rel="noopener"

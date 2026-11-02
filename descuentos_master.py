@@ -294,6 +294,7 @@ class Item:
     precio_transferencia: Optional[float] = None
     genero: str = "masculino"   # "masculino" | "femenino" | "unisex"
     presentacion: str = ""      # texto del tamaño/variante: "100 ML", "50 ML", etc.
+    imagen: str = ""            # URL (https) de la foto del producto; "" si no hay
 
     @property
     def clave(self) -> tuple:
@@ -302,6 +303,29 @@ class Item:
 
 def _dto(lista: float, actual: float) -> float:
     return round((lista - actual) / lista * 100, 1) if lista > actual > 0 else 0.0
+
+
+def _url_imagen(src, host: str = "") -> str:
+    """Normaliza la URL de una foto: https, absoluta, sin data: ni vacíos.
+    Las fotos de VTEX (/arquivos/ids/<id>/...) se piden a 400 px de ancho (la
+    original pesa ~40 KB-1 MB; el dashboard solo muestra miniaturas)."""
+    s = (src or "").strip()
+    if not s or s.startswith("data:"):
+        return ""
+    if s.startswith("//"):
+        s = "https:" + s
+    elif s.startswith("http://"):
+        s = "https://" + s[7:]
+    elif s.startswith("/"):
+        if not host:
+            return ""
+        s = f"https://{host}{s}"
+    elif not s.startswith("https://"):
+        if not host:
+            return ""
+        s = f"https://{host}/{s}"
+    s = re.sub(r"(/arquivos/ids/\d+)/", r"\1-400-auto/", s, count=1)
+    return s[:600]
 
 
 def _norm(s: str) -> str:
@@ -431,13 +455,15 @@ def guardar_en_mysql(items: list, fecha_hora, args, reporte_sitios=None) -> bool
                     continue
                 cur.execute(
                     "INSERT INTO productos (tienda_id, nombre, nombre_norm, "
-                    "marca, genero, tamano_ml, presentacion, url, primera_vez, ultima_vez) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+                    "marca, genero, tamano_ml, presentacion, url, imagen, primera_vez, ultima_vez) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
                     "ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), "
                     "marca=VALUES(marca), genero=VALUES(genero), "
                     "tamano_ml=VALUES(tamano_ml), "
                     "presentacion=VALUES(presentacion), "
-                    "url=VALUES(url), ultima_vez=VALUES(ultima_vez), "
+                    "url=VALUES(url), "
+                    "imagen=COALESCE(VALUES(imagen), imagen), "
+                    "ultima_vez=VALUES(ultima_vez), "
                     "id=LAST_INSERT_ID(id)",
                     (tienda_id[it.tienda], it.nombre[:255], nn,
                      it.marca or None, it.genero,
@@ -445,6 +471,7 @@ def guardar_en_mysql(items: list, fecha_hora, args, reporte_sitios=None) -> bool
                      (it.presentacion[:150] if it.presentacion
                       else _presentacion("", it.nombre) or None),
                      it.url or None,
+                     it.imagen or None,
                      fecha_hora, fecha_hora))
                 prod_id[clave] = cur.lastrowid
 
@@ -629,6 +656,15 @@ def _parse_vtex_productos(data, host, tienda) -> list[Item]:
         if not skus:
             continue
 
+        # foto: la del producto (primer SKU con imagen), igual para todas las presentaciones
+        imagen = ""
+        for sku in skus:
+            imgs = sku.get("images") or []
+            if imgs:
+                imagen = _url_imagen(imgs[0].get("imageUrl"), host)
+                if imagen:
+                    break
+
         for sku in skus:
             try:
                 offer  = sku["sellers"][0]["commertialOffer"]
@@ -665,6 +701,7 @@ def _parse_vtex_productos(data, host, tienda) -> list[Item]:
                 fuente="api",
                 url=url,
                 presentacion=presentacion,
+                imagen=imagen,
             ))
     return items
 
@@ -803,10 +840,19 @@ def _item_de_unishop(prod: dict, host: str, tienda: str) -> Optional[Item]:
     pid = v.get("productId") or ""
     url = (f"https://{host}/p/{url_name}/{pid}"
            if url_name and pid else f"https://{host}")
+    # foto: imagen de la variante (imageIdx) en formato cuadrado (270 px); si no, la thumb
+    imagen = ""
+    imgs = prod.get("images") or []
+    if imgs:
+        idx = v.get("imageIdx") or 0
+        im = imgs[idx] if 0 <= idx < len(imgs) else imgs[0]
+        if isinstance(im, dict):
+            imagen = _url_imagen(im.get("square", {}).get("fullUrl")
+                                 or im.get("thumb", {}).get("fullUrl"), host)
     return Item(tienda=tienda, marca=marca, nombre=nombre,
                 precio_lista=lista, precio_actual=price,
                 descuento_pct=_dto(lista, price), fuente="api", url=url,
-                presentacion=_presentacion("", nombre))
+                presentacion=_presentacion("", nombre), imagen=imagen)
 
 
 def scrap_unishop(session, site, max_items) -> list[Item]:
@@ -855,6 +901,28 @@ _RE_TN_ITEM = re.compile(r'<div\s+class="js-product-item-private product-item') 
 _RE_TN_VARIANTS = re.compile(r'data-variants="(.*?)"', re.S)
 _RE_TN_NOMBRE = re.compile(r'js-item-name[^>]*>\s*([^<]+?)\s*<')
 _RE_TN_URL = re.compile(r'href="(https?://[^"]*/productos/[^"]+?)"')
+_RE_TN_SRCSET = re.compile(r'data-srcset="([^"]+)"')
+
+
+def _imagen_tiendanube(block: str, d: dict, host: str) -> str:
+    """Foto de una tarjeta Tiendanube: la entrada mayor (<= 640 px) del data-srcset
+    de la primera <img>; si no hay, `image_url` de la variante con el tamaño
+    reducido (-1024-1024 -> -480-0)."""
+    m = _RE_TN_SRCSET.search(block)
+    if m:
+        cand = []
+        for parte in m.group(1).split(","):
+            partes = parte.strip().split()
+            if len(partes) == 2 and partes[1].endswith("w"):
+                try:
+                    cand.append((int(partes[1][:-1]), partes[0]))
+                except ValueError:
+                    pass
+        cand = [c for c in cand if c[0] <= 640] or cand
+        if cand:
+            return _url_imagen(max(cand)[1], host)
+    u = d.get("image_url") or ""
+    return _url_imagen(re.sub(r"-1024-1024(\.\w+)$", r"-480-0\1", u), host)
 
 
 def _num_ar(s) -> Optional[float]:
@@ -927,7 +995,8 @@ def _items_de_tiendanube(html_text: str, host: str, tienda: str) -> list[Item]:
             precio_lista=lista, precio_actual=actual,
             descuento_pct=_dto(lista, actual), fuente="tiendanube", url=url,
             tipo_descuento=tipo, precio_transferencia=ptransfer,
-            presentacion=_presentacion("", nombre)))
+            presentacion=_presentacion("", nombre),
+            imagen=_imagen_tiendanube(block, d, host)))
     return out
 
 
@@ -1183,9 +1252,33 @@ JS_EXTRAER = r"""
     for(const a of links){ if(esLinkProducto(a.href)){ href = a.href; break; } }
     if(!href && links.length) href = links[0].href;
 
+    // foto: primera <img> de la tarjeta con una fuente real (lazy: data-src/srcset)
+    function imgDe(root){
+      for(const im of root.querySelectorAll('img')){
+        const cand = [im.currentSrc, im.getAttribute('data-src'), im.getAttribute('data-lazy-src'),
+                      im.getAttribute('data-original'), im.getAttribute('src')];
+        const ss = im.getAttribute('data-srcset') || im.getAttribute('srcset') || '';
+        if(ss){ const partes = ss.split(',').map(x => x.trim().split(/\s+/)[0]).filter(Boolean);
+                if(partes.length) cand.push(partes[Math.floor(partes.length/2)]); }
+        const u = cand.find(x => x && !/^data:/.test(x) && !/(placeholder|loading|spinner|blank|pixel|\.svg|logo)/i.test(x));
+        if(u){ try { return new URL(u, document.baseURI).href; } catch(e){ return u; } }
+      }
+      return '';
+    }
+    let img = imgDe(el);
+    if(!img){
+      // la <img> puede colgar de un contenedor padre: subir mientras no aparezcan otros precios
+      const n$ = ((el.innerText||'').match(/\$/g)||[]).length;
+      let q = el.parentElement;
+      for(let i=0; i<3 && q && !img; i++, q=q.parentElement){
+        if(((q.innerText||'').match(/\$/g)||[]).length !== n$) break;
+        img = imgDe(q);
+      }
+    }
+
     el.dataset.cardused = '1';
     cards.push({ marca: marca.slice(0,80), nombre: nombre.slice(0,160),
-                 lista: listaT, normales: normales, pct: pct, href: href });
+                 lista: listaT, normales: normales, pct: pct, href: href, img: img });
   }
   return cards;
 }
@@ -1345,6 +1438,7 @@ def _scrap_detalle_variantes(page, item_base: Item, fuentes_ok: list) -> list[It
                 tipo_descuento=item_base.tipo_descuento,
                 genero=item_base.genero,
                 presentacion=presentacion,
+                imagen=item_base.imagen,
             ))
         except Exception as e:
             log.debug("  variantes_detalle: fallo en '%s': %s", texto_btn, e)
@@ -1431,6 +1525,7 @@ def _cards_a_items(cards, tienda, url_default, fuentes_validas=None) -> list[Ite
             tienda=tienda, marca=marca, nombre=nombre,
             precio_lista=lista, precio_actual=actual,
             descuento_pct=dto, fuente=fuente, url=href,
+            imagen=_url_imagen(c.get("img")),
         ))
     return items
 
@@ -1751,6 +1846,61 @@ def escribir_excel(items: list[Item], ruta: str, previos: dict | None = None) ->
 # --------------------------------------------------------------------------- #
 # Orquestación
 # --------------------------------------------------------------------------- #
+def rellenar_imagenes(sitios: list, max_items: int) -> int:
+    """Completa `productos.imagen` (solo donde está vacía) leyendo los catálogos
+    VTEX / Unishop / Tiendanube (HTTP, sin navegador). NO crea corrida ni
+    observaciones ni Excel: es un parche único para productos que se guardaron
+    antes de que el scraper capturara la foto (los sitios HTML la completan solos
+    en la próxima corrida normal). Devuelve la cantidad de fotos cargadas."""
+    try:
+        import pymysql
+    except ImportError:
+        log.error("Falta PyMySQL: pip install pymysql")
+        return 0
+    try:
+        conn = pymysql.connect(charset="utf8mb4", autocommit=False, **DB_CONFIG)
+    except Exception as e:  # noqa: BLE001
+        log.error("No pude conectar a MySQL (%s).", e)
+        return 0
+    total = 0
+    try:
+        for site in sitios:
+            if site["platform"] not in ("vtex", "unishop", "tiendanube"):
+                continue
+            log.info("== %s (%s) ==", site["name"], site["platform"])
+            try:
+                session = nueva_session()
+                if site["platform"] == "vtex":
+                    prods = scrap_vtex(session, site, max_items)
+                elif site["platform"] == "unishop":
+                    prods = scrap_unishop(session, site, max_items)
+                else:
+                    prods = scrap_tiendanube(session, site, max_items)
+            except Exception as e:  # noqa: BLE001
+                log.error("  fallo: %s", e)
+                continue
+            filas = {}
+            for it in prods:
+                if it.imagen:
+                    filas[_nombre_norm(it.nombre)] = it.imagen
+            with conn.cursor() as cur:
+                cur.executemany(
+                    "UPDATE productos p JOIN tiendas t ON t.id = p.tienda_id "
+                    "SET p.imagen = %s "
+                    "WHERE t.nombre = %s AND p.nombre_norm = %s "
+                    "AND (p.imagen IS NULL OR p.imagen = '')",
+                    [(img, site["name"], nn) for nn, img in filas.items()])
+                n = cur.rowcount
+            conn.commit()
+            total += max(n, 0)
+            log.info("  %d fotos leídas, %d productos completados", len(filas), max(n, 0))
+            time.sleep(random.uniform(0.8, 1.6))
+    finally:
+        conn.close()
+    log.info("Listo: %d productos con foto nueva.", total)
+    return total
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Scraper maestro de descuentos (perfumerías AR)")
     ap.add_argument("-o", "--output", default="descuentos_perfumes.xlsx")
@@ -1773,6 +1923,9 @@ def main(argv=None) -> int:
                          "para guardar la corrida en MySQL (default %(default)s)")
     ap.add_argument("--sin-chequeo-red", action="store_true",
                     help="no esperar conectividad antes de empezar")
+    ap.add_argument("--rellenar-imagenes", action="store_true",
+                    help="solo completa productos.imagen vacía (sitios VTEX/Unishop/"
+                         "Tiendanube, sin navegador); no crea corrida ni Excel")
     args = ap.parse_args(argv)
 
     # Sin red no tiene sentido arrancar: el barrido saldria vacio.
@@ -1780,6 +1933,12 @@ def main(argv=None) -> int:
         log.error("No hay conectividad despues de varios intentos. Aborto sin "
                   "scrapear (no genero Excel ni corrida en la base).")
         return 2
+
+    if args.rellenar_imagenes:
+        quiero = {x.lower() for x in (args.solo or [])}
+        rellenar_imagenes([x for x in SITES if not x.get("disabled")
+                           and (not quiero or x["name"] in quiero)], args.max_items)
+        return 0
 
     import datetime as _dt
     ahora = _dt.datetime.now()   # misma marca de tiempo para Excel y corrida DB

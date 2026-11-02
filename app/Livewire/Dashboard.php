@@ -624,7 +624,7 @@ class Dashboard extends Component
             ->when(!empty($this->mlDisponibles) && count($this->mlSeleccionados) < count($this->mlDisponibles),
                 fn($q) => empty($this->mlSeleccionados) ? $q->whereRaw('1 = 0') : $q->whereIn('p.tamano_ml', $this->mlSeleccionados))
             ->when($this->joyasTiendaFiltro, fn($q) => $q->where('t.nombre', $this->joyasTiendaFiltro))
-            ->selectRaw('t.nombre AS tienda, p.marca, p.nombre AS producto, o.precio_actual, o.descuento_pct, p.url')
+            ->selectRaw('p.id AS pid, t.nombre AS tienda, p.marca, p.nombre AS producto, o.precio_actual, o.descuento_pct, p.url')
             ->orderByDesc('o.descuento_pct')
             ->get()
             ->toArray();
@@ -657,6 +657,20 @@ class Dashboard extends Component
 
         $this->joyasVisibles = self::JOYAS_POR_PAGINA;
         $this->joyasJson = json_encode(array_values($matched));
+    }
+
+    /**
+     * Fotos (`productos.imagen`) de los productos pedidos, por id. Destacados la usa solo para las cards visibles: así
+     * `joyasJson` (que viaja en cada request de Livewire) no carga las URL de todas las joyas.
+     */
+    public function imagenesProductos(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if (empty($ids)) {
+            return [];
+        }
+        return DB::table('productos')->whereIn('id', $ids)->whereNotNull('imagen')->where('imagen', '<>', '')
+            ->pluck('imagen', 'id')->all();
     }
 
     /** Scroll infinito de Destacados: agrega otra tanda de cards (la vista renderiza solo las primeras $joyasVisibles). */
@@ -930,6 +944,7 @@ class Dashboard extends Component
                                 'precio_actual'=> round($r->precio_actual),
                                 'descuento_pct'=> round($r->descuento_pct, 1),
                                 'url'          => $r->url ?? '',
+                                'pid'          => (int) $r->pid,
                             ];
                             break;
                         }

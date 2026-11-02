@@ -36,7 +36,7 @@
                 <tr class="hover:bg-[var(--color-primary-50)] dark:hover:bg-white/5">
                     <td class="px-3 py-2 font-medium text-[var(--c-text)]">
                         @if(!empty($r['imagen']))
-                        <img src="{{ $r['imagen'] }}" alt="" loading="lazy" referrerpolicy="no-referrer" class="inline-block w-9 h-9 rounded object-cover bg-[var(--c-bg)] mr-2 align-middle">
+                        <img src="{{ $r['imagen'] }}" alt="" loading="lazy" referrerpolicy="no-referrer" class="inline-block w-9 h-9 rounded {{ $rubro === config('rubros.default') ? 'object-contain bg-white p-0.5' : 'object-cover bg-[var(--c-bg)]' }} mr-2 align-middle">
                         @endif
                         {{ $r['producto'] }}
                     </td>

@@ -22,6 +22,7 @@ Leyenda: 🔴 funcional/crítico · 🟠 importante · 🟡 menor · ⚪ nota.
 | A8 | ⚪ | La DB guarda solo ofertas y transferencias, **no el catálogo completo** (no se puede medir "% del catálogo en oferta"). | scraper | Decisión de producto |
 | A9 | ⚪ | `dashboard_descuentos.py` (Streamlit) y la tabla `usuarios` son legado sin uso automático. `nbp_inventory.json` no pertenece a este proyecto (datos de terceros de una API de impresoras). | raíz | Archivar/eliminar cuando se confirme |
 | A10 | ⚪ | Cambios previos a 2026-08-31 del scraper no estaban en `descuentos_master_cambios.md` (ya agregado resumen). | doc | — |
+| A16 | 🟡 | **Fotos de perfumes (2026-11-01):** `Juleriaque` y `Parfumerie` (sitios `html`) devuelven 0 productos en el último log del scraper (`logs_scraper.txt`) y en una prueba con Chromium sin cabeza no renderizan precios en 10 s: sin datos nuevos no tendrán foto. Los productos viejos de todas las tiendas siguen sin foto hasta la próxima corrida diaria o hasta `python descuentos_master.py --rellenar-imagenes` (VTEX/Unishop/Tiendanube; ya se corrió para Ambrosia, Fiorani, GetTheLook y Unishop). | `descuentos_master.py` (`scrap_html`), doc scraper-02 | Revisar por qué Juleriaque/Parfumerie dan 0 (¿bloqueo o cambio del sitio?); correr `--rellenar-imagenes` completo si se quiere ver fotos ya. |
 
 ## Resueltos el 2026-10-29
 

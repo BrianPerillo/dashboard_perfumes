@@ -31,7 +31,7 @@ Orden de ejecucion en cada corrida: primero las entradas sin navegador en el ord
 ## 2. Conceptos comunes
 
 ### 2.1 Registro `Item` producido por todos los adaptadores
-`tienda, marca, nombre, precio_lista, precio_actual, descuento_pct, fuente, url, tipo_descuento ("rebaja"|"transferencia"), precio_transferencia, genero, presentacion` (l.283-300; detalle en doc 03). El `genero` lo asigna `main()` **despues** del scraping a partir de la entrada de `SITES` (l.1821-1823 y l.1869-1871); los adaptadores no lo conocen.
+`tienda, marca, nombre, precio_lista, precio_actual, descuento_pct, fuente, url, tipo_descuento ("rebaja"|"transferencia"), precio_transferencia, genero, presentacion, imagen` (l.283-300; detalle en doc 03). El `genero` lo asigna `main()` **despues** del scraping a partir de la entrada de `SITES` (l.1821-1823 y l.1869-1871); los adaptadores no lo conocen.
 
 ### 2.2 Calculo del descuento
 * `_dto(lista, actual) = round((lista - actual) / lista * 100, 1)` si `lista > actual > 0`; si no, `0.0` (l.303).
@@ -43,6 +43,12 @@ Orden de ejecucion en cada corrida: primero las entradas sin navegador en el ord
 * En VTEX se itera **cada SKU** (cada presentacion = un Item) y se arma el nombre con `_nombre_con_tamano(productName, nameComplete)` (l.344) para que incluya los ml. En Unishop/Tiendanube el nombre se toma tal cual.
 * En HTML el tamano solo aparece si esta en el nombre de la card o si `variantes_detalle` logra leer botones de variante (ver 5.3).
 * `tamano_ml` y `presentacion` se calculan al guardar en DB (doc 03).
+* **Foto (`Item.imagen`, desde 2026-11-01)**, siempre normalizada con `_url_imagen` (https, absoluta, sin `data:`):
+  * VTEX: `items[].images[0].imageUrl` del primer SKU con foto (igual para todas las presentaciones del producto); las URL `/arquivos/ids/<id>/` se piden a 400 px de ancho (`/arquivos/ids/<id>-400-auto/`, verificado en los 6 hosts VTEX: 40 KB-1 MB originales → 5-75 KB).
+  * Unishop: `images[imageIdx].square.fullUrl` (270 px, CloudFront), si no la `thumb`.
+  * Tiendanube: la entrada mayor ≤ 640 px del `data-srcset` de la primera `<img>` de la tarjeta; si no, `image_url` de la variante con `-1024-1024` → `-480-0` (`_imagen_tiendanube`).
+  * HTML (Playwright): `JS_EXTRAER` devuelve `img` (primera `<img>` con fuente real: `currentSrc`, `data-src`, `srcset`…; descarta `data:`, placeholders, logos y `.svg`); si la tarjeta detectada no contiene la `<img>`, sube hasta 3 padres **mientras no aparezcan otros precios** (caso Ruiz y Roca). Las variantes expandidas por detalle (`_scrap_detalle_variantes`) heredan la foto del Item base.
+  * Probado 2026-11-01 (sin correr el scraper completo): VTEX 6/6 hosts con foto, Unishop 24/24, Tiendanube 12/12, HTML Ruiz y Roca 8/8 y Normy 8/8 (imagen `200 OK`). Juleriaque y Parfumerie no se pudieron probar: en esa prueba (Chromium sin cabeza) no se renderizaron los precios en 10 s, igual que el último log del scraper (`0 productos`); hasta que se arreglen no tendrán foto.
 
 ### 2.4 Ritmo y cabeceras
 `requests.Session` con UA aleatorio, `Accept: application/json`, `Accept-Language: es-AR`; en VTEX ademas `Referer`. Pausas aleatorias 0.4-0.9 s entre paginas. Timeout 25 s, 1 solo intento (doc 01, 6.2).

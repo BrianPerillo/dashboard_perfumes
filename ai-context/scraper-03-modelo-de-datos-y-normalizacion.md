@@ -23,6 +23,7 @@ Dataclass que producen todos los adaptadores:
 | `precio_transferencia` | float\|None | `None` | Precio pagando por transferencia (solo si es menor que el actual) |
 | `genero` | str | `"masculino"` | `"masculino"` / `"femenino"` / `"unisex"`; lo pone `main()` segun la entrada de `SITES` |
 | `presentacion` | str | `""` | Texto del tamano/variante: "100 ML", "50 ML" |
+| `imagen` | str | `""` | URL https de la foto del producto (2026-11-01); `""` si el sitio no la da |
 
 Propiedad `clave` = `(tienda, nombre.lower().strip(), round(precio_actual, 2))` (l.298): clave de deduplicacion en memoria. Notar que **incluye el precio**, a diferencia de la clave de la base.
 
@@ -195,6 +196,7 @@ Tablas legado del dashboard Streamlit que comparten la base (no las escribe el s
 | | `genero` | `Item.genero` (se actualiza en cada corrida) |
 | | `tamano_ml` | `_tamano_ml(nombre)` |
 | | `presentacion` | `Item.presentacion[:150]`, o `_presentacion("", nombre)`, o `NULL` |
+| | `imagen` | `Item.imagen` o `NULL`; en el `ON DUPLICATE KEY UPDATE` es `COALESCE(VALUES(imagen), imagen)` (una corrida sin foto no borra la ya guardada). Probado con tablas temporales (sin tocar datos reales): se completa si faltaba, no se pisa con vacío y se actualiza si cambia la URL. |
 | | `url` | `Item.url or NULL` (se actualiza; **no se trunca**, columna 600) |
 | | `primera_vez` | `fecha_hora` de la corrida **en el INSERT inicial**; el `ON DUPLICATE KEY` no lo modifica |
 | | `ultima_vez` | `fecha_hora` de la corrida (se actualiza siempre que el producto aparece) |

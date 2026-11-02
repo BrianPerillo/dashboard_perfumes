@@ -224,7 +224,7 @@ Un precio observado de un producto en una corrida. Tabla grande (~435k filas).
 | `talles` | varchar(255) | sí (talles con stock, texto original: "XS, S, M") |
 | `talles_norm` | varchar(255) | sí (calzado normalizado: H10 / M7) |
 | `referencia` | varchar(80) | sí (ropa: modelo-color, ej. IH0745-010) |
-| `imagen` | varchar(600) | sí (URL; hotlink al CDN de la tienda) |
+| `imagen` | varchar(600) | sí (URL https de la foto; hotlink al CDN de la tienda. **Perfumes y ropa**: `descuentos_master.py` la guarda desde 2026-11-01 con `COALESCE(VALUES(imagen), imagen)`: una corrida sin foto no pisa la existente) |
 | `url` | varchar(600) | sí |
 | `primera_vez`, `ultima_vez` | datetime | sí |
 

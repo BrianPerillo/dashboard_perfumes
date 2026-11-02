@@ -272,7 +272,7 @@
                 </span>
                 @if(!empty($row['imagen']))
                 <img src="{{ $row['imagen'] }}" alt="" loading="lazy" referrerpolicy="no-referrer" x-on:mouseenter="const r = $el.getBoundingClientRect(); $dispatch('img-zoom-show', { src: $el.src, l: r.left, r: r.right, t: r.top, b: r.bottom })" x-on:mouseleave="$dispatch('img-zoom-hide')"
-                     class="w-14 h-14 rounded-lg object-cover bg-[var(--c-bg)] shrink-0">
+                     class="w-14 h-14 rounded-lg {{ $rubro === config('rubros.default') ? 'object-contain bg-white p-0.5' : 'object-cover bg-[var(--c-bg)]' }} shrink-0">
                 @endif
                 {{-- Info producto --}}
                 <div class="flex-1 min-w-0">
@@ -355,7 +355,7 @@
                     <td class="px-3 py-2 font-medium text-[var(--c-text)]">
                         @if(!empty($row['imagen']))
                         <img src="{{ $row['imagen'] }}" alt="" loading="lazy" referrerpolicy="no-referrer" x-on:mouseenter="const r = $el.getBoundingClientRect(); $dispatch('img-zoom-show', { src: $el.src, l: r.left, r: r.right, t: r.top, b: r.bottom })" x-on:mouseleave="$dispatch('img-zoom-hide')"
-                             class="inline-block w-9 h-9 rounded object-cover bg-[var(--c-bg)] mr-2 align-middle">
+                             class="inline-block w-9 h-9 rounded {{ $rubro === config('rubros.default') ? 'object-contain bg-white p-0.5' : 'object-cover bg-[var(--c-bg)]' }} mr-2 align-middle">
                         @endif
                         {{ $row['producto'] }}
                         @if(!empty($row['talles']) || !empty($row['tipo']) || !empty($row['color']))
