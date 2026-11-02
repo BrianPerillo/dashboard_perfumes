@@ -162,6 +162,29 @@ SITES.append({
         {"path": "/3-hombre-brooksfield", "genero": "hombre", "categoria": "ropa", "etiqueta": "hombre"},
         {"path": "/7-mujer-brooksfield", "genero": "mujer", "categoria": "ropa", "etiqueta": "mujer"}]},
 })
+# Moov: Salesforce Commerce Cloud (mismas tarjetas que Dexter), por HTTP. Multimarca (Nike, Adidas, Puma...). Las secciones por genero
+# van primero (main() descarta duplicados) y /sale al final suma lo que no esta en /hombre ni /mujer (ninos, accesorios).
+SITES.append({
+    "name": "moov", "platform": "sfcc_http", "host": "www.moov.com.ar", "marca": "Moov", "pag_max": 60, "grid": "Sites-Moov-Site",
+    "secciones": {"descuento": [
+        {"path": "/hombre", "cgid": "hombre", "genero": "hombre", "categoria": "ropa", "etiqueta": "hombre", "cortar_sin_descuento": True},
+        {"path": "/mujer", "cgid": "mujer", "genero": "mujer", "categoria": "ropa", "etiqueta": "mujer", "cortar_sin_descuento": True},
+        {"path": "/sale", "cgid": "sale", "genero": "unisex", "categoria": "ropa", "etiqueta": "sale", "cortar_sin_descuento": True}]},
+})
+# Columbia: Shopify, DESACTIVADA. El JSON publica solo el precio de lista (sin compare_at): el descuento (Cyber Monday 20-40 %) es de
+# coleccion, depende de en que coleccion se mire el producto y NO coincide siempre con la tag ("40cybermonday"): en una muestra de
+# 139 productos la tag acerto en 103. "dto_tags" lo aproxima, pero no se activa hasta decidir como leer el precio mostrado.
+SITES.append({
+    "name": "columbia", "platform": "shopify", "host": "columbiasportswear.com.ar", "marca": "Columbia", "pag_max": 10, "activo": False,
+    "dto_tags": r"^(\d{2})cybermonday$",
+    "secciones": {"descuento": [{"path": "/products.json", "genero": "unisex", "categoria": "ropa", "etiqueta": "catalogo"}]},
+})
+# Briganti: Shopify (calzado y marroquineria de cuero, outlet). Se omiten regalos, packaging, cuidado de calzado y decoracion.
+SITES.append({
+    "name": "briganti", "platform": "shopify", "host": "briganti.com.ar", "marca": "Briganti", "pag_max": 20,
+    "excluir_tipos": r"regalo|gift|cuidado|packaging|home|^$",
+    "secciones": {"descuento": [{"path": "/products.json", "genero": "unisex", "categoria": "ropa", "etiqueta": "catalogo"}]},
+})
 # Las plataformas sin secciones propias para "oportunidades" usan las de "descuento".
 for _s in SITES:
     _s["secciones"].setdefault("oportunidades", _s["secciones"]["descuento"])
@@ -848,10 +871,11 @@ def _tarjetas_sfcc(html: str, site: dict, seccion: dict) -> tuple[list[ItemRopa]
         precio_lista = max(precio_lista, actual)
         img = t.select_one("img.primary-image")
         href = a.get("href") or ""
-        gen = _genero_de_texto(nombre) or "unisex"
+        # seccion con genero (Moov: /hombre, /mujer): manda; en la general ("unisex") se deduce del nombre
+        gen = seccion["genero"] if seccion["genero"] != "unisex" else (_genero_de_texto(nombre) or "unisex")
         categoria = "calzado" if _RE_CALZADO.search(nombre) else "accesorios" if _RE_ACCESORIOS.search(nombre) else "ropa"
         out.append(ItemRopa(
-            tienda=site["name"], marca=_marca_de_nombre(nombre, "Dexter"), nombre=nombre, referencia=t.get("data-pid") or "",
+            tienda=site["name"], marca=_marca_de_nombre(nombre, site.get("marca", "Dexter")), nombre=nombre, referencia=t.get("data-pid") or "",
             genero=gen, categoria=categoria, tipo=_cap(nombre.split()[0].lower()), color="", precio_lista=precio_lista,
             precio_actual=actual, descuento_pct=_dto(precio_lista, actual),
             url=f"https://{site['host']}{href}" if href.startswith("/") else href,
@@ -1228,6 +1252,132 @@ def scrap_prestashop(sesion, site: dict, seccion: dict, max_paginas: int) -> lis
 
 
 # --------------------------------------------------------------------------- #
+# Adaptador "sfcc_http": Salesforce Commerce Cloud sin Cloudflare activo para HTTP (Moov). Mismas tarjetas que Dexter
+# (`_tarjetas_sfcc`), pero se piden por HTTP: la primera pagina de la seccion y luego Search-UpdateGrid (36 por pagina,
+# srule=product-discount = mayor descuento primero; se corta cuando una pagina ya no trae tachados). Sin talles (la ficha
+# de cada producto costaria ~1 h por corrida); el genero sale de la seccion (/hombre, /mujer).
+# --------------------------------------------------------------------------- #
+def scrap_sfcc_http(sesion, site: dict, seccion: dict, max_paginas: int) -> list[ItemRopa]:
+    cgid = seccion["cgid"]
+    vistos: dict = {}
+    for pagina in range(1, min(max_paginas, site.get("pag_max", 60)) + 1):
+        url = (f"https://{site['host']}/on/demandware.store/{site['grid']}/default/Search-UpdateGrid?cgid={cgid}"
+               f"&srule=product-discount&start={(pagina - 1) * 36}&sz=36")
+        for intento in range(1, 4):
+            time.sleep(random.uniform(2.5, 4.5) * _RITMO["factor"])
+            r = sesion.get(url, timeout=40, headers={"Accept": "text/html,*/*", "X-Requested-With": "XMLHttpRequest"})
+            if r.status_code == 200:
+                _ritmo_exito()
+                break
+            _ritmo_bloqueo()
+            log.warning("  %s respondio %s (intento %d/3)", url, r.status_code, intento)
+            time.sleep(30 * intento)
+        else:
+            raise Bloqueado(url)
+        items, n = _tarjetas_sfcc(r.text, site, seccion)
+        nuevos = 0
+        for it in items:
+            if it.clave not in vistos:
+                vistos[it.clave] = it
+                nuevos += 1
+        con_dto = sum(1 for it in items if it.descuento_pct > 0)
+        log.info("  pagina %d: %d tarjetas, %d legibles (%d nuevas, %d con descuento)", pagina, n, len(items), nuevos, con_dto)
+        if n < 36 or nuevos == 0 or (seccion.get("cortar_sin_descuento") and con_dto == 0):
+            break
+    return list(vistos.values())
+
+
+# --------------------------------------------------------------------------- #
+# Adaptador "shopify": catalogo publico /products.json?limit=250&page=N (Columbia, Briganti). Shopify limita el ritmo
+# (429 "local_rate_limited"): pausa de 6-9 s entre paginas y espera creciente. Cada producto trae variantes con precio,
+# precio anterior (`compare_at_price`) y disponibilidad; las opciones se leen por NOMBRE (Talle/Size, Color).
+# Config opcional por tienda: "excluir_tipos" (regex sobre product_type), "dto_tags" (regex con un grupo numerico sobre
+# las tags: descuento de coleccion que Shopify NO publica en el precio, p. ej. "40cybermonday" = 40 % sobre `price`).
+# --------------------------------------------------------------------------- #
+def _genero_shopify(tipo: str, tags: list) -> str:
+    t = {x.strip().lower() for x in tags}
+    tl = (tipo or "").lower()
+    h = "hombre" in tl or "hombre" in t or "men" in t
+    m = "mujer" in tl or "mujer" in t or "women" in t
+    if re.search(r"nene|nena|ni[ñn]|kids", tl) or t & {"kids", "ninos", "niños"}:
+        return "ninos"
+    if h and m or "unisex" in tl or "unisex" in t:
+        return "unisex"
+    return "hombre" if h else "mujer" if m else "unisex"
+
+
+def producto_de_shopify(p: dict, site: dict, seccion: dict) -> Optional[ItemRopa]:
+    tipo_crudo = p.get("product_type") or ""
+    if site.get("excluir_tipos") and re.search(site["excluir_tipos"], tipo_crudo, re.I):
+        return None
+    nombres = [str(o.get("name") or "").strip().lower() for o in p.get("options") or []]
+    i_talle = next((i for i, n in enumerate(nombres) if re.match(r"talle|size|medida", n)), None)
+    i_color = next((i for i, n in enumerate(nombres) if n.startswith("color")), None)
+    disp = [v for v in p.get("variants") or [] if v.get("available") and float(v.get("price") or 0) > 0]
+    if not disp:
+        return None
+    v0 = min(disp, key=lambda v: float(v["price"]))
+    actual = float(v0["price"])
+    cap = float(v0.get("compare_at_price") or 0)
+    lista = max(cap, actual)
+    if lista == actual and site.get("dto_tags"):
+        for tg in p.get("tags") or []:
+            m = re.match(site["dto_tags"], tg, re.I)
+            if m and 0 < int(m.group(1)) < 90:
+                lista, actual = actual, round(actual * (100 - int(m.group(1))) / 100)
+                break
+
+    def opcion(v, i):
+        return str(v.get(f"option{i + 1}") or "").strip() if i is not None else ""
+
+    talles = sorted({opcion(v, i_talle) for v in disp if opcion(v, i_talle)}, key=_orden_talle)
+    colores = sorted({opcion(v, i_color) for v in disp if opcion(v, i_color)})
+    nombre = " ".join((p.get("title") or "").split())
+    img = ((p.get("images") or [{}])[0].get("src") or "")
+    if "cdn.shopify.com" in img or "/cdn/shop/" in img:
+        img += ("&" if "?" in img else "?") + "width=480"
+    gen = _genero_shopify(tipo_crudo, p.get("tags") or [])
+    vendor = (p.get("vendor") or "").strip()
+    marca = site.get("marca", "") if not vendor or vendor.lower().startswith(site.get("marca", "").lower()) else vendor.title()
+    cat_txt = f"{tipo_crudo} {nombre}"
+    categoria = "calzado" if re.search(r"calzado|zapatilla|bota|sandalia|zapato|mocasin|ojota|chatita|zueco|pantufla", cat_txt, re.I) \
+        else "accesorios" if re.search(r"bolso|accesorio|cartera|billetera|cintur|mochila|gorro|gorra|media|guante|bandolera|riñonera|rinonera|maletin|neceser|matera", cat_txt, re.I) else "ropa"
+    return ItemRopa(
+        tienda=site["name"], marca=marca, nombre=nombre, referencia=str(p.get("id") or p.get("handle")),
+        genero=gen if gen != "unisex" else seccion["genero"],
+        categoria=categoria, tipo=_cap(nombre.split()[0].lower()) if nombre else "", color=", ".join(colores[:3]), talles=talles,
+        precio_lista=lista, precio_actual=actual, descuento_pct=_dto(lista, actual),
+        url=f"https://{site['host']}/products/{p.get('handle')}", imagen=img, seccion=seccion["path"])
+
+
+def scrap_shopify(sesion, site: dict, seccion: dict, max_paginas: int) -> list[ItemRopa]:
+    vistos: dict = {}
+    for pagina in range(1, min(max_paginas, site.get("pag_max", 30)) + 1):
+        url = f"https://{site['host']}/products.json?limit=250&page={pagina}"
+        for intento in range(1, 5):
+            time.sleep(random.uniform(6.0, 9.0) * _RITMO["factor"] + (intento - 1) * 15)
+            r = sesion.get(url, timeout=60, headers={"Accept": "application/json"})
+            if r.status_code == 200:
+                _ritmo_exito()
+                break
+            _ritmo_bloqueo()
+            log.warning("  %s respondio %s (intento %d/4)", url, r.status_code, intento)
+        else:
+            raise Bloqueado(url)
+        data = r.json().get("products") or []
+        items = [i for i in (producto_de_shopify(p, site, seccion) for p in data) if i]
+        nuevos = 0
+        for it in items:
+            if it.clave not in vistos:
+                vistos[it.clave] = it
+                nuevos += 1
+        log.info("  pagina %d: %d productos, %d legibles con stock (%d nuevos)", pagina, len(data), len(items), nuevos)
+        if len(data) < 250:
+            break
+    return list(vistos.values())
+
+
+# --------------------------------------------------------------------------- #
 # Tipos de producto unificados entre tiendas
 # --------------------------------------------------------------------------- #
 # Cada tienda publica el tipo a su manera ("Remera", "Remeras y polos", "Remeras"; "Calzado" / "Zapatillas";
@@ -1555,7 +1705,7 @@ def guardar_en_mysql(items: list, fecha_hora: datetime, reporte: list, estado_in
                      (normalizar_talles(_GENERO_DB.get(it.genero, "unisex"), it.categoria, it.talles)[:255] or None)))
                 prod_id[(it.tienda, nn)] = cur.lastrowid
 
-            fuente_de = {s["name"]: {"vtex_api": "vtex_api", "kevingston": "kevingston_api", "montagne": "html", "wrangler": "html", "sfcc_dexter": "sfcc_html", "puma": "puma_state", "tiendanube": "tiendanube", "magento": "magento_html", "prestashop": "html"}.get(s["platform"], "vtex_state") for s in SITES}
+            fuente_de = {s["name"]: {"vtex_api": "vtex_api", "kevingston": "kevingston_api", "montagne": "html", "wrangler": "html", "sfcc_dexter": "sfcc_html", "puma": "puma_state", "tiendanube": "tiendanube", "magento": "magento_html", "prestashop": "html", "shopify": "shopify_json", "sfcc_http": "sfcc_html"}.get(s["platform"], "vtex_state") for s in SITES}
             filas, vistos = [], set()
             for it in items:
                 pid = prod_id[(it.tienda, (it.referencia or it.url).strip().lower()[:255])]
@@ -1707,6 +1857,10 @@ def main() -> int:
                             items = scrap_wrangler(sesion, site, sec, args.max_paginas)
                         elif site["platform"] == "montagne":
                             items = scrap_montagne(sesion, site, sec, args.max_paginas)
+                        elif site["platform"] == "shopify":
+                            items = scrap_shopify(sesion, site, sec, args.max_paginas)
+                        elif site["platform"] == "sfcc_http":
+                            items = scrap_sfcc_http(sesion, site, sec, args.max_paginas)
                         elif site["platform"] == "magento":
                             items = scrap_magento(sesion, site, sec, args.max_paginas)
                         elif site["platform"] == "prestashop":

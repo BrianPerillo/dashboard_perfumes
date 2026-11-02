@@ -12,6 +12,14 @@ Formato:
 
 ---
 
+## 2026-11-01 — Ropa: Moov y Briganti agregadas; Columbia investigada y dejada desactivada
+
+- `descuentos_ropa.py`: adaptadores nuevos `sfcc_http` (Moov: Salesforce Commerce Cloud por HTTP con `Search-UpdateGrid`, reusa `_tarjetas_sfcc`, que ahora toma el género de la sección y la marca por defecto de la tienda) y `shopify` (Briganti, Columbia: `/products.json` con pausas largas y espera ante 429; opciones por nombre; `excluir_tipos`, `dto_tags`). `observaciones.fuente`: `sfcc_html` y `shopify_json`.
+- **Moov** (multimarca, `/hombre` + `/mujer` + `/sale`): 1.606 productos, 1.522 con descuento, ~4,5 min, sin talles. **Briganti** (calzado/cuero, outlet): 3.355 productos, 3.352 con descuento, ~11 min.
+- **Columbia** queda `"activo": False`: su JSON no trae precio de lista; el descuento Cyber Monday es de colección y no coincide siempre con la tag (103 de 139 en la muestra). Detalle y opciones en ropa-02.
+- Pruebas: catálogo completo de Moov y Briganti sin DB y guardado de prueba (60 observaciones en una corrida `en_curso` de 2099, limpiada por ids; la última corrida visible siguió siendo la #173).
+- Docs actualizados: ropa-02, 03, 12.
+
 ## 2026-11-01 — Ropa: 6 tiendas nuevas (Tascani, Catriel, Mistral, Stone, Cueros Mi Campo, Devre) y 2 adaptadores
 
 - `descuentos_ropa.py`: nuevas entradas en `SITES` y adaptadores `magento` (Devre) y `prestashop` (Brooksfield, **desactivada**: sin ofertas hoy). Tascani usa el adaptador `vtex_api` existente; Catriel, Mistral, Stone y Cueros Mi Campo, el `tiendanube`, que ahora soporta dos temas de tarjeta, **detecta por producto qué opción es talle y cuál color** (`_opciones_tn`, `_RE_TALLE`), toma el género de la sección (`/hombre/`, `/mujer/`, `/kids/`) y pide la imagen a 480 px. El guardado sigue siendo **tienda por tienda** (corrida `en_curso` hasta cerrarla).
