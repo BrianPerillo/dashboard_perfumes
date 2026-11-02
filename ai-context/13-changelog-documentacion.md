@@ -12,6 +12,14 @@ Formato:
 
 ---
 
+## 2026-11-02 — Juleriaque/Parfumerie: diagnóstico corregido, reintento y `--fecha` en el scraper de perfumes
+
+- **Diagnóstico**: Juleriaque nunca dejó de traer datos; Parfumerie dio 0 una sola vez (corrida #176, 2026-11-01 20:24) y por eso no figuraba en el snapshot visible. El A16 inicial ("devuelven 0") era erróneo y se corrigió.
+- `descuentos_master.py`: (1) un sitio HTML que devuelve 0 productos se reintenta una vez tras ~1 min; (2) nuevo `--fecha` para guardar dentro de una corrida existente (implica `--force-db`); (3) `guardar_en_mysql` recalcula `total_productos/min/max` de la corrida desde las observaciones.
+- Reparación de datos: Parfumerie (38 obs.), Juleriaque, Normy y Ruiz y Roca se leyeron de nuevo dentro de la corrida #176 (de 3.098 a 3.295 observaciones); todas las tiendas HTML tienen ahora foto salvo ~84 variantes de Juleriaque.
+- La tarea `descuentos_master_perfumes` no corrió el 2026-10-31 ni el 2026-11-01 a las 13:00 (PC apagada; corrió al encenderse a las 16:31 y 20:24, `StartWhenAvailable`): los datos de perfumes de esos días son de las corridas de recuperación.
+- Docs actualizados: 12 (A16), scraper-01 (`--fecha`), scraper-02.
+
 ## 2026-11-02 — Carga inmediata de las tiendas nuevas, auditoría de ritmo/robots y enlaces `noreferrer`
 
 - **Carga ahora**: las 8 tiendas nuevas de ropa (Cueros Mi Campo, Devre, Catriel, Moov, Tascani, Mistral, Stone, Briganti) se cargaron **dentro de la corrida visible #173** con `descuentos_ropa.py --solo <tienda> --fecha 2026-11-01T16:31:46`, una por una (la corrida pasó de 8.066 a 16.757 productos). Efecto: en Cambios las tiendas nuevas figuran como "nuevas" frente a la corrida anterior. La corrida de las 15:00 las volverá a leer con normalidad.

@@ -48,7 +48,7 @@ Orden de ejecucion en cada corrida: primero las entradas sin navegador en el ord
   * Unishop: `images[imageIdx].square.fullUrl` (270 px, CloudFront), si no la `thumb`.
   * Tiendanube: la entrada mayor ≤ 640 px del `data-srcset` de la primera `<img>` de la tarjeta; si no, `image_url` de la variante con `-1024-1024` → `-480-0` (`_imagen_tiendanube`).
   * HTML (Playwright): `JS_EXTRAER` devuelve `img` (primera `<img>` con fuente real: `currentSrc`, `data-src`, `srcset`…; descarta `data:`, placeholders, logos y `.svg`); si la tarjeta detectada no contiene la `<img>`, sube hasta 3 padres **mientras no aparezcan otros precios** (caso Ruiz y Roca). Las variantes expandidas por detalle (`_scrap_detalle_variantes`) heredan la foto del Item base.
-  * Probado 2026-11-01 (sin correr el scraper completo): VTEX 6/6 hosts con foto, Unishop 24/24, Tiendanube 12/12, HTML Ruiz y Roca 8/8 y Normy 8/8 (imagen `200 OK`). Juleriaque y Parfumerie no se pudieron probar: en esa prueba (Chromium sin cabeza) no se renderizaron los precios en 10 s, igual que el último log del scraper (`0 productos`); hasta que se arreglen no tendrán foto.
+  * Probado 2026-11-01 (sin correr el scraper completo): VTEX 6/6 hosts con foto, Unishop 24/24, Tiendanube 12/12, HTML Ruiz y Roca 8/8 y Normy 8/8 (imagen `200 OK`). Juleriaque y Parfumerie no se pudieron probar ese día (Chromium sin cabeza no renderizó precios en 10 s y Parfumerie dio 0 en la corrida #176); el 2026-11-02 Parfumerie volvió a traer 17/10/11 productos con foto (38/38) y Juleriaque, Normy y Ruiz y Roca se re-leyeron dentro de la corrida #176.
 
 ### 2.4 Ritmo y cabeceras
 `requests.Session` con UA aleatorio, `Accept: application/json`, `Accept-Language: es-AR`; en VTEX ademas `Referer`. Pausas aleatorias 0.4-0.9 s entre paginas. Timeout 25 s, 1 solo intento (doc 01, 6.2).
@@ -162,6 +162,7 @@ Reglas: se usa **solo el primer seller**; se descartan SKUs sin precio (`Price` 
 ---
 
 ## 7. Motor HTML con Playwright (juleriaque, parfumerie, ruizyroca, normy)
+> **Reintento (2026-11-02):** si un sitio HTML devuelve 0 productos se espera ~1 min y se lo lee una vez más con una página nueva (`main`, bucle HTML); recién entonces se registra `vacio`. Motivo: Parfumerie dio 0 una vez (corrida #176) y quedó fuera del snapshot visible.
 
 ### 7.1 Funciones
 | Funcion | Linea | Rol |

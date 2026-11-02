@@ -53,6 +53,7 @@ python descuentos_master.py --headful               # muestra el navegador (debu
 | `--no-playwright` | off | Saltea los sitios `platform: "html"`. |
 | `--headful` | off | Chromium visible (por defecto headless). |
 | `--no-db` | off | No guardar en MySQL. |
+| `--fecha AAAA-MM-DDTHH:MM:SS` | — | (2026-11-02) Guarda dentro de la corrida **existente** con esa `fecha_hora` (completar una tienda que falló; implica `--force-db`; recalcula `total_productos/min/max` de la corrida). Usar con `--solo` y `-o` fuera de `excel_perfumes/` (genera un Excel con esa fecha en el nombre). |
 | `--force-db` | off | Guarda en MySQL aun con `--solo` o con corrida incompleta. |
 | `--umbral-tiendas` | `0.70` | Fraccion minima de tiendas con datos para considerar completa la corrida (`UMBRAL_TIENDAS_OK`, linea 508). |
 | `--sin-chequeo-red` | off | No esperar conectividad al inicio. |

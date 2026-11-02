@@ -500,6 +500,14 @@ def guardar_en_mysql(items: list, fecha_hora, args, reporte_sitios=None) -> bool
                 "precio_transferencia=VALUES(precio_transferencia)",
                 filas)
 
+            # 4b) totales reales de la corrida (si se guarda una tienda dentro de una corrida existente, el INSERT de arriba los
+            # dejo con el conteo de esta pasada solamente)
+            cur.execute(
+                "UPDATE corridas SET total_productos=(SELECT COUNT(*) FROM observaciones WHERE corrida_id=%s), "
+                "min_descuento=(SELECT MIN(descuento_pct) FROM observaciones WHERE corrida_id=%s AND tipo_descuento='rebaja'), "
+                "max_descuento=(SELECT MAX(descuento_pct) FROM observaciones WHERE corrida_id=%s AND tipo_descuento='rebaja') "
+                "WHERE id=%s", (corrida_id, corrida_id, corrida_id, corrida_id))
+
             # 5) log de auditoría por sitio (qué encontró cada perfumería)
             if reporte_sitios:
                 cur.executemany(
@@ -1926,6 +1934,9 @@ def main(argv=None) -> int:
     ap.add_argument("--headful", action="store_true")
     ap.add_argument("--no-db", action="store_true",
                     help="no guardar en MySQL (solo genera el Excel)")
+    ap.add_argument("--fecha", metavar="AAAA-MM-DDTHH:MM:SS",
+                    help="guardar dentro de la corrida EXISTENTE con esa fecha_hora (completar una tienda que fallo): implica "
+                         "--force-db y recalcula los totales de la corrida; usar con --solo y -o fuera de excel_perfumes")
     ap.add_argument("--force-db", action="store_true",
                     help="forzar guardado en MySQL aun con --solo o con una "
                          "corrida incompleta (por defecto --solo NO guarda, "
@@ -1954,13 +1965,13 @@ def main(argv=None) -> int:
         return 0
 
     import datetime as _dt
-    ahora = _dt.datetime.now()   # misma marca de tiempo para Excel y corrida DB
+    ahora = _dt.datetime.fromisoformat(args.fecha) if args.fecha else _dt.datetime.now()   # misma marca de tiempo para Excel y corrida DB
 
     # Una corrida en la base representa un barrido COMPLETO. Con --solo el
     # barrido es parcial, así que por defecto NO guardamos (no queremos un
     # snapshot con una sola tienda, que ensuciaría la "foto más reciente" del
     # dashboard). Se puede forzar con --force-db.
-    if args.solo and not args.no_db and not args.force_db:
+    if args.solo and not args.no_db and not args.force_db and not args.fecha:
         log.info("Modo --solo: no guardo en MySQL para no crear una corrida "
                  "parcial (el dashboard muestra el último snapshot). Si igual "
                  "querés guardarla, agregá --force-db.")
@@ -2047,6 +2058,15 @@ def main(argv=None) -> int:
                         page = browser.new_page(
                             user_agent=random.choice(USER_AGENTS), locale="es-AR")
                         prods = scrap_html(page, site)
+                        if not prods:
+                            # 0 productos suele ser un fallo pasajero (sitio lento o cortando): una segunda pasada tras una pausa
+                            # evita publicar una corrida sin esta tienda (pasó con Parfumerie el 2026-11-01)
+                            log.warning("  0 productos: reintento una vez en ~1 min")
+                            page.close()
+                            page = None
+                            time.sleep(random.uniform(45, 75))
+                            page = browser.new_page(user_agent=random.choice(USER_AGENTS), locale="es-AR")
+                            prods = scrap_html(page, site)
                         g = site.get("genero", "masculino")
                         for p in prods:
                             p.genero = g
@@ -2125,7 +2145,7 @@ def main(argv=None) -> int:
 
     corrida_incompleta = (not args.solo
                           and salud["ratio"] < args.umbral_tiendas)
-    if corrida_incompleta and not args.no_db and not args.force_db:
+    if corrida_incompleta and not args.no_db and not args.force_db and not args.fecha:
         log.error("CORRIDA INCOMPLETA: solo %d de %d perfumerias trajeron datos "
                   "(minimo %.0f%%). NO la guardo en MySQL para no tapar el "
                   "ultimo snapshot bueno del dashboard. Revisa la conectividad "
