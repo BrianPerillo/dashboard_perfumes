@@ -37,7 +37,7 @@ Esta carpeta es la **fuente de verdad** sobre cómo funciona *Descuentos Perfume
 | [15-rendimiento.md](15-rendimiento.md) | Auditoría de velocidad (2026-11-01): cuellos de botella, caché, scroll infinito en Destacados, búsqueda en Seguir, pendientes de configuración (buffer pool, opcache) |
 | [14-multirubro.md](14-multirubro.md) | Arquitectura multi-rubro (perfumes, ropa…): config, datos, rutas, selector, cómo sumar un rubro |
 | [ropa-01-scraper-nike.md](ropa-01-scraper-nike.md) | Scraper de ropa: cómo es Nike Argentina, cómo se lee, uso, límites |
-| [ropa-02-tiendas-y-plataformas.md](ropa-02-tiendas-y-plataformas.md) | Tiendas de ropa: plataforma de cada sitio, adaptadores `vtex_io`/`vtex_api` (Levi's, Topper), bloqueos (Lacoste/Adidas) |
+| [ropa-02-tiendas-y-plataformas.md](ropa-02-tiendas-y-plataformas.md) | Tiendas de ropa: plataforma de cada sitio, adaptadores `magento`/`prestashop`/`tiendanube`/`vtex_io`/`vtex_api` (Levi's, Topper), bloqueos (Lacoste/Adidas) |
 | [scraper-01-descripcion-y-ejecucion.md](scraper-01-descripcion-y-ejecucion.md) | El script `descuentos_master.py`: cómo se ejecuta, flujo, logs, archivos |
 | [scraper-02-sitios-y-extraccion.md](scraper-02-sitios-y-extraccion.md) | Cada sitio scrapeado y cómo se extraen los datos |
 | [scraper-03-modelo-de-datos-y-normalizacion.md](scraper-03-modelo-de-datos-y-normalizacion.md) | Normalización, detección de ofertas, escritura en la DB |

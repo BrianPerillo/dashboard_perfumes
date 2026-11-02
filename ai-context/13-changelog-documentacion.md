@@ -12,6 +12,14 @@ Formato:
 
 ---
 
+## 2026-11-01 — Ropa: 6 tiendas nuevas (Tascani, Catriel, Mistral, Stone, Cueros Mi Campo, Devre) y 2 adaptadores
+
+- `descuentos_ropa.py`: nuevas entradas en `SITES` y adaptadores `magento` (Devre) y `prestashop` (Brooksfield, **desactivada**: sin ofertas hoy). Tascani usa el adaptador `vtex_api` existente; Catriel, Mistral, Stone y Cueros Mi Campo, el `tiendanube`, que ahora soporta dos temas de tarjeta, **detecta por producto qué opción es talle y cuál color** (`_opciones_tn`, `_RE_TALLE`), toma el género de la sección (`/hombre/`, `/mujer/`, `/kids/`) y pide la imagen a 480 px. El guardado sigue siendo **tienda por tienda** (corrida `en_curso` hasta cerrarla).
+- Adidas **no se agregó**: `403` de Akamai (no se sortea); sus productos ya entran vía Dexter. Stone resultó ser Tiendanube (no Mercado Libre).
+- Pruebas: catálogo completo de cada tienda sin DB (Tascani 1.465 productos, Devre 719, Mistral 438, Stone 313, Catriel 199, Cueros 103) y guardado de prueba en una corrida `en_curso` de 2099 (210 observaciones, 7 tiendas) que se limpió por ids; `Corrida::ultima('ropa')` no cambió.
+- Otros: tipos nuevos (Relojes, tapado/sobretodo/blazer → Campera, chalina, media, calzoncillo, perfumería), reintento ante 500/502/504 en la API VTEX, espacios de las URL de imagen codificados, `observaciones.fuente = magento_html`, y **corregido un bug previo**: cuatro patrones de `normalizar_disciplina` tenían `\b` convertido en un carácter de control y nunca coincidían.
+- Docs actualizados: ropa-02, 03, 12, README.
+
 ## 2026-11-01 — Fotos de perfumes (scraper + UI)
 
 - `descuentos_master.py` captura `Item.imagen` en VTEX, Unishop, Tiendanube y el motor HTML (helper `_url_imagen`: https, URL absoluta, sin `data:`; VTEX a 400 px, Tiendanube ≤ 640 px) y la guarda en `productos.imagen` con `COALESCE(VALUES(imagen), imagen)` (una corrida sin foto no borra la que ya hay).

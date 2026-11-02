@@ -112,6 +112,56 @@ SITES.append({
     "name": "montagne", "platform": "montagne", "host": "www.montagne.com.ar", "marca": "Montagne", "pag_max": 30, "activo": False,
     "secciones": {"descuento": [{"path": "/categoria/164-ofertas", "genero": "unisex", "categoria": "ropa", "etiqueta": "ofertas"}]},
 })
+# --- Tiendas agregadas el 2026-11-01 (ver ai-context/ropa-02) ---
+# Tascani: VTEX con catalogo publico (adaptador vtex_api). Su "Genero" es siempre hombre.
+SITES.append({
+    "name": "tascani", "platform": "vtex_api", "host": "www.tascani.com.ar", "marca": "Tascani", "pag_max": 40,
+    "specs": {"genero": ["Genero"], "tipo": [], "color": ["Color"], "linea": [], "disciplina": []},
+    "secciones": {"descuento": [{"path": "/catalogo", "genero": "hombre", "categoria": "ropa", "etiqueta": "catalogo",
+                                  "orden": "OrderByBestDiscountDESC", "cortar_sin_descuento": True}]},
+})
+# Tiendanube (adaptador tiendanube): el genero sale de la seccion (/hombre/, /mujer/...) y el catalogo completo va al final
+# (main() descarta duplicados: gana la primera seccion que trae el producto). Talle y color se detectan solos por producto.
+SITES.append({
+    "name": "catriel", "platform": "tiendanube", "host": "catrielbuenosaires.com", "marca": "Catriel", "pag_max": 40,
+    "secciones": {"descuento": [
+        {"path": "/hombre/", "genero": "hombre", "categoria": "ropa", "etiqueta": "hombre"},
+        {"path": "/mujer/", "genero": "mujer", "categoria": "ropa", "etiqueta": "mujer"},
+        {"path": "/productos/", "genero": "unisex", "categoria": "ropa", "etiqueta": "catalogo"}]},
+})
+SITES.append({
+    "name": "mistral", "platform": "tiendanube", "host": "www.mistral.com.ar", "marca": "Mistral", "pag_max": 60,
+    "secciones": {"descuento": [
+        {"path": "/hombre/", "genero": "hombre", "categoria": "ropa", "etiqueta": "hombre"},
+        {"path": "/mujer/", "genero": "mujer", "categoria": "ropa", "etiqueta": "mujer"},
+        {"path": "/nino/", "genero": "ninos", "categoria": "ropa", "etiqueta": "ninos"},
+        {"path": "/productos/", "genero": "unisex", "categoria": "ropa", "etiqueta": "catalogo"}]},
+})
+SITES.append({
+    "name": "stone", "platform": "tiendanube", "host": "www.stoneshop.com.ar", "marca": "Stone", "pag_max": 40,
+    "secciones": {"descuento": [
+        {"path": "/hombre/", "genero": "hombre", "categoria": "ropa", "etiqueta": "hombre"},
+        {"path": "/mujer/", "genero": "mujer", "categoria": "ropa", "etiqueta": "mujer"},
+        {"path": "/kids/", "genero": "ninos", "categoria": "ropa", "etiqueta": "ninos"},
+        {"path": "/productos/", "genero": "unisex", "categoria": "ropa", "etiqueta": "catalogo"}]},
+})
+SITES.append({
+    "name": "cuerosmicampo", "platform": "tiendanube", "host": "www.cuerosmicampo.com.ar", "marca": "Cueros Mi Campo", "pag_max": 30,
+    "secciones": {"descuento": [{"path": "/productos/", "genero": "unisex", "categoria": "ropa", "etiqueta": "catalogo"}]},
+})
+# Devre: Magento 2 (HTML del servidor; cada tarjeta trae el JSON de sus talles y precios). Ropa de hombre.
+SITES.append({
+    "name": "devre", "platform": "magento", "host": "www.devre.la", "marca": "Devré", "pag_max": 60,
+    "secciones": {"descuento": [{"path": "/coleccion.html", "genero": "hombre", "categoria": "ropa", "etiqueta": "coleccion"}]},
+})
+# Brooksfield: PrestaShop. Hoy NINGUN producto de su catalogo (~1.500) tiene precio tachado, asi que queda desactivado
+# (se prueba con --solo brooksfield). Si publican ofertas, poner "activo": True (el adaptador lee precio y precio anterior).
+SITES.append({
+    "name": "brooksfield", "platform": "prestashop", "host": "www.brooksfieldstore.com", "marca": "Brooksfield", "pag_max": 40, "activo": False,
+    "secciones": {"descuento": [
+        {"path": "/3-hombre-brooksfield", "genero": "hombre", "categoria": "ropa", "etiqueta": "hombre"},
+        {"path": "/7-mujer-brooksfield", "genero": "mujer", "categoria": "ropa", "etiqueta": "mujer"}]},
+})
 # Las plataformas sin secciones propias para "oportunidades" usan las de "descuento".
 for _s in SITES:
     _s["secciones"].setdefault("oportunidades", _s["secciones"]["descuento"])
@@ -400,7 +450,7 @@ API_PAGINA = 50
 _RE_CALZADO = re.compile(r"calzado|zapatill|botin|sandalia|ojota|chinela|zapato|\bbotas?\b|mocasin|pantufla|championes", re.I)
 _RE_ACCESORIOS = re.compile(r"accesorio|mochila|gorra|gorro|bolso|pelota|cintur|billetera|medias|rinonera|riñonera|canillera|"
                             r"lentes|bufanda|guante|valija|neceser|paraguas|bidon|bidón|inflador|\bmat\b|botinero|sombrero|"
-                            r"cartera|morral|llavero|pañuelo|panuelo|vincha|munequera|muñequera", re.I)
+                            r"cartera|morral|llavero|pañuelo|panuelo|vincha|munequera|muñequera|reloj", re.I)
 
 
 def _genero_de_texto(valores) -> Optional[str]:
@@ -483,7 +533,7 @@ def producto_de_api(p: dict, site: dict, seccion: dict) -> Optional[ItemRopa]:
         disciplina=_cap(_spec1(p, sp.get("disciplina"))), linea=_spec1(p, sp.get("linea")),
         precio_lista=precio_lista, precio_actual=actual, descuento_pct=_dto(precio_lista, actual),
         url=(f"https://{site['host']}{link}" if link.startswith("/") else link), seccion=seccion["path"],
-        imagen=ref_sku["img"] or next((s["img"] for s in skus if s["img"]), ""))
+        imagen=(ref_sku["img"] or next((s["img"] for s in skus if s["img"]), "")).replace(" ", "%20"))
 
 
 def cargar_json_api(sesion, url: str, reintentos: int = 3):
@@ -495,7 +545,7 @@ def cargar_json_api(sesion, url: str, reintentos: int = 3):
             if r.status_code in (200, 206):
                 _ritmo_exito()
                 return r.json(), r.headers.get("resources", "")
-            if r.status_code in (403, 429, 503):
+            if r.status_code in (403, 429, 500, 502, 503, 504):
                 _ritmo_bloqueo()
                 espera = 45 * intento
                 log.warning("  API respondio %s en %s; espero %ss (intento %d/%d)", r.status_code, url, espera, intento, reintentos)
@@ -900,11 +950,43 @@ def _talles_dexter(page, items: list[ItemRopa]) -> None:
 # --------------------------------------------------------------------------- #
 import html as _html
 
-_RE_TN_ITEM = re.compile(r'<div\s+class="js-product-item-private product-item')
+_RE_TN_ITEM = re.compile(r'<div\s+class="(?:js-product-item-private product-item|js-item-product\b)')     # dos temas de Tiendanube
 _RE_TN_VARIANTS = re.compile(r'data-variants="(.*?)"', re.S)
 _RE_TN_NOMBRE = re.compile(r'js-item-name[^>]*>\s*([^<]+?)\s*<')
 _RE_TN_URL = re.compile(r'href="(https?://[^"]*/productos/[^"]+?)"')
 _RE_TN_IMG = re.compile(r'(?:data-srcset|srcset|src)="(?://|https?://)([^"\s,]*(?:tiendanube|nuvemshop|mitiendanube)[^"\s,]*)')
+# Valor de una opcion que parece un talle (S, XL, 2XL, 42, 39-43, "44 AR", S/M, Unico...); lo demas se toma como color.
+_RE_TALLE = re.compile(
+    r"^(?:(?:[2-6]\s?)?x{0,4}[sl]|m|u|[uú]nic[oa]|talle\s+[uú]nico|\d{1,3}(?:[.,]5)?(?:\s?(?:ar|eu|us|cm))?|\d{2}\s?[-/]\s?\d{2}|"
+    r"(?:xxs|xs|s|m|l|xl|xxl|[2-6]xl)\s?/\s?(?:xs|s|m|l|xl|xxl|[2-6]xl))$", re.I)
+
+
+def _es_talle(valor) -> bool:
+    return bool(_RE_TALLE.match(str(valor or "").strip()))
+
+
+def _opciones_tn(con_stock: list, site: dict) -> tuple:
+    """(indice de la opcion de talle, indice de la de color) de las variantes de un producto Tiendanube. Con "talle_opcion"
+    en la tienda se usa ese indice (color = option0); si no, se detecta: el orden de las opciones cambia de tienda en tienda
+    (y de producto en producto), asi que se elige la opcion cuyos valores parecen talles."""
+    if site.get("talle_opcion") is not None:
+        return site["talle_opcion"], 0
+    mejor, mejor_pct = None, 0.0
+    for i in range(3):
+        vals = [str(v.get(f"option{i}") or "").strip() for v in con_stock if v.get(f"option{i}")]
+        if not vals:
+            continue
+        pct = sum(1 for x in vals if _es_talle(x)) / len(vals)
+        if pct >= 0.6 and pct > mejor_pct:
+            mejor, mejor_pct = i, pct
+    color = next((i for i in range(3) if i != mejor and any(v.get(f"option{i}") for v in con_stock)), None)
+    return mejor, color
+
+
+def _img_tn(bloque: str) -> str:
+    """Primera imagen del producto en el CDN de Tiendanube, a 480 px de ancho (el HTML trae 50/100/240/320/480/...)."""
+    mi = _RE_TN_IMG.search(bloque)
+    return re.sub(r"-\d+-0\.(webp|jpe?g|png)", r"-480-0.\1", "https://" + mi.group(1)) if mi else ""
 
 
 def items_de_tiendanube_ropa(html_text: str, site: dict, seccion: dict) -> list[ItemRopa]:
@@ -935,13 +1017,13 @@ def items_de_tiendanube_ropa(html_text: str, site: dict, seccion: dict) -> list[
         if actual <= 0:
             continue
         lista = max(lista, actual)
-        idx = site.get("talle_opcion", 1)
-        talles = sorted({str(v.get(f"option{idx}") or "").strip() for v in con_stock if v.get(f"option{idx}")}, key=_orden_talle)
-        colores = sorted({str(v.get("option0") or "").strip() for v in con_stock if v.get("option0")})
+        idx, idx_color = _opciones_tn(con_stock, site)
+        talles = sorted({str(v.get(f"option{idx}") or "").strip() for v in con_stock if v.get(f"option{idx}")}, key=_orden_talle) if idx is not None else []
+        colores = sorted({str(v.get(f"option{idx_color}") or "").strip() for v in con_stock if v.get(f"option{idx_color}")}) if idx_color is not None else []
         nombre = _html.unescape(mn.group(1)).strip()
-        mi = _RE_TN_IMG.search(bloque)
-        img = ("https://" + mi.group(1)) if mi else ""
-        gen = _genero_de_texto(nombre) or seccion["genero"]
+        img = _img_tn(bloque)
+        # seccion con genero (/hombre/, /mujer/...): manda; en la general ("unisex") se deduce del nombre
+        gen = seccion["genero"] if seccion["genero"] != "unisex" else (_genero_de_texto(nombre) or "unisex")
         categoria = "calzado" if _RE_CALZADO.search(nombre) else "accesorios" if _RE_ACCESORIOS.search(nombre) else "ropa"
         out.append(ItemRopa(
             tienda=site["name"], marca=site.get("marca", ""), nombre=nombre, referencia=str(v0.get("product_id") or mu.group(1)),
@@ -982,6 +1064,170 @@ def scrap_tiendanube_ropa(sesion, site: dict, seccion: dict, max_paginas: int) -
 
 
 # --------------------------------------------------------------------------- #
+# Adaptador "magento": Devre (Magento 2, HTML del servidor, HTTP simple). El listado /coleccion.html?p=N trae 16 tarjetas;
+# cada una incluye el JSON del selector de talles (jsonConfig: talles disponibles y, por talle, precio anterior y precio
+# final) y un bloque de datos de analitica (item_id). Sin orden por descuento: se recorre toda la seccion.
+# --------------------------------------------------------------------------- #
+_RE_MG_ITEM = re.compile(r'<li class="item product product-item')
+_RE_MG_URL = re.compile(r'<a href="([^"]+)" class="product-item-photo')
+_RE_MG_NOMBRE = re.compile(r'class="product-item-link"[^>]*href="[^"]*">\s*([^<]+?)\s*</a>')
+_RE_MG_IMG = re.compile(r'class="product-image-photo"\s+src="([^"]+)"')
+_RE_MG_ID = re.compile(r'"item_id":"([^"]+)"')
+_RE_MG_PRECIO = re.compile(r'data-price-amount="([\d.]+)"\s+data-price-type="(finalPrice|oldPrice)"')
+
+
+def _cfg_magento(bloque: str) -> dict:
+    """JSON 'jsonConfig' del selector de opciones de la tarjeta ({} si no hay)."""
+    m = re.search(r'"jsonConfig":\s*(?=\{"attributes")', bloque)      # la tarjeta tiene otro "jsonConfig" (colores) antes
+    if not m:
+        return {}
+    try:
+        return json.JSONDecoder().raw_decode(bloque, m.end())[0]
+    except ValueError:
+        return {}
+
+
+def items_de_magento(html_text: str, site: dict, seccion: dict) -> list[ItemRopa]:
+    out: list[ItemRopa] = []
+    pos = [m.start() for m in _RE_MG_ITEM.finditer(html_text)] + [len(html_text)]
+    for i in range(len(pos) - 1):
+        b = html_text[pos[i]:pos[i + 1]]
+        mu, mn = _RE_MG_URL.search(b), _RE_MG_NOMBRE.search(b)
+        if not (mu and mn):
+            continue
+        cfg = _cfg_magento(b)
+        talles: list = []
+        actual = lista = 0.0
+        attrs = list((cfg.get("attributes") or {}).values())
+        if attrs:
+            attr = next((a for a in attrs if "talle" in str(a.get("code", "")).lower()), attrs[0])
+            hijos = {pid for o in attr.get("options", []) for pid in o.get("products", [])}      # solo los talles disponibles
+            if not hijos:
+                continue                                                                         # sin stock
+            talles = sorted({str(o.get("label", "")).strip() for o in attr.get("options", []) if o.get("products")}, key=_orden_talle)
+            precios = [cfg["optionPrices"][h] for h in hijos if h in (cfg.get("optionPrices") or {})]
+            if precios:
+                p0 = min(precios, key=lambda p: p["finalPrice"]["amount"])
+                actual, lista = float(p0["finalPrice"]["amount"]), float((p0.get("oldPrice") or {}).get("amount") or 0)
+        if actual <= 0:                                                                          # producto sin variantes: caja de precio
+            pr = {tipo: float(v) for v, tipo in _RE_MG_PRECIO.findall(b)}
+            actual, lista = pr.get("finalPrice", 0.0), pr.get("oldPrice", 0.0)
+        if actual <= 0:
+            continue
+        lista = max(lista, actual)
+        nombre = _html.unescape(mn.group(1)).strip()
+        mi, mid = _RE_MG_IMG.search(b), _RE_MG_ID.search(b)
+        categoria = "calzado" if _RE_CALZADO.search(nombre) else "accesorios" if _RE_ACCESORIOS.search(nombre) else "ropa"
+        out.append(ItemRopa(
+            tienda=site["name"], marca=site.get("marca", ""), nombre=nombre, referencia=(mid.group(1) if mid else mu.group(1)),
+            genero=_genero_de_texto(nombre) or seccion["genero"], categoria=categoria, tipo=_cap(nombre.split()[0].lower()), color="",
+            talles=talles, precio_lista=lista, precio_actual=actual, descuento_pct=_dto(lista, actual), url=mu.group(1),
+            imagen=_html.unescape(mi.group(1)) if mi else "", seccion=seccion["path"]))
+    return out
+
+
+def scrap_magento(sesion, site: dict, seccion: dict, max_paginas: int) -> list[ItemRopa]:
+    vistos: dict = {}
+    for pagina in range(1, min(max_paginas, site.get("pag_max", 60)) + 1):
+        url = f"https://{site['host']}{seccion['path']}?p={pagina}"
+        for intento in range(1, 4):
+            time.sleep(random.uniform(2.5, 4.5) * _RITMO["factor"])
+            r = sesion.get(url, timeout=60, headers={"Accept": "text/html,application/xhtml+xml,*/*"})
+            if r.status_code == 200:
+                _ritmo_exito()
+                break
+            _ritmo_bloqueo()
+            log.warning("  %s respondio %s (intento %d/3)", url, r.status_code, intento)
+            time.sleep(30 * intento)
+        else:
+            raise Bloqueado(url)
+        tarjetas = len(_RE_MG_ITEM.findall(r.text))
+        items = items_de_magento(r.text, site, seccion)
+        nuevos = 0
+        for it in items:
+            if it.clave not in vistos:
+                vistos[it.clave] = it
+                nuevos += 1
+        log.info("  pagina %d: %d tarjetas, %d con stock (%d nuevas)", pagina, tarjetas, len(items), nuevos)
+        if tarjetas == 0 or (nuevos == 0 and items):
+            break        # Magento repite la ultima pagina si se pide una mas alla del final
+    return list(vistos.values())
+
+
+# --------------------------------------------------------------------------- #
+# Adaptador "prestashop": Brooksfield (PrestaShop, tema iqit; HTML del servidor, HTTP simple). El listado
+# /{id}-{categoria}?page=N trae 24 tarjetas (`article.js-product-miniature`) con precio (`.product-price`) y, si hay oferta,
+# precio anterior (`.regular-price`). Pedir una pagina mas alla del final repite la ultima: se corta al no haber productos
+# nuevos. El listado no trae talles: se leen de la ficha solo de los productos con descuento.
+# AVISO: al 2026-11-01 ningun producto tenia precio tachado, asi que la lectura de ofertas no esta verificada con datos reales.
+# --------------------------------------------------------------------------- #
+def _talles_prestashop(sesion, url: str) -> list:
+    try:
+        time.sleep(random.uniform(1.5, 2.5) * _RITMO["factor"])
+        r = sesion.get(url.split("#")[0], timeout=40, headers={"Accept": "text/html"})
+    except Exception as e:  # noqa: BLE001
+        log.warning("  ficha sin leer %s: %s", url, str(e)[:80])
+        return []
+    if r.status_code != 200:
+        return []
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(r.text, "html.parser")
+    for grupo in soup.select(".product-variants-item"):
+        if "talle" in (grupo.get_text(" ")[:30]).lower():
+            return sorted({(i.get("title") or "").strip() for i in grupo.select("input.input-radio") if i.get("title")}, key=_orden_talle)
+    return []
+
+
+def scrap_prestashop(sesion, site: dict, seccion: dict, max_paginas: int) -> list[ItemRopa]:
+    from bs4 import BeautifulSoup
+    vistos: dict = {}
+    for pagina in range(1, min(max_paginas, site.get("pag_max", 40)) + 1):
+        url = f"https://{site['host']}{seccion['path']}?page={pagina}"
+        for intento in range(1, 4):
+            time.sleep(random.uniform(2.5, 4.5) * _RITMO["factor"])
+            r = sesion.get(url, timeout=40, headers={"Accept": "text/html,*/*"})
+            if r.status_code == 200:
+                _ritmo_exito()
+                break
+            _ritmo_bloqueo()
+            log.warning("  %s respondio %s (intento %d/3)", url, r.status_code, intento)
+            time.sleep(30 * intento)
+        else:
+            raise Bloqueado(url)
+        tarjetas = BeautifulSoup(r.text, "html.parser").select("article.js-product-miniature")
+        nuevos = 0
+        for t in tarjetas:
+            a = t.select_one(".product-title a")
+            pid = t.get("data-id-product")
+            if not a or not pid or pid in vistos:
+                continue
+            nuevos += 1
+            actual = _monto((t.select_one(".product-price") or t).get_text()) if t.select_one(".product-price") else 0.0
+            lista = _monto(t.select_one(".regular-price").get_text()) if t.select_one(".regular-price") else 0.0
+            nombre = " ".join(a.get_text().split())
+            if actual <= 0:
+                continue
+            lista = max(lista, actual)
+            img = t.select_one("img[data-full-size-image-url], img[data-src]")
+            imagen = ((img.get("data-full-size-image-url") or img.get("data-src")) if img else "") or ""
+            ref = t.select_one(".product-reference")
+            cat = " ".join((t.select_one(".product-category-name") or t).get_text().split()) if t.select_one(".product-category-name") else ""
+            categoria = "calzado" if _RE_CALZADO.search(nombre) else "accesorios" if _RE_ACCESORIOS.search(nombre + " " + cat) else "ropa"
+            vistos[pid] = ItemRopa(
+                tienda=site["name"], marca=site.get("marca", ""), nombre=nombre, referencia=(ref.get_text().strip() if ref else pid),
+                genero=seccion["genero"], categoria=categoria, tipo=_cap(cat or nombre.split()[0].lower()), color="",
+                precio_lista=lista, precio_actual=actual, descuento_pct=_dto(lista, actual), url=(a.get("href") or "").split("#")[0],
+                imagen=imagen, seccion=seccion["path"])
+        log.info("  pagina %d: %d tarjetas (%d nuevas)", pagina, len(tarjetas), nuevos)
+        if not tarjetas or nuevos == 0:
+            break
+    con = [it for it in vistos.values() if it.descuento_pct > 0]
+    for it in con:
+        it.talles = _talles_prestashop(sesion, it.url)
+    return list(vistos.values())
+
+
+# --------------------------------------------------------------------------- #
 # Tipos de producto unificados entre tiendas
 # --------------------------------------------------------------------------- #
 # Cada tienda publica el tipo a su manera ("Remera", "Remeras y polos", "Remeras"; "Calzado" / "Zapatillas";
@@ -989,7 +1235,7 @@ def scrap_tiendanube_ropa(sesion, site: dict, seccion: dict, max_paginas: int) -
 # canonico (y la categoria que le corresponde) mirando el nombre y el tipo crudo. El primer patron que coincide gana:
 # el orden importa (p. ej. "traje de baño" antes que "traje").
 _TIPOS = [
-    (r"\b(edt|edp|perfume|eau de|fragancia|colonia)\b", "Perfumería", "accesorios"),
+    (r"\b(edt|edp|perfume|eau|fragancia|colonia|parfum|desodorante|antitranspirante)\b", "Perfumería", "accesorios"),
     (r"bicicleta|shimano|knog|vairo|\bcasco\b|\bfreno\b|herramienta", "Ciclismo", "accesorios"),
     (r"\bbotin(es)?\b", "Botines", "calzado"),
     (r"ojota|sandalia|\bslides?\b|chancl", "Sandalias y ojotas", "calzado"),
@@ -1008,14 +1254,14 @@ _TIPOS = [
     (r"camiseta", "Camiseta", "ropa"),
     (r"camis|blusa", "Camisa", "ropa"),
     (r"buzo|hoodie|canguro|zipthru|sudadera", "Buzo", "ropa"),
-    (r"campera|chaqueta|parka|anorak|puffer|gaban|montgomery|cortaviento|rompevientos|jacket|\bsaco\b|abrigo", "Campera", "ropa"),
+    (r"campera|chaqueta|parka|anorak|puffer|gaban|montgomery|cortaviento|rompevientos|jacket|\bsaco\b|abrigo|blazer|tapado|sobretodo|\bpiloto\b|poncho|trench", "Campera", "ropa"),
     (r"chaleco|\bvest\b", "Chaleco", "ropa"),
     (r"sweater|cardigan|pullover|tejido", "Sweater", "ropa"),
     (r"vestido", "Vestido", "ropa"),
     (r"pollera|falda", "Pollera", "ropa"),
     (r"conjunto|\bambo\b|pijama|\btraje\b", "Conjunto", "ropa"),
-    (r"medias|soquete", "Medias", "ropa"),
-    (r"boxer|bóxer|\bslip\b|ropa interior", "Ropa interior", "ropa"),
+    (r"\bmedias?\b|soquete", "Medias", "ropa"),
+    (r"boxer|bóxer|\bslip\b|ropa interior|calzoncillo", "Ropa interior", "ropa"),
     (r"gorra|gorro|beanie|piluso|vincha|sombrero|\bcap\b", "Gorras y gorros", "accesorios"),
     (r"mochila|bolso|bolsa|riñonera|rinonera|bandolera|valija|matera|necesser|neceser|totebag|canasta|morral", "Mochilas y bolsos", "accesorios"),
     (r"billetera|tarjetero|cartera|monedero", "Billeteras", "accesorios"),
@@ -1023,7 +1269,8 @@ _TIPOS = [
     (r"pelota|balón|\bbalon\b", "Pelotas", "accesorios"),
     (r"guante", "Guantes", "accesorios"),
     (r"lentes|gafas|anteojo", "Lentes", "accesorios"),
-    (r"bufanda|corbata|pañuelo|panuelo|\bcuello\b", "Bufandas y pañuelos", "accesorios"),
+    (r"reloj", "Relojes", "accesorios"),
+    (r"bufanda|corbata|pañuelo|panuelo|\bcuello\b|chalina|pashmina", "Bufandas y pañuelos", "accesorios"),
     (r"canillera|rodillera|muñequera|munequera|\bgrip\b|\bpalo\b|soporte|protector", "Protecciones y deporte", "accesorios"),
 ]
 _TIPOS_RE = [(re.compile(rx, re.I), tipo, cat) for rx, tipo, cat in _TIPOS]
@@ -1047,9 +1294,9 @@ def normalizar_tipo(nombre: str, tipo_crudo: str, categoria: str) -> tuple[str, 
 _DISCIPLINA_MAP = {"training": "Entrenamiento", "basketball": "Basquet", "básquet": "Basquet", "tenis": "Tenis y Pádel",
                    "futbol": "Fútbol", "casual": "Moda", "inspiracion-deportiva": "Moda", "urbano": "Moda", "deportivo": ""}
 _DISCIPLINA_NOMBRE = [(re.compile(rx, re.I), d) for rx, d in [
-    (r"f[úu]tbol|botines", "Fútbol"), (r"running|run|correr", "Running"), (r"tenis|p[áa]del", "Tenis y Pádel"),
-    (r"b[áa]squet|basket|nba", "Basquet"), (r"nataci|piscina|traje de ba|malla", "Natación"),
-    (r"training|entrenamiento|gym|crossfit", "Entrenamiento"), (r"trekking|outdoor|monta[ñn]a", "Outdoor")]]
+    (r"f[úu]tbol|\bbotines\b", "Fútbol"), (r"running|\brun\b|correr", "Running"), (r"tenis|p[áa]del", "Tenis y Pádel"),
+    (r"b[áa]squet|basket|\bnba\b", "Basquet"), (r"nataci|piscina|traje de ba|malla", "Natación"),
+    (r"training|entrenamiento|\bgym\b|crossfit", "Entrenamiento"), (r"trekking|outdoor|monta[ñn]a", "Outdoor")]]
 
 
 def normalizar_disciplina(nombre: str, disciplina: str, tipo: str) -> str:
@@ -1308,7 +1555,7 @@ def guardar_en_mysql(items: list, fecha_hora: datetime, reporte: list, estado_in
                      (normalizar_talles(_GENERO_DB.get(it.genero, "unisex"), it.categoria, it.talles)[:255] or None)))
                 prod_id[(it.tienda, nn)] = cur.lastrowid
 
-            fuente_de = {s["name"]: {"vtex_api": "vtex_api", "kevingston": "kevingston_api", "montagne": "html", "wrangler": "html", "sfcc_dexter": "sfcc_html", "puma": "puma_state", "tiendanube": "tiendanube"}.get(s["platform"], "vtex_state") for s in SITES}
+            fuente_de = {s["name"]: {"vtex_api": "vtex_api", "kevingston": "kevingston_api", "montagne": "html", "wrangler": "html", "sfcc_dexter": "sfcc_html", "puma": "puma_state", "tiendanube": "tiendanube", "magento": "magento_html", "prestashop": "html"}.get(s["platform"], "vtex_state") for s in SITES}
             filas, vistos = [], set()
             for it in items:
                 pid = prod_id[(it.tienda, (it.referencia or it.url).strip().lower()[:255])]
@@ -1460,6 +1707,10 @@ def main() -> int:
                             items = scrap_wrangler(sesion, site, sec, args.max_paginas)
                         elif site["platform"] == "montagne":
                             items = scrap_montagne(sesion, site, sec, args.max_paginas)
+                        elif site["platform"] == "magento":
+                            items = scrap_magento(sesion, site, sec, args.max_paginas)
+                        elif site["platform"] == "prestashop":
+                            items = scrap_prestashop(sesion, site, sec, args.max_paginas)
                         elif page is not None:
                             items = scrap_seccion(page, site, sec, args.max_paginas)
                         else:

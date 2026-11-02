@@ -84,7 +84,9 @@ Ver [11-entorno-config-despliegue.md](11-entorno-config-despliegue.md) y `Cambio
 - **Calzado: equivalencias H↔M** (M = H + 1,5): hoy una mujer que busca `M7` no ve el calzado de hombre `H5.5`. Se podría ofrecer "incluir equivalentes" (producto de hombre en talle H = M − 1,5 y viceversa). Decisión de producto.
 
 ## Tiendas de ropa: estado (2026-10-30)
-- **Lacoste y Adidas bloqueadas por Akamai (403)**: no se sortea el bloqueo; requiere decisión del usuario (autorización/feed/afiliados). Detalle en [ropa-02](ropa-02-tiendas-y-plataformas.md).
+- **Lacoste y Adidas bloqueadas por Akamai (403)**: no se sortea el bloqueo; requiere decisión del usuario (autorización/feed/afiliados). Adidas ya entra vía Dexter. Detalle en [ropa-02](ropa-02-tiendas-y-plataformas.md).
+- **Tiendas nuevas (2026-11-01)**: Tascani, Catriel, Mistral, Stone, Cueros Mi Campo y Devre agregadas (probadas por tienda y con guardado de prueba; **primera corrida programada completa con ellas aún no observada**). Brooksfield queda desactivada (sin ofertas hoy; lectura de ofertas no verificada).
+- Corrida de ropa ~20 min más larga con las tiendas nuevas (ver ropa-02).
 - Filtro de calzado "incluir equivalentes H↔M" y aviso "vuelve un talle": siguen pendientes (decisión de producto).
 - UX móvil (punto 8 de arriba): **resuelto** (botón Filtros + Ver resultados, ver 10).
 - Reparar la tarea programada de perfumes (`descuentos_master_perfumes`) requiere la contraseña de Windows del usuario (`scripts\instalar_tareas_windows.ps1`).
