@@ -12,6 +12,16 @@ Formato:
 
 ---
 
+## 2026-11-02 — Carga inmediata de las tiendas nuevas, auditoría de ritmo/robots y enlaces `noreferrer`
+
+- **Carga ahora**: las 8 tiendas nuevas de ropa (Cueros Mi Campo, Devre, Catriel, Moov, Tascani, Mistral, Stone, Briganti) se cargaron **dentro de la corrida visible #173** con `descuentos_ropa.py --solo <tienda> --fecha 2026-11-01T16:31:46`, una por una (la corrida pasó de 8.066 a 16.757 productos). Efecto: en Cambios las tiendas nuevas figuran como "nuevas" frente a la corrida anterior. La corrida de las 15:00 las volverá a leer con normalidad.
+- **Moov**: la primera carga cortó en 324 productos porque su orden "mayor descuento" no es estricto; ahora se corta tras 4 páginas seguidas sin descuentos (`"tolerancia": 4`): 2.036 productos.
+- **Caché**: `Dashboard::huellaCorrida()` (id + `total_productos` de la última corrida) reemplaza al id solo en las claves de caché, para que completar una corrida ya publicada (`--fecha`) renueve la caché.
+- **Fotos de perfumes**: se ejecutó `descuentos_master.py --rellenar-imagenes` (4.763 productos con foto nueva): Beauty24, Farmalife, Pigmento, Rouge, Fiorani, GetTheLook, Unishop y Ambrosia quedan ≈ 100 % con foto. Siguen sin foto Normy y Ruiz y Roca (sitios HTML: se completan en la corrida diaria) y Juleriaque/Parfumerie (devuelven 0 productos, A16).
+- **Enlaces**: los 11 enlaces a tiendas del dashboard y el del mail llevan `rel="noopener noreferrer" referrerpolicy="no-referrer"`.
+- **Auditoría de ritmo y robots** (doc nuevo [16](16-scraping-responsable-y-privacidad.md)): Shopify 10–15 s entre páginas; fichas de Dexter 1–1,8 s; perfumes `_pausa()` 1–1,8 s (antes 0,4–0,9 s) y `_get` reintenta 429/503. **Wrangler desactivada** (`robots.txt` `Disallow: /`).
+- Docs actualizados: 16 (nuevo), README, 10, 12, ropa-02.
+
 ## 2026-11-01 — Ropa: Moov y Briganti agregadas; Columbia investigada y dejada desactivada
 
 - `descuentos_ropa.py`: adaptadores nuevos `sfcc_http` (Moov: Salesforce Commerce Cloud por HTTP con `Search-UpdateGrid`, reusa `_tarjetas_sfcc`, que ahora toma el género de la sección y la marca por defecto de la tienda) y `shopify` (Briganti, Columbia: `/products.json` con pausas largas y espera ante 429; opciones por nombre; `excluir_tipos`, `dto_tags`). `observaciones.fuente`: `sfcc_html` y `shopify_json`.

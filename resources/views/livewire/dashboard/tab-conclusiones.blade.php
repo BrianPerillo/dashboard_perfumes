@@ -26,7 +26,7 @@
                 <span class="font-extrabold text-red-600">{{ $pct }}%</span>
                 <span class="text-[var(--c-muted)]">{{ $j['tienda'] }} · ${{ number_format($j['precio_actual'],0,',','.') }}</span>
                 @if(!empty($j['url']))
-                <a href="{{ $j['url'] }}" target="_blank" rel="noopener" class="text-violet-500 dark:text-violet-400 hover:underline">ver →</a>
+                <a href="{{ $j['url'] }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="text-violet-500 dark:text-violet-400 hover:underline">ver →</a>
                 @endif
             </div>
             @endforeach

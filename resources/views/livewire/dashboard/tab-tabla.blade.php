@@ -207,7 +207,7 @@
             $tallesLista = array_values(array_filter(preg_split('/,\s*/', $row['talles'] ?? '')));
         @endphp
         <article class="group flex flex-col overflow-hidden rounded-xl border border-[var(--c-border)] bg-[var(--c-card)] transition hover:-translate-y-0.5 hover:shadow-lg">
-            <a @if($row['url']) href="{{ $row['url'] }}" target="_blank" rel="noopener" @endif class="relative block aspect-square bg-white">
+            <a @if($row['url']) href="{{ $row['url'] }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" @endif class="relative block aspect-square bg-white">
                 @if(!empty($row['imagen']))
                 <img src="{{ $row['imagen'] }}" alt="{{ $row['producto'] }}" loading="lazy" referrerpolicy="no-referrer"
                      class="h-full w-full object-contain p-2 transition-transform duration-300 group-hover:scale-105">
@@ -224,7 +224,7 @@
                     · <button wire:click="toggleTablaFiltroMarca('{{ addslashes($row['marca']) }}')" class="hover:text-violet-500 hover:underline underline-offset-2">{{ $row['marca'] }}</button>
                     @endif
                 </p>
-                <a @if($row['url']) href="{{ $row['url'] }}" target="_blank" rel="noopener" @endif
+                <a @if($row['url']) href="{{ $row['url'] }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" @endif
                    class="line-clamp-2 text-sm font-semibold leading-snug text-[var(--c-text)] hover:text-violet-500" title="{{ $row['producto'] }}">{{ $row['producto'] }}</a>
                 @if(!empty($row['tipo']) || !empty($row['color']) || ($row['variantes'] ?? 1) > 1)
                 <p class="text-[11px] text-[var(--c-muted)] truncate">
@@ -293,7 +293,7 @@
                 </div>
                 {{-- Link --}}
                 @if($row['url'])
-                <a href="{{ $row['url'] }}" target="_blank" rel="noopener"
+                <a href="{{ $row['url'] }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer"
                    class="shrink-0 whitespace-nowrap text-xs font-semibold text-violet-500 dark:text-violet-400 hover:underline">ver →</a>
                 @endif
             </div>
@@ -367,7 +367,7 @@
                     <td class="px-3 py-2 text-right text-emerald-500 dark:text-emerald-400 font-medium text-xs">{{ $row['ahorro'] }}</td>
                     <td class="px-3 py-2 text-xs text-slate-400">{{ $row['fuente'] }}</td>
                     <td class="px-3 py-2 text-center">
-                        @if($row['url'])<a href="{{ $row['url'] }}" target="_blank" rel="noopener" class="text-xs whitespace-nowrap text-violet-500 dark:text-violet-400 underline underline-offset-2">ver →</a>@endif
+                        @if($row['url'])<a href="{{ $row['url'] }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="text-xs whitespace-nowrap text-violet-500 dark:text-violet-400 underline underline-offset-2">ver →</a>@endif
                     </td>
                 </tr>
                 @empty

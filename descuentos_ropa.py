@@ -91,7 +91,8 @@ SITES = [
     },
 ]
 SITES.append({
-    "name": "wrangler", "platform": "wrangler", "host": "wranglerjeans.com.ar", "marca": "Wrangler", "pag_max": 20,
+    # DESACTIVADA (2026-11-01): su robots.txt dice "User-agent: *  Disallow: /" (solo permite a Googlebot). Reactivar solo con su autorizacion.
+    "name": "wrangler", "platform": "wrangler", "host": "wranglerjeans.com.ar", "marca": "Wrangler", "pag_max": 20, "activo": False,
     "secciones": {"descuento": [{"path": "/last-chance", "category_id": 171, "genero": "unisex", "categoria": "ropa", "etiqueta": "lastchance"}]},
 })
 SITES.append({
@@ -167,9 +168,9 @@ SITES.append({
 SITES.append({
     "name": "moov", "platform": "sfcc_http", "host": "www.moov.com.ar", "marca": "Moov", "pag_max": 60, "grid": "Sites-Moov-Site",
     "secciones": {"descuento": [
-        {"path": "/hombre", "cgid": "hombre", "genero": "hombre", "categoria": "ropa", "etiqueta": "hombre", "cortar_sin_descuento": True},
-        {"path": "/mujer", "cgid": "mujer", "genero": "mujer", "categoria": "ropa", "etiqueta": "mujer", "cortar_sin_descuento": True},
-        {"path": "/sale", "cgid": "sale", "genero": "unisex", "categoria": "ropa", "etiqueta": "sale", "cortar_sin_descuento": True}]},
+        {"path": "/hombre", "cgid": "hombre", "genero": "hombre", "categoria": "ropa", "etiqueta": "hombre", "cortar_sin_descuento": True, "tolerancia": 4},
+        {"path": "/mujer", "cgid": "mujer", "genero": "mujer", "categoria": "ropa", "etiqueta": "mujer", "cortar_sin_descuento": True, "tolerancia": 4},
+        {"path": "/sale", "cgid": "sale", "genero": "unisex", "categoria": "ropa", "etiqueta": "sale", "cortar_sin_descuento": True, "tolerancia": 4}]},
 })
 # Columbia: Shopify, DESACTIVADA. El JSON publica solo el precio de lista (sin compare_at): el descuento (Cyber Monday 20-40 %) es de
 # coleccion, depende de en que coleccion se mire el producto y NO coincide siempre con la tag ("40cybermonday"): en una muestra de
@@ -946,7 +947,7 @@ def _talles_dexter(page, items: list[ItemRopa]) -> None:
     fallos = 0
     for n, it in enumerate(items, 1):
         path = it.url.split("dexter.com.ar", 1)[-1]
-        time.sleep(random.uniform(0.6, 1.1) * _RITMO["factor"])
+        time.sleep(random.uniform(1.0, 1.8) * _RITMO["factor"])
         try:
             html = page.evaluate(_JS_FETCH_TXT, path)
         except Exception as e:  # noqa: BLE001
@@ -1260,6 +1261,7 @@ def scrap_prestashop(sesion, site: dict, seccion: dict, max_paginas: int) -> lis
 def scrap_sfcc_http(sesion, site: dict, seccion: dict, max_paginas: int) -> list[ItemRopa]:
     cgid = seccion["cgid"]
     vistos: dict = {}
+    sin_dto = 0                      # paginas seguidas sin ningun tachado
     for pagina in range(1, min(max_paginas, site.get("pag_max", 60)) + 1):
         url = (f"https://{site['host']}/on/demandware.store/{site['grid']}/default/Search-UpdateGrid?cgid={cgid}"
                f"&srule=product-discount&start={(pagina - 1) * 36}&sz=36")
@@ -1282,14 +1284,17 @@ def scrap_sfcc_http(sesion, site: dict, seccion: dict, max_paginas: int) -> list
                 nuevos += 1
         con_dto = sum(1 for it in items if it.descuento_pct > 0)
         log.info("  pagina %d: %d tarjetas, %d legibles (%d nuevas, %d con descuento)", pagina, n, len(items), nuevos, con_dto)
-        if n < 36 or nuevos == 0 or (seccion.get("cortar_sin_descuento") and con_dto == 0):
+        sin_dto = 0 if con_dto else sin_dto + 1
+        # El orden "mayor descuento" de Moov NO es estricto (aparecen paginas sin tachados y despues otras con 100 %): se corta
+        # recien tras varias paginas seguidas sin descuentos (corrida del 2026-11-01: cortar en la 1ª dejo 324 de ~1.050).
+        if n < 36 or nuevos == 0 or (seccion.get("cortar_sin_descuento") and sin_dto >= seccion.get("tolerancia", 1)):
             break
     return list(vistos.values())
 
 
 # --------------------------------------------------------------------------- #
 # Adaptador "shopify": catalogo publico /products.json?limit=250&page=N (Columbia, Briganti). Shopify limita el ritmo
-# (429 "local_rate_limited"): pausa de 6-9 s entre paginas y espera creciente. Cada producto trae variantes con precio,
+# (429 "local_rate_limited"): pausa de 10-15 s (+30 s por reintento) entre paginas y espera creciente. Cada producto trae variantes con precio,
 # precio anterior (`compare_at_price`) y disponibilidad; las opciones se leen por NOMBRE (Talle/Size, Color).
 # Config opcional por tienda: "excluir_tipos" (regex sobre product_type), "dto_tags" (regex con un grupo numerico sobre
 # las tags: descuento de coleccion que Shopify NO publica en el precio, p. ej. "40cybermonday" = 40 % sobre `price`).
@@ -1355,7 +1360,7 @@ def scrap_shopify(sesion, site: dict, seccion: dict, max_paginas: int) -> list[I
     for pagina in range(1, min(max_paginas, site.get("pag_max", 30)) + 1):
         url = f"https://{site['host']}/products.json?limit=250&page={pagina}"
         for intento in range(1, 5):
-            time.sleep(random.uniform(6.0, 9.0) * _RITMO["factor"] + (intento - 1) * 15)
+            time.sleep(random.uniform(10.0, 15.0) * _RITMO["factor"] + (intento - 1) * 30)
             r = sesion.get(url, timeout=60, headers={"Accept": "application/json"})
             if r.status_code == 200:
                 _ritmo_exito()

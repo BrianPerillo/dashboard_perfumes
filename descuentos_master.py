@@ -602,14 +602,27 @@ def nueva_session() -> requests.Session:
     return s
 
 
+def _pausa() -> None:
+    """Pausa entre pedidos consecutivos al MISMO sitio (paginas del catalogo): 1-1,8 s para no martillar al servidor."""
+    time.sleep(random.uniform(1.0, 1.8))
+
+
 def _get(session, url, **kw):
-    try:
-        r = session.get(url, timeout=25, **kw)
-        if r.status_code in (200, 206):
-            return r
-        log.debug("  %s -> HTTP %s", url, r.status_code)
-    except requests.RequestException as e:
-        log.debug("  fallo GET %s: %s", url, e)
+    for intento in range(1, 4):
+        try:
+            r = session.get(url, timeout=25, **kw)
+            if r.status_code in (200, 206):
+                return r
+            if r.status_code in (429, 503) and intento < 3:
+                # el sitio pide ir mas despacio: espera creciente en vez de seguir insistiendo (o dar la pagina por vacia)
+                espera = 20 * intento
+                log.warning("  %s -> HTTP %s; espero %ss (intento %d/3)", url, r.status_code, espera, intento)
+                time.sleep(espera)
+                continue
+            log.debug("  %s -> HTTP %s", url, r.status_code)
+        except requests.RequestException as e:
+            log.debug("  fallo GET %s: %s", url, e)
+        return None
     return None
 
 
@@ -732,7 +745,7 @@ def scrap_vtex(session, site, max_items) -> list[Item]:
             if len(data) < paso:
                 break
             desde += paso
-            time.sleep(random.uniform(0.4, 0.9))
+            _pausa()
         return out
 
     base_api = f"https://{host}/api/catalog_system/pub/products/search"
@@ -883,7 +896,7 @@ def scrap_unishop(session, site, max_items) -> list[Item]:
             if it:
                 items.append(it)
         page += 1
-        time.sleep(random.uniform(0.4, 0.9))
+        _pausa()
     return items
 
 
@@ -1027,7 +1040,7 @@ def scrap_tiendanube(session, site, max_items) -> list[Item]:
         if agregados == 0:        # página repetida -> no hay más
             break
         page += 1
-        time.sleep(random.uniform(0.4, 0.9))
+        _pausa()
     return items
 
 

@@ -45,7 +45,7 @@
                     <td class="px-3 py-2 text-xs">
                         @foreach($r['detalle'] ?? [] as $k => $d)
                         <div class="whitespace-nowrap {{ $k === 0 ? 'font-bold text-emerald-500 dark:text-emerald-400' : 'text-[var(--c-muted)]' }}">
-                            @if($d['url'])<a href="{{ $d['url'] }}" target="_blank" rel="noopener" class="hover:underline">{{ $d['tienda'] }}</a>@else{{ $d['tienda'] }}@endif
+                            @if($d['url'])<a href="{{ $d['url'] }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="hover:underline">{{ $d['tienda'] }}</a>@else{{ $d['tienda'] }}@endif
                             ${{ number_format($d['precio'], 0, ',', '.') }} <span class="opacity-70">(-{{ $d['dto'] }}%)</span>
                             @if(!empty($d['talles']))<span class="opacity-70">· {{ $d['talles'] }}</span>@endif
                         </div>
@@ -58,7 +58,7 @@
                     <td class="px-3 py-2 text-right text-slate-400 text-xs line-through">${{ number_format($r['precio_max'], 0, ',', '.') }}</td>
                     <td class="px-3 py-2 text-right"><span class="font-bold text-emerald-500 dark:text-emerald-400">${{ number_format($r['ahorro'], 0, ',', '.') }}</span><span class="text-xs text-slate-400 ml-1">({{ $r['spread_pct'] }}%)</span></td>
                     <td class="px-3 py-2 text-center">
-                        @if($r['url'])<a href="{{ $r['url'] }}" target="_blank" rel="noopener" class="text-xs whitespace-nowrap text-violet-500 dark:text-violet-400 underline underline-offset-2">ver →</a>@endif
+                        @if($r['url'])<a href="{{ $r['url'] }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="text-xs whitespace-nowrap text-violet-500 dark:text-violet-400 underline underline-offset-2">ver →</a>@endif
                     </td>
                 </tr>
                 @endforeach

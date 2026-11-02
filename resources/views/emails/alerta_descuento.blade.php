@@ -104,7 +104,7 @@
         @endif
         @if(!empty($r->url))
         <br><br>
-        <a href="{{ $r->url }}" class="btn">Ver en tienda →</a>
+        <a href="{{ $r->url }}" rel="noreferrer" referrerpolicy="no-referrer" class="btn">Ver en tienda →</a>
         @endif
       </div>
     </div>

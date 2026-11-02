@@ -108,7 +108,7 @@
                     @php $foto = $joyasFotos[$j['pid'] ?? 0] ?? ''; @endphp
                     <div class="flex items-start gap-3">
                         {{-- Foto (tamaño fijo: el layout no salta al cargar); sin foto, ícono del rubro --}}
-                        <a @if(!empty($j['url'])) href="{{ $j['url'] }}" target="_blank" rel="noopener" @endif
+                        <a @if(!empty($j['url'])) href="{{ $j['url'] }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" @endif
                            class="shrink-0 flex items-center justify-center overflow-hidden rounded-lg bg-white border border-[var(--c-border)]" style="width:72px;height:72px;">
                             @if($foto)
                             <img src="{{ $foto }}" alt="{{ $j['producto'] }}" width="72" height="72" loading="lazy" decoding="async" referrerpolicy="no-referrer"
@@ -128,7 +128,7 @@
                     </div>
                     <div class="flex items-center justify-between mt-2">
                         @if(!empty($j['url']))
-                        <a href="{{ $j['url'] }}" target="_blank" rel="noopener"
+                        <a href="{{ $j['url'] }}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer"
                            class="text-xs text-violet-500 dark:text-violet-400 hover:underline">ver producto →</a>
                         @else<span></span>@endif
                         @if($badgeLabel)

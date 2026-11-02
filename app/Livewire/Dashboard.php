@@ -371,7 +371,7 @@ class Dashboard extends Component
             ->selectRaw('c.fecha_hora, COUNT(*) AS total, AVG(o.descuento_pct) AS desc_prom, MAX(o.descuento_pct) AS desc_max, SUM(o.ahorro) AS ahorro_total, COUNT(DISTINCT p.tienda_id) AS tiendas_n');
 
         // Recorre todo el historial (~4 s): se cachea por filtros y última corrida (una corrida nueva cambia la clave)
-        $rows = Cache::remember('evolucion:' . md5($rows->toSql() . json_encode($rows->getBindings()) . (Corrida::ultima($this->rubro)?->id ?? 0)), 21600, fn() => $rows->get()->all());
+        $rows = Cache::remember('evolucion:' . md5($rows->toSql() . json_encode($rows->getBindings()) . $this->huellaCorrida()), 21600, fn() => $rows->get()->all());
         $rows = collect($rows);
 
         $this->serieEvolucionJson = $rows->map(fn($r) => [
@@ -489,8 +489,16 @@ class Dashboard extends Component
      */
     private function cacheado($query, string $tipo, \Closure $fn)
     {
-        $clave = "q:{$tipo}:{$this->rubro}:" . md5($query->toSql() . json_encode($query->getBindings()) . (Corrida::ultima($this->rubro)?->id ?? 0));
+        $clave = "q:{$tipo}:{$this->rubro}:" . md5($query->toSql() . json_encode($query->getBindings()) . $this->huellaCorrida());
         return Cache::remember($clave, 21600, $fn);
+    }
+
+    /** Huella de la última corrida completa: id + total de productos (si se completa una corrida con otra tienda, la huella cambia y la caché se renueva). */
+    private function huellaCorrida(): string
+    {
+        $c = Corrida::ultima($this->rubro);
+
+        return $c ? $c->id . '-' . $c->total_productos : '0';
     }
 
     private function buildTablaQuery(): \Illuminate\Database\Query\Builder
@@ -1129,7 +1137,7 @@ class Dashboard extends Component
     {
         // Primeras opciones (sin texto): se cachean por filtros y última corrida; recorrer ~24.000 productos con EXISTS cuesta ~0,8 s
         $q = $this->queryOpcionesSeguir();
-        $this->seguirOpciones = Cache::remember('seguir:' . md5($q->toSql() . json_encode($q->getBindings()) . (Corrida::ultima($this->rubro)?->id ?? 0)), 21600,
+        $this->seguirOpciones = Cache::remember('seguir:' . md5($q->toSql() . json_encode($q->getBindings()) . $this->huellaCorrida()), 21600,
             fn() => $q->get()->map(fn($r) => ['key' => $r->pk, 'label' => $r->etiqueta])->toArray());
 
         if (!$this->seguirProdKey && !empty($this->seguirOpciones)) {
@@ -1735,7 +1743,7 @@ class Dashboard extends Component
     /** Clave de caché de los listados de marcas/ml: tiendas del rubro + última corrida (si hay corrida nueva, se recalculan). */
     private function claveDisponibles(string $que): string
     {
-        return "disp:{$que}:{$this->rubro}:" . (Corrida::ultima($this->rubro)?->id ?? 0);
+        return "disp:{$que}:{$this->rubro}:" . $this->huellaCorrida();
     }
 
     private function cargarMlDisponibles(): void
