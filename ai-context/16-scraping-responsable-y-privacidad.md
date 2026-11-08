@@ -24,6 +24,9 @@ Principios aplicados: pausa aleatoria entre pedidos al mismo sitio, **sin parale
 | `shopify` (Briganti, Columbia) | **10–15 s** (+30 s por reintento) | 4 intentos; Shopify responde `429 local_rate_limited` con pocas páginas seguidas |
 | Perfumes (`descuentos_master.py`: VTEX, Unishop, Tiendanube) | **1–1,8 s** (`_pausa()`; antes 0,4–0,9 s) | `_get` reintenta 429/503 con 20 s × intento (antes los daba por "página vacía") |
 | Perfumes HTML (Playwright) | 1–2 s entre páginas | — |
+| Tecnología: Compragamer (`cg_json`) | 4 pedidos en total (catálogo JSON estático), 1–2 s | 30 s × intento y ritmo adaptativo |
+| Tecnología: Maximus (`maximus_ws`) | 2,5–4,5 s entre pedidos (≈55) | idem |
+| Tecnología: Fullh4rd (`fh_html`) | 2,5–4,5 s entre páginas (≈160, 650 KB c/u) | idem |
 
 Cambios de esta auditoría: pausas de perfumes más largas y reintento ante 429/503; Shopify de 6–9 s a 10–15 s; fichas de Dexter de 0,6–1,1 s a 1–1,8 s (+~15 min en la corrida); Moov corta tras 4 páginas seguidas sin descuentos (su orden "mayor descuento" no es estricto).
 
@@ -35,6 +38,7 @@ Se leyó el `robots.txt` de cada sitio (un pedido) y se comprobó que las rutas 
 * **Permitido** en todas las perfumerías y en Levi's, Topper, Tascani, Kevingston, Dexter, Prototype, Puma, Catriel, Mistral, Stone, Cueros Mi Campo, Old Bridge (2026-11-02), Devre, Moov, Briganti, Columbia y Brooksfield. Ninguno declara `Crawl-delay`.
 * **Wrangler: `User-agent: *  Disallow: /`** (solo Googlebot permitido) → **desactivada** (`"activo": False` en `SITES`). Reactivar solo con autorización del sitio.
 * Nike: `robots.txt` devuelve 403 a una petición simple (Cloudflare); se lee con navegador real y pausas largas, sin evasión.
+* **Tecnología (2026-11-08):** Compragamer no publica `robots.txt` (devuelve su SPA) y el JSON que leemos es el que descarga cualquier visitante; Maximus veta login/checkout/perfil/seguimiento y nosotros solo pedimos el listado público; Fullh4rd veta `/cart`, `/order`, `/checkout`, `/tag?` y pedimos `/productos?page=N`. Sin `Crawl-delay` ni protección anti-bot en esas rutas. Mexx estaba en mantenimiento.
 
 ## Protecciones anti-bot (Akamai, Lacoste/Adidas)
 

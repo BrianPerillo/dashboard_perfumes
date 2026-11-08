@@ -24,7 +24,8 @@ class Dashboard extends Component
     // ── Rubro (perfumes | ropa | ...; ver config/rubros.php) ──────
     public string $rubro = 'perfumes';
     public array  $generosDisponibles = [];
-    public string $categoriaFiltro = '';   // ropa: '' = todas | ropa | calzado | accesorios
+    public string $categoriaFiltro = '';   // ropa: '' = todas | ropa | calzado | accesorios (tecnología: cualquier categoría de categoriasDisponibles)
+    public array  $categoriasDisponibles = [];   // solo rubros con categorias_dinamicas: [['v' => 'Monitores', 'n' => 12], ...]
     public bool   $agruparColores      = true;   // ropa: un renglón por modelo+precio (los colores se agrupan)
     public ?int   $precioMin           = null;   // ropa: rango de precio actual
     public ?int   $precioMax           = null;
@@ -1364,7 +1365,10 @@ class Dashboard extends Component
     // ── Filtros de ropa: categoría, tipo de producto y talles ──────
     public function setCategoria(string $categoria): void
     {
-        $this->categoriaFiltro = in_array($categoria, ['ropa', 'calzado', 'accesorios'], true) ? $categoria : '';
+        $validas = config("rubros.rubros.{$this->rubro}.categorias_dinamicas")
+            ? array_column($this->categoriasDisponibles, 'v')
+            : ['ropa', 'calzado', 'accesorios'];
+        $this->categoriaFiltro = in_array($categoria, $validas, true) ? $categoria : '';
         $this->recargarTodo();
     }
 
@@ -1509,8 +1513,27 @@ class Dashboard extends Component
         $this->disciplinasDisponibles = [];
         $this->lineasDisponibles = [];
         $this->tallesDisponibles = [];
+        $this->categoriasDisponibles = [];
         if (!config("rubros.rubros.{$this->rubro}.filtro_categoria") || !$this->corridaActualId) {
             return;
+        }
+
+        if (config("rubros.rubros.{$this->rubro}.categorias_dinamicas")) {
+            // chips de categoría con la cantidad de ofertas de cada una (sin aplicar la categoría ya elegida)
+            $cats = DB::table('productos as p')
+                ->join('observaciones as o', 'o.producto_id', '=', 'p.id')
+                ->where('o.corrida_id', $this->corridaActualId)
+                ->where('o.tipo_descuento', 'rebaja')
+                ->whereIn('p.tienda_id', array_keys($this->tiendas))
+                ->whereNotNull('p.categoria')
+                ->groupBy('p.categoria')
+                ->orderByRaw('COUNT(*) DESC')
+                ->selectRaw('p.categoria AS v, COUNT(*) AS n')
+                ->get();
+            $this->categoriasDisponibles = $cats->map(fn($c) => ['v' => $c->v, 'n' => (int) $c->n])->all();
+            if ($this->categoriaFiltro !== '' && !in_array($this->categoriaFiltro, array_column($this->categoriasDisponibles, 'v'), true)) {
+                $this->categoriaFiltro = '';
+            }
         }
 
         $rows = DB::table('productos as p')

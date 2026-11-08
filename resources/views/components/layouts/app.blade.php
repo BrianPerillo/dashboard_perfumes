@@ -256,7 +256,7 @@
             <a href="{{ $rubroUrl($slug) }}"
                class="flex-1 text-center rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors
                       {{ $slug === $rubro ? 'bg-[var(--color-primary-600)] text-white shadow' : 'text-[var(--c-muted)] hover:text-[var(--c-text)]' }}">
-                {{ $r['icono'] }} {{ $r['nombre'] }}
+                {{ $r['icono'] }} {{ $r['nombre_corto'] ?? $r['nombre'] }}
             </a>
             @endforeach
         </div>
@@ -505,7 +505,7 @@
         <a href="{{ $rubroUrl($slug) }}"
            class="flex-1 text-center rounded-lg px-2 py-1.5 text-xs font-semibold
                   {{ $slug === $rubro ? 'bg-[var(--color-primary-600)] text-white' : 'bg-[var(--c-bg)] text-[var(--c-muted)]' }}">
-            {{ $r['icono'] }} {{ $r['nombre'] }}
+            {{ $r['icono'] }} {{ $r['nombre_corto'] ?? $r['nombre'] }}
         </a>
         @endforeach
     </div>

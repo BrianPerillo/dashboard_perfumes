@@ -1,6 +1,6 @@
 # 14 · Multi-rubro (perfumes, ropa y los que vengan)
 
-Desde 2026-10-29 el sitio deja de ser "solo perfumes": cada **rubro** tiene sus tiendas, scraper, corridas y productos, pero comparte usuarios, alertas, planes, admin, layout y el dashboard. Rubros hoy: `perfumes` (por defecto) y `ropa` (Nike Argentina; Lacoste y otros después).
+Desde 2026-10-29 el sitio deja de ser "solo perfumes": cada **rubro** tiene sus tiendas, scraper, corridas y productos, pero comparte usuarios, alertas, planes, admin, layout y el dashboard. Rubros hoy: `perfumes` (por defecto), `ropa` (Nike y otras tiendas) y `tecnologia` (PC y electro: Compragamer, Maximus, Fullh4rd; desde 2026-11-08, ver [tecno-01](tecno-01-tiendas-y-precios.md)).
 
 > **Estado (2026-10-29):** migración **aplicada** a MySQL (todo lo existente = `perfumes`), dashboard `/ropa/*` y perfumes verificados contra la base real (todas las pestañas cargan), scraper de ropa guardando en MySQL (probado; corrida real de Nike: 1.124 productos con descuento en `/ropa/tabla`), alertas por rubro implementadas. Pendiente: ver [12](12-problemas-conocidos-y-pendientes.md).
 
@@ -46,3 +46,12 @@ Fuente de verdad de rubros. Por rubro: `nombre`, `icono`, `items_label` (KPI), `
 Pestañas propias de ropa (por tienda, comparar entre sitios); crear la tarea de Windows del scraper de ropa (`scripts/instalar_tareas_windows.ps1`, diaria 15:00); segundo sitio: **Lacoste está bloqueado a navegadores automatizados** (ver [ropa-01](ropa-01-scraper-nike.md)).
 
 > **Layout (2026-10-30):** el menú lateral muestra solo los filtros de la página; las pestañas de cada rubro (`config/rubros.php` → `tabs`) se navegan desde el header. Ver [10](10-frontend-layouts-ui.md).
+
+## Rubro `tecnologia` (2026-11-08): qué hubo que generalizar
+Sumar el tercer rubro mostró qué seguía atado a "ropa". Quedó parametrizado por `config/rubros.php` (claves opcionales; sin ellas rige el comportamiento de ropa/perfumes):
+* `nombre_corto`: etiqueta del selector de rubro (3 opciones caben en el sidebar).
+* `generos` con **un solo valor** (`['unisex' => 'General']`): la sección "Género" no se muestra (sidebar y menú móvil de `livewire/dashboard.blade.php`).
+* `categorias_dinamicas`: los chips de **Categoría** salen de los datos (`Dashboard::$categoriasDisponibles`, calculado en `cargarOpcionesRopa`; `setCategoria` valida contra esa lista) en lugar de ropa/calzado/accesorios.
+* `tipo_label` (título del filtro de tipo, default "Prenda / tipo"), `usa_talles` (default true; en `false` la tabla no muestra talles ni "consultá en la tienda"), `filtro_colores` (default true; en `false` se oculta "Agrupar colores").
+* Alertas (`_alerta_form.blade.php`): los textos ya no asumen "perfume" para todo lo que no sea ropa (la presentación en ml solo se muestra para perfumes; el placeholder depende del rubro).
+* Sin pestaña "Comparar tiendas" (la de ropa cruza por `Support\Modelo::clave`, que no aplica a tecnología).

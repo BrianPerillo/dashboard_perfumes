@@ -16,8 +16,14 @@
 <div class="border-b border-[var(--c-border)] px-4 py-3" wire:loading.class="opacity-50 pointer-events-none">
     <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)] mb-2">Categoría</p>
     <div class="flex flex-wrap gap-1">
-        @foreach(['' => 'Todas', 'ropa' => 'Ropa', 'calzado' => 'Calzado', 'accesorios' => 'Accesorios'] as $ckey => $clabel)
-        <button wire:click="setCategoria('{{ $ckey }}')"
+        @php
+            // tecnología: las categorías salen de los datos (Dashboard::cargarOpcionesRopa); ropa tiene 3 fijas
+            $chipsCategoria = config("rubros.rubros.$rubro.categorias_dinamicas")
+                ? ['' => 'Todas'] + collect($categoriasDisponibles)->mapWithKeys(fn($c) => [$c['v'] => $c['v'] . ' (' . $c['n'] . ')'])->all()
+                : ['' => 'Todas', 'ropa' => 'Ropa', 'calzado' => 'Calzado', 'accesorios' => 'Accesorios'];
+        @endphp
+        @foreach($chipsCategoria as $ckey => $clabel)
+        <button wire:click="setCategoria(@js((string) $ckey))"
                 class="px-2.5 py-1 rounded text-xs font-semibold border transition-all {{ $chip($categoriaFiltro === $ckey) }}">
             {{ $clabel }}
         </button>
@@ -31,7 +37,7 @@
     <button @click="open = !open" :class="!open ? 'filter-section-closed' : ''"
             class="w-full flex items-center justify-between px-4 pt-3 pb-2">
         <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
-            Prenda / tipo
+            {{ config("rubros.rubros.$rubro.tipo_label", 'Prenda / tipo') }}
             <span class="font-normal normal-case opacity-60">({{ count($tiposDisponibles) - count($tiposExcluidos) }}/{{ count($tiposDisponibles) }})</span>
         </p>
         <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
@@ -129,7 +135,7 @@
     <button @click="open = !open" :class="!open ? 'filter-section-closed' : ''"
             class="w-full flex items-center justify-between px-4 pt-3 pb-2">
         <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--c-muted)]">
-            Precio y colores
+            {{ config("rubros.rubros.$rubro.filtro_colores", true) ? 'Precio y colores' : 'Precio' }}
             @if($precioMin || $precioMax)<span class="font-normal normal-case opacity-60">(precio filtrado)</span>@endif
         </p>
         <span class="text-[var(--c-muted)] transition-transform duration-200" :class="open ? 'rotate-180' : ''">
@@ -147,10 +153,12 @@
                     <input type="number" min="0" step="1000" placeholder="Máx" wire:model.live.debounce.700ms="precioMax"
                            class="w-1/2 rounded-lg border border-[var(--c-border)] bg-[var(--c-input)] px-2 py-1 text-xs text-[var(--c-text)]">
                 </div>
+                @if(config("rubros.rubros.$rubro.filtro_colores", true))
                 <label class="mt-3 flex items-center gap-2 text-[11px] text-[var(--c-muted)] cursor-pointer">
                     <input type="checkbox" wire:model.live="agruparColores" class="rounded accent-[var(--color-primary-600)]">
                     Agrupar colores del mismo modelo
                 </label>
+                @endif
             </div>
         </div>
     </div>

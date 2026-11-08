@@ -9,7 +9,10 @@
  *  - tabs        : pestañas visibles en los menús => [etiqueta, icono, en_sidebar]
  *  - tabs_rutas  : pestañas válidas por URL (incluye las ocultas de los menús)
  *  - tab_inicial : pestaña a la que redirige la raíz del rubro
- *  - generos     : valores de productos.genero => etiqueta (ropa usa los mismos valores + 'ninos')
+ *  - generos     : valores de productos.genero => etiqueta (ropa usa los mismos valores + 'ninos'); con un solo valor
+ *                  el filtro de género no se muestra
+ *  - opcionales  : nombre_corto (selector de rubro), categorias_dinamicas (chips de categoría con los datos),
+ *                  tipo_label (título del filtro de tipo), usa_talles (default true), filtro_colores (default true)
  */
 return [
     'default' => 'perfumes',
@@ -38,6 +41,7 @@ return [
 
         'ropa' => [
             'nombre'      => 'Ropa y calzado',
+            'nombre_corto' => 'Ropa',
             'icono'       => '👕',
             'items_label' => 'Productos en oferta',
             'prefijo'     => 'ropa',
@@ -54,6 +58,32 @@ return [
             'generos' => ['masculino' => 'Hombre', 'femenino' => 'Mujer', 'ninos' => 'Niños', 'unisex' => 'Unisex'],
             'filtro_ml'  => false,
             'filtro_categoria' => true,
+        ],
+
+        // PC y electro (Compragamer, Maximus, Fullh4rd): sin géneros ni talles; la categoría sale de los datos
+        // (productos.categoria = categoría común a las tiendas; productos.tipo = subtipo, p. ej. Teclados / Mouses).
+        'tecnologia' => [
+            'nombre'       => 'Tecnología',
+            'nombre_corto' => 'Tecnología',
+            'icono'        => '🖥️',
+            'items_label'  => 'Productos en oferta',
+            'prefijo'      => 'tecnologia',
+            'tab_inicial'  => 'tabla',
+            'tabs' => [
+                'tabla'     => ['Ofertas',           '📋', true],
+                'cambios'   => ['Cambios recientes', '🔁', true],
+                'evolucion' => ['Evolución',         '📈', true],
+                'seguir'    => ['Seguir producto',   '🔎', true],
+                'marcas'    => ['Marcas',            '🏷️', true],
+            ],
+            'tabs_rutas' => ['tabla', 'cambios', 'tiendas', 'evolucion', 'seguir', 'marcas', 'distribucion'],
+            'generos' => ['unisex' => 'General'],
+            'filtro_ml'  => false,
+            'filtro_categoria' => true,
+            'categorias_dinamicas' => true,   // chips de categoría armados con los datos (no solo ropa/calzado/accesorios)
+            'tipo_label'   => 'Tipo de producto',
+            'usa_talles'   => false,
+            'filtro_colores' => false,
         ],
     ],
 ];

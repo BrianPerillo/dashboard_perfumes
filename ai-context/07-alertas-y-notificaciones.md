@@ -101,3 +101,5 @@ Los mensajes de alerta (email y Telegram) incluyen **"Talles disponibles: …"**
 
 ## Imagen en el email (2026-10-30)
 `ProcesarAlertas::procesarAlerta` ahora también trae `p.imagen`; `emails/alerta_descuento.blade.php` la muestra (96 px, a la derecha de la tarjeta) cuando es una URL http(s). Telegram sigue siendo solo texto. Pendiente (no hecho): aviso "vuelve un talle" (hay que guardar los talles por observación para compararlos entre corridas; hoy `productos.talles` solo tiene el valor actual). La opción "incluir equivalentes H↔M" ya existe en el filtro del dashboard (ver 05), no en las alertas.
+
+**Tecnología (2026-11-08):** el formulario de alertas (`livewire/_alerta_form.blade.php`) ofrece el rubro Tecnología; la card "¿Qué querés monitorear?" pasó de "Perfume" a "Producto" y el texto/placeholder dependen del rubro; "Tamaño (ml)" solo para perfumes y "Talles" solo para ropa. `ProcesarAlertas` ya filtraba por `alertas.rubro`, así que no cambió.

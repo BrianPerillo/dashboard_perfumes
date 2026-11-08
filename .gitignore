@@ -36,5 +36,7 @@ ngrok-start.bat
 __pycache__/
 *.pyc
 !descuentos_ropa.py
+!descuentos_tecno.py
 excel_ropa/
 logs_ropa.txt
+logs_tecno.txt

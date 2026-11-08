@@ -12,6 +12,15 @@ Formato:
 
 ---
 
+## 2026-11-08 — Nuevo rubro Tecnología (PC y electro): Compragamer, Maximus y Fullh4rd
+
+- **Scraper nuevo `descuentos_tecno.py`** (+ `scripts/descuentos_tecno.bat`, `.gitignore`): un adaptador por tienda (Compragamer: JSON estático del propio sitio; Maximus: WebMethod del listado con el `hidWSId` público; Fullh4rd: HTML paginado), guardado tienda por tienda en una corrida `en_curso` que se cierra `completa` (≥60 % de tiendas OK). Precios en base **contado/transferencia**; la rebaja de Fullh4rd (no publica descuentos) sale del historial propio de 30 días. Clasificación común de categoría/tipo/marca. Mexx no se agregó (en mantenimiento). Primera corrida real: #277.
+- **Dashboard** (`config/rubros.php` → `tecnologia`, `Dashboard.php`, `filtros-ropa`, `dashboard`, `tab-tabla`, layout, `_alerta_form`): rubro `/tecnologia/*` con pestañas Ofertas/Cambios/Evolución/Seguir/Marcas; claves nuevas de config (`nombre_corto`, `categorias_dinamicas`, `tipo_label`, `usa_talles`, `filtro_colores`; género oculto con un solo valor); alertas con textos por rubro.
+- **BUG de ropa corregido** (corridas `en_curso` desde el 2-nov por microsegundos en `fecha_hora`; 5 corridas reparadas): ver 12.
+- **Candado de MySQL** (`scripts/mysql_asegurar.bat`, usado por los 4 lanzadores) tras el doble arranque de `mysqld` del 2026-11-08: ver 11.
+- La tarea `descuentos_tecno` (diaria 12:00) quedó definida en `instalar_tareas_windows.ps1` pero **sin registrar** (requiere ejecutarlo a mano).
+- Docs actualizados: tecno-01 (nuevo), README, 03, 04, 05, 07, 10, 11, 12, 14, 16.
+
 ## 2026-11-02 — Ropa: Old Bridge (Tiendanube)
 
 - `descuentos_ropa.py`: nueva entrada `oldbridge` en `SITES` (adaptador `tiendanube` existente, catálogo `/productos/`, género `hombre`, `pag_max` 60) y dos patrones de `_TIPOS` (`denim` → Jean; `sock(s)` → Medias).

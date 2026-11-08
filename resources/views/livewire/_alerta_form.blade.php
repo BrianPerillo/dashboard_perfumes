@@ -32,7 +32,7 @@
         </label>
         <div class="grid grid-cols-3 gap-2">
             @foreach([
-                ['producto', '🧴', 'Perfume', 'Un perfume específico por nombre'],
+                ['producto', '🛍️', 'Producto', 'Un producto específico por nombre'],
                 ['marca',   '🏷️', 'Marca',   'Todos los descuentos de una marca'],
                 ['tienda',  '🏪', 'Tienda',  'Todos los descuentos de una tienda'],
             ] as [$val, $icon, $lbl, $desc])
@@ -56,8 +56,8 @@
     <div>
         <label for="alerta-valor-{{ $esEdicion ? 'edit' : 'new' }}"
                class="block text-xs font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-2"
-               x-text="$wire.tipo === 'producto' ? ($wire.rubro === 'ropa' ? '¿Qué producto?' : '¿Qué perfume?') : ($wire.tipo === 'marca' ? '¿Qué marca?' : '¿Qué tienda?')">
-            @if($tipo === 'producto') {{ $rubro === 'ropa' ? '¿Qué producto?' : '¿Qué perfume?' }}
+               x-text="$wire.tipo === 'producto' ? ($wire.rubro === 'perfumes' ? '¿Qué perfume?' : '¿Qué producto?') : ($wire.tipo === 'marca' ? '¿Qué marca?' : '¿Qué tienda?')">
+            @if($tipo === 'producto') {{ $rubro === 'perfumes' ? '¿Qué perfume?' : '¿Qué producto?' }}
             @elseif($tipo === 'marca') ¿Qué marca?
             @else ¿Qué tienda?
             @endif
@@ -66,7 +66,7 @@
                id="alerta-valor-{{ $esEdicion ? 'edit' : 'new' }}"
                list="sugerencias-list-{{ $esEdicion ? 'edit' : 'new' }}"
                wire:model.live.debounce.350ms="valor"
-               :placeholder="$wire.tipo === 'producto' ? ($wire.rubro === 'ropa' ? 'Ej: Air Force, Jordan, Dunk…' : 'Ej: Dylan Blue, Bleu de Chanel…') : ($wire.tipo === 'marca' ? 'Ej: Versace, Chanel…' : 'Ej: Juleriaque, Rouge…')"
+               :placeholder="({ producto: { perfumes: 'Ej: Dylan Blue, Bleu de Chanel…', ropa: 'Ej: Air Force, Jordan, Dunk…', tecnologia: 'Ej: RTX 4060, Ryzen 5 5600, Kumara K552…' }, marca: { perfumes: 'Ej: Versace, Chanel…', ropa: 'Ej: Nike, Adidas…', tecnologia: 'Ej: Logitech, Asus, MSI…' }, tienda: { perfumes: 'Ej: Juleriaque, Rouge…', ropa: 'Ej: Nike, Moov…', tecnologia: 'Ej: Compragamer, Maximus…' } }[$wire.tipo] || {})[$wire.rubro] || ''"
                autocomplete="off"
                class="w-full rounded-xl border border-[var(--c-border)] bg-[var(--c-input)]
                       text-[var(--c-text)] placeholder:text-[var(--c-muted)]
@@ -88,7 +88,7 @@
     <div x-show="$wire.tipo === 'producto'">
 
         {{-- Tamaño (ml: solo perfumes) --}}
-        <div class="mb-5" x-show="$wire.rubro !== 'ropa'">
+        <div class="mb-5" x-show="$wire.rubro === 'perfumes'">
             <label class="block text-xs font-semibold uppercase tracking-wider text-[var(--c-muted)] mb-2">
                 Tamaño <span class="normal-case font-normal">(opcional)</span>
             </label>

@@ -231,6 +231,7 @@
                     {{ $row['tipo'] }}@if(!empty($row['color'])){{ $row['tipo'] ? ' · ' : '' }}{{ $row['color'] }}@endif@if(($row['variantes'] ?? 1) > 1) · <span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span>@endif
                 </p>
                 @endif
+                @if(config("rubros.rubros.{$rubro}.usa_talles", true))
                 <div class="flex flex-wrap gap-1">
                     @forelse(array_slice($tallesLista, 0, 8) as $t)
                     <span class="rounded border border-[var(--c-border)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--c-text)]">{{ $t }}</span>
@@ -241,6 +242,7 @@
                     <span class="px-1 py-0.5 text-[10px] text-[var(--c-muted)]" title="{{ implode(', ', $tallesLista) }}">+{{ count($tallesLista) - 8 }}</span>
                     @endif
                 </div>
+                @endif
                 <div class="mt-auto pt-2">
                     <div class="flex items-baseline gap-2">
                         <span class="text-base font-bold text-violet-500 dark:text-violet-300">{{ $row['precio_actual'] }}</span>
@@ -287,7 +289,7 @@
                     </p>
                     @if(!empty($row['talles']) || !empty($row['tipo']) || !empty($row['color']))
                     <p class="text-[11px] text-[var(--c-muted)] mt-0.5">
-                        {{ $row['tipo'] ? $row['tipo'] . ' · ' : '' }}@if(($row['variantes'] ?? 1) > 1)<span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span> · @endif{{ $row['color'] ? $row['color'] . ' · ' : '' }}@if(!empty($row['talles']))Talles: {{ $row['talles'] }}@else<span class="italic">Talles: consultá en la tienda</span>@endif
+                        {{ $row['tipo'] ? $row['tipo'] . ' · ' : '' }}@if(($row['variantes'] ?? 1) > 1)<span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span> · @endif{{ $row['color'] ? $row['color'] . ' · ' : '' }}@if(!config("rubros.rubros.{$rubro}.usa_talles", true))@elseif(!empty($row['talles']))Talles: {{ $row['talles'] }}@else<span class="italic">Talles: consultá en la tienda</span>@endif
                     </p>
                     @endif
                 </div>
@@ -359,7 +361,7 @@
                         @endif
                         {{ $row['producto'] }}
                         @if(!empty($row['talles']) || !empty($row['tipo']) || !empty($row['color']))
-                        <span class="block text-[11px] font-normal text-[var(--c-muted)]">{{ $row['tipo'] ? $row['tipo'] . ' · ' : '' }}@if(($row['variantes'] ?? 1) > 1)<span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span> · @endif{{ $row['color'] ? $row['color'] . ' · ' : '' }}@if(!empty($row['talles']))Talles: {{ $row['talles'] }}@else<span class="italic">Talles: consultá en la tienda</span>@endif</span>
+                        <span class="block text-[11px] font-normal text-[var(--c-muted)]">{{ $row['tipo'] ? $row['tipo'] . ' · ' : '' }}@if(($row['variantes'] ?? 1) > 1)<span class="font-semibold text-violet-500">{{ $row['variantes'] }} colores</span> · @endif{{ $row['color'] ? $row['color'] . ' · ' : '' }}@if(!config("rubros.rubros.{$rubro}.usa_talles", true))@elseif(!empty($row['talles']))Talles: {{ $row['talles'] }}@else<span class="italic">Talles: consultá en la tienda</span>@endif</span>
                         @endif
                     </td>
                     <td class="px-3 py-2 text-right text-slate-400 text-xs line-through">{{ $row['precio_lista'] }}</td>

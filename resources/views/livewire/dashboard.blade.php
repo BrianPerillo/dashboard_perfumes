@@ -210,6 +210,7 @@
     </div>
     @endif
 
+    @if(count(config("rubros.rubros.$rubro.generos")) > 1)
     {{-- ── Género ───────────────────────────────────────────── --}}
     <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
@@ -244,6 +245,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- ── Presentación ─────────────────────────────────────── --}}
     @if(config("rubros.rubros.$rubro.filtro_ml") && !empty($mlDisponibles))
@@ -389,6 +391,7 @@
     </div>
     @endif
 
+    @if(count(config("rubros.rubros.$rubro.generos")) > 1)
     {{-- ── Género ───────────────────────────────────────────── --}}
     <div x-data="{ open: true }" class="border-b border-[var(--c-border)]" wire:loading.class="opacity-50 pointer-events-none">
         <button @click="open = !open"
@@ -423,6 +426,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- ── Presentación ─────────────────────────────────────── --}}
     @if(config("rubros.rubros.$rubro.filtro_ml") && !empty($mlDisponibles))

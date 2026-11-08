@@ -70,3 +70,5 @@ Las rutas de pestañas se generan por rubro desde `config/rubros.php`: perfumes 
 El sidebar ya **no lista pestañas** ni lleva logo: la navegación está en el header (barra superior en escritorio, barra de secciones y selector de rubro en móvil) y el sidebar muestra solo los **filtros de la página actual** (más selector de rubro, cuenta y tema). La marca "Descuentos ARG" con el icono del rubro se muestra en el header (escritorio ≥ xl y móvil). Las tablas de menús de arriba aplican ahora solo a la **barra superior** y a la **barra móvil**.
 
 **Ropa (2026-10-30):** `/ropa/comparar` (Comparar tiendas) se suma a `/ropa/{tabla,cambios,evolucion,seguir,marcas}`; las rutas salen de `config/rubros.php`.
+
+**Tecnología (2026-11-08):** `/tecnologia` (→ `/tecnologia/tabla`) y `/tecnologia/{tabla,cambios,evolucion,seguir,marcas}` (`tecnologia.tab`), generadas desde `config/rubros.php`; no tiene `comparar`.

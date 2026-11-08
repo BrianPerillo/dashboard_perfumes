@@ -4,6 +4,7 @@
     descuentos_master_perfumes : scraper, diario 13:00  -> scripts\descuentos_master.bat
     alertas_perfumes           : alertas, cada 3 horas  -> scripts\alertas_procesar.bat
     descuentos_ropa            : scraper de ropa, diario 15:00 -> scripts\descuentos_ropa.bat
+    descuentos_tecno           : scraper de tecnologia, diario 12:00 -> scripts\descuentos_tecno.bat
 
   Uso (PowerShell, como el usuario que ejecuta el scraper):
     powershell -ExecutionPolicy Bypass -File scripts\instalar_tareas_windows.ps1
@@ -88,7 +89,18 @@ Register-ScheduledTask -TaskName $nombreRopa -Action $accionRopa -Trigger $trigg
     -Principal $principalRopa -Force | Out-Null
 Write-Host "Tarea '$nombreRopa' registrada (diaria 15:00) - modo Interactive (solo con la sesion iniciada)."
 
-Get-ScheduledTask -TaskName $nombreScraper, $nombreAlertas, $nombreRopa | ForEach-Object {
+# ── 4. Scraper de tecnologia (Compragamer, Maximus, Fullh4rd): diario 12:00 (dura ~15 min), antes del de perfumes ─
+$nombreTecno = 'descuentos_tecno'
+$accionTecno  = Nueva-AccionOculta 'descuentos_tecno.bat'
+$triggerTecno = New-ScheduledTaskTrigger -Daily -At '12:00'
+$settingsTecno = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew `
+                  -ExecutionTimeLimit (New-TimeSpan -Hours 2) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+$principalTecno = New-ScheduledTaskPrincipal -UserId $usuario -LogonType Interactive -RunLevel Limited
+Register-ScheduledTask -TaskName $nombreTecno -Action $accionTecno -Trigger $triggerTecno -Settings $settingsTecno `
+    -Principal $principalTecno -Force | Out-Null
+Write-Host "Tarea '$nombreTecno' registrada (diaria 12:00) - modo Interactive (solo con la sesion iniciada)."
+
+Get-ScheduledTask -TaskName $nombreScraper, $nombreAlertas, $nombreRopa, $nombreTecno | ForEach-Object {
     $i = Get-ScheduledTaskInfo $_
     '{0,-28} {1,-8} proxima: {2}' -f $_.TaskName, $_.State, $i.NextRunTime
 }

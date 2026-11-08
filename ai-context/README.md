@@ -36,7 +36,8 @@ Esta carpeta es la **fuente de verdad** sobre cómo funciona *Descuentos Perfume
 | [13-changelog-documentacion.md](13-changelog-documentacion.md) | Registro cronológico de cambios al sistema/documentación |
 | [16-scraping-responsable-y-privacidad.md](16-scraping-responsable-y-privacidad.md) | Ritmo (throttling) de cada scraper, revisión de `robots.txt`, criterio ante Akamai (Lacoste/Adidas) y enlaces salientes sin `Referer` (`noreferrer`) |
 | [15-rendimiento.md](15-rendimiento.md) | Auditoría de velocidad (2026-11-01): cuellos de botella, caché, scroll infinito en Destacados, búsqueda en Seguir, pendientes de configuración (buffer pool, opcache) |
-| [14-multirubro.md](14-multirubro.md) | Arquitectura multi-rubro (perfumes, ropa…): config, datos, rutas, selector, cómo sumar un rubro |
+| [14-multirubro.md](14-multirubro.md) | Arquitectura multi-rubro (perfumes, ropa, tecnología…): config, datos, rutas, selector, cómo sumar un rubro |
+| [tecno-01-tiendas-y-precios.md](tecno-01-tiendas-y-precios.md) | Rubro Tecnología (PC y electro): Compragamer, Maximus, Fullh4rd, modelo de precios (contado vs lista), clasificación común, uso y pendientes |
 | [ropa-01-scraper-nike.md](ropa-01-scraper-nike.md) | Scraper de ropa: cómo es Nike Argentina, cómo se lee, uso, límites |
 | [ropa-02-tiendas-y-plataformas.md](ropa-02-tiendas-y-plataformas.md) | Tiendas de ropa: plataforma de cada sitio, adaptadores `magento`/`prestashop`/`tiendanube`/`vtex_io`/`vtex_api` (Levi's, Topper), bloqueos (Lacoste/Adidas) |
 | [scraper-01-descripcion-y-ejecucion.md](scraper-01-descripcion-y-ejecucion.md) | El script `descuentos_master.py`: cómo se ejecuta, flujo, logs, archivos |
@@ -58,6 +59,8 @@ Esta carpeta es la **fuente de verdad** sobre cómo funciona *Descuentos Perfume
 | `descuentos_master.py`, `excel_perfumes/`, `logs_scraper.txt` | scraper-01/02/03 |
 | `scripts/` (lanzadores de las tareas de Windows) | 11, scraper-01, 07 |
 | `config/rubros.php`, `descuentos_ropa.py` | 14, ropa-01 |
+| `descuentos_tecno.py`, `scripts/descuentos_tecno.bat`, `logs_tecno.txt` | tecno-01, 11 |
+| `scripts/mysql_asegurar.bat` (candado de arranque de MySQL) | 11 |
 
 ## Documentos previos en la raíz (históricos)
 
