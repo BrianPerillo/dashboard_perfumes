@@ -182,6 +182,7 @@
     if (count($tiendasSeleccionadas) < count($tiendas)) $_fc++;
     if (count($generosSeleccionados) < count($generosDisponibles)) $_fc++;
     if ($categoriaFiltro !== '') $_fc++;
+    $_fc += count($categoriasElegidas);
     $_fc += count($tiposExcluidos) + count($tallesSeleccionados) + count($disciplinasExcluidas) + count($lineasExcluidas);
     if ($precioMin) $_fc++;
     if ($precioMax) $_fc++;

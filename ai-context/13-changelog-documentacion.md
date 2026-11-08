@@ -12,6 +12,11 @@ Formato:
 
 ---
 
+## 2026-11-09 — Tecnología: filtro de categorías con selección múltiple
+
+- `Dashboard.php` (`categoriasElegidas`, `setCategoria`, `filtrosRopa`, `cargarOpcionesRopa`, reset y favoritos) y `filtros-ropa.blade.php`: en rubros con `categorias_dinamicas` (Tecnología) las categorías **se suman** (antes la nueva reemplazaba a la anterior); "Todas" limpia la selección y cada chip se quita volviendo a tocarlo. Ropa conserva la selección única (`categoriaFiltro`: ropa/calzado/accesorios). Verificado en el navegador: Monitores 146 → + Gabinetes 221 → + Procesadores 327 → − Gabinetes 252 → Todas 1.691.
+- Docs actualizados: 05, 14.
+
 ## 2026-11-09 — Tecnología: Gezatek, Wiztech, Armytech y Gamingcity
 
 - `descuentos_tecno.py`: 4 adaptadores nuevos (`gz_html`, `wt_json`, `at_html`, `gc_html`; ver [tecno-01](tecno-01-tiendas-y-precios.md)) y entradas en `SITES`; el historial de 30 días ahora también se usa en Wiztech (y no pisa rebajas ya publicadas); clasificación sin tildes + búsqueda de la palabra de tipo en cualquier parte del nombre + categorías nuevas (Hogar y electro, Consolas y juegos, Celulares y wearables, Cámaras y smart home); `--reclasificar` (sin scrapear).

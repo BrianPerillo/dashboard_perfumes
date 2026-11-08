@@ -24,7 +24,9 @@
         @endphp
         @foreach($chipsCategoria as $ckey => $clabel)
         <button wire:click="setCategoria(@js((string) $ckey))"
-                class="px-2.5 py-1 rounded text-xs font-semibold border transition-all {{ $chip($categoriaFiltro === $ckey) }}">
+                class="px-2.5 py-1 rounded text-xs font-semibold border transition-all {{ $chip(config("rubros.rubros.$rubro.categorias_dinamicas")
+                    ? ($ckey === '' ? empty($categoriasElegidas) : in_array($ckey, $categoriasElegidas, true))
+                    : $categoriaFiltro === $ckey) }}">
             {{ $clabel }}
         </button>
         @endforeach

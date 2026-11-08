@@ -26,6 +26,7 @@ class Dashboard extends Component
     public array  $generosDisponibles = [];
     public string $categoriaFiltro = '';   // ropa: '' = todas | ropa | calzado | accesorios (tecnología: cualquier categoría de categoriasDisponibles)
     public array  $categoriasDisponibles = [];   // solo rubros con categorias_dinamicas: [['v' => 'Monitores', 'n' => 12], ...]
+    public array  $categoriasElegidas = [];      // idem: selección múltiple (se suman); vacío = todas
     public bool   $agruparColores      = true;   // ropa: un renglón por modelo+precio (los colores se agrupan)
     public ?int   $precioMin           = null;   // ropa: rango de precio actual
     public ?int   $precioMax           = null;
@@ -1365,10 +1366,18 @@ class Dashboard extends Component
     // ── Filtros de ropa: categoría, tipo de producto y talles ──────
     public function setCategoria(string $categoria): void
     {
-        $validas = config("rubros.rubros.{$this->rubro}.categorias_dinamicas")
-            ? array_column($this->categoriasDisponibles, 'v')
-            : ['ropa', 'calzado', 'accesorios'];
-        $this->categoriaFiltro = in_array($categoria, $validas, true) ? $categoria : '';
+        if (config("rubros.rubros.{$this->rubro}.categorias_dinamicas")) {
+            // tecnología: cada categoría se suma o se quita (varias a la vez); '' = "Todas" (limpia la selección)
+            if ($categoria === '') {
+                $this->categoriasElegidas = [];
+            } elseif (in_array($categoria, array_column($this->categoriasDisponibles, 'v'), true)) {
+                $i = array_search($categoria, $this->categoriasElegidas, true);
+                $i === false ? $this->categoriasElegidas[] = $categoria : array_splice($this->categoriasElegidas, $i, 1);
+                $this->categoriasElegidas = array_values($this->categoriasElegidas);
+            }
+        } else {
+            $this->categoriaFiltro = in_array($categoria, ['ropa', 'calzado', 'accesorios'], true) ? $categoria : '';
+        }
         $this->recargarTodo();
     }
 
@@ -1451,6 +1460,9 @@ class Dashboard extends Component
         if ($this->categoriaFiltro !== '') {
             $q->where('p.categoria', $this->categoriaFiltro);
         }
+        if (!empty($this->categoriasElegidas)) {
+            $q->whereIn('p.categoria', $this->categoriasElegidas);
+        }
         if ($this->precioMin) {
             $q->where('o.precio_actual', '>=', $this->precioMin);
         }
@@ -1531,9 +1543,8 @@ class Dashboard extends Component
                 ->selectRaw('p.categoria AS v, COUNT(*) AS n')
                 ->get();
             $this->categoriasDisponibles = $cats->map(fn($c) => ['v' => $c->v, 'n' => (int) $c->n])->all();
-            if ($this->categoriaFiltro !== '' && !in_array($this->categoriaFiltro, array_column($this->categoriasDisponibles, 'v'), true)) {
-                $this->categoriaFiltro = '';
-            }
+            // descartar selecciones que ya no existen en la corrida actual
+            $this->categoriasElegidas = array_values(array_intersect($this->categoriasElegidas, array_column($this->categoriasDisponibles, 'v')));
         }
 
         $rows = DB::table('productos as p')
@@ -1543,6 +1554,7 @@ class Dashboard extends Component
             ->whereIn('p.tienda_id', array_keys($this->tiendas))
             ->when(count($this->generosSeleccionados) < count($this->generosDisponibles), fn($q) => $q->whereIn('p.genero', $this->generosSeleccionados))
             ->when($this->categoriaFiltro !== '', fn($q) => $q->where('p.categoria', $this->categoriaFiltro))
+            ->when(!empty($this->categoriasElegidas), fn($q) => $q->whereIn('p.categoria', $this->categoriasElegidas))
             ->get(['p.categoria', 'p.tipo', 'p.talles', 'p.talles_norm', 'p.disciplina', 'p.linea']);
 
         $tipos = [];
@@ -1659,6 +1671,7 @@ class Dashboard extends Component
         $this->tiendasSeleccionadas = array_keys($this->tiendas);
         $this->generosSeleccionados = $this->generosDisponibles;
         $this->categoriaFiltro      = '';
+        $this->categoriasElegidas   = [];
         $this->tallesSeleccionados  = [];
         $this->tallesEquivalentes   = false;
         $this->tiposExcluidos   = [];
@@ -1683,6 +1696,7 @@ class Dashboard extends Component
 
         \App\Models\Favorito::guardar(auth()->id(), trim($this->favoritoNombre), [
             'categoriaFiltro'    => $this->categoriaFiltro,
+            'categoriasElegidas' => $this->categoriasElegidas,
             'tiposExcluidos' => $this->tiposExcluidos,
             'disciplinasExcluidas' => $this->disciplinasExcluidas,
             'lineasExcluidas' => $this->lineasExcluidas,
@@ -1720,6 +1734,7 @@ class Dashboard extends Component
         $this->tablaSortCol3      = $cfg['tablaSortCol3'] ?? '';
         $this->tablaSortDir3      = $cfg['tablaSortDir3'] ?? 'desc';
         $this->categoriaFiltro    = $cfg['categoriaFiltro'] ?? '';
+        $this->categoriasElegidas = $cfg['categoriasElegidas'] ?? [];
         $this->tiposExcluidos = $cfg['tiposExcluidos'] ?? [];
         $this->disciplinasExcluidas = $cfg['disciplinasExcluidas'] ?? [];
         $this->lineasExcluidas = $cfg['lineasExcluidas'] ?? [];
