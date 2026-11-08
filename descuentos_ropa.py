@@ -1801,8 +1801,9 @@ def main() -> int:
 
     if args.renormalizar_tipos:
         return renormalizar_tipos_en_bd()
-    ahora = datetime.fromisoformat(args.fecha) if args.fecha else datetime.now()
-    sitios = [s for s in SITES if (s["name"] in args.solo if args.solo else s.get("activo", True))]
+    # sin microsegundos: DATETIME(0) los trunca al insertar y despues cerrar_corrida() no encontraba la fila (WHERE fecha_hora=...)
+    ahora = datetime.fromisoformat(args.fecha) if args.fecha else datetime.now().replace(microsecond=0)
+    sitios =[s for s in SITES if (s["name"] in args.solo if args.solo else s.get("activo", True))]
     if not sitios:
         log.error("Ninguna tienda coincide con --solo %s", args.solo)
         return 2

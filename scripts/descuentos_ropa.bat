@@ -9,12 +9,8 @@ setlocal
 
 cd /d "%~dp0.."
 
-rem Arrancar MySQL (con la config de XAMPP) solo si no esta corriendo
-tasklist /FI "IMAGENAME eq mysqld.exe" 2>NUL | "%SystemRoot%\System32\find.exe" /I "mysqld.exe" >NUL
-if errorlevel 1 (
-    start "" /B "C:\xampp\mysql\bin\mysqld.exe" --defaults-file="C:\xampp\mysql\bin\my.ini" --standalone
-    ping -n 6 127.0.0.1 >NUL
-)
+rem Arrancar MySQL (con la config de XAMPP) solo si no esta corriendo, sin pisarse con otras tareas
+call "%~dp0mysql_asegurar.bat"
 
 python descuentos_ropa.py %* >> logs_ropa.txt 2>&1
 
