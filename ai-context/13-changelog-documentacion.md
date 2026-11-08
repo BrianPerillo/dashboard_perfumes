@@ -12,6 +12,13 @@ Formato:
 
 ---
 
+## 2026-11-09 — Tecnología: Gezatek, Wiztech, Armytech y Gamingcity
+
+- `descuentos_tecno.py`: 4 adaptadores nuevos (`gz_html`, `wt_json`, `at_html`, `gc_html`; ver [tecno-01](tecno-01-tiendas-y-precios.md)) y entradas en `SITES`; el historial de 30 días ahora también se usa en Wiztech (y no pisa rebajas ya publicadas); clasificación sin tildes + búsqueda de la palabra de tipo en cualquier parte del nombre + categorías nuevas (Hogar y electro, Consolas y juegos, Celulares y wearables, Cámaras y smart home); `--reclasificar` (sin scrapear).
+- Carga: `--solo wiztech armytech gezatek gamingcity --fecha 2026-11-08T13:19:19` dentro de la corrida visible #277 (de 4.790 a 8.675 productos; 1.691 con rebaja). Gezatek 1.227, Wiztech 176, Armytech 520, Gamingcity 1.962. `--reclasificar` corrigió 208 productos.
+- Dashboard (`Dashboard.php`): `filtro_colores: false` ahora también desactiva el agrupado por modelo+precio (en Tecnología ocultaba 191 ofertas). Sin otros cambios de UI.
+- Docs actualizados: tecno-01, 03, 11, 12, 14, 16.
+
 ## 2026-11-08 — Nuevo rubro Tecnología (PC y electro): Compragamer, Maximus y Fullh4rd
 
 - **Scraper nuevo `descuentos_tecno.py`** (+ `scripts/descuentos_tecno.bat`, `.gitignore`): un adaptador por tienda (Compragamer: JSON estático del propio sitio; Maximus: WebMethod del listado con el `hidWSId` público; Fullh4rd: HTML paginado), guardado tienda por tienda en una corrida `en_curso` que se cierra `completa` (≥60 % de tiendas OK). Precios en base **contado/transferencia**; la rebaja de Fullh4rd (no publica descuentos) sale del historial propio de 30 días. Clasificación común de categoría/tipo/marca. Mexx no se agregó (en mantenimiento). Primera corrida real: #277.

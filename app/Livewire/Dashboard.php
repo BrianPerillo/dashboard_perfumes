@@ -536,7 +536,7 @@ class Dashboard extends Component
 
         $query->where('o.corrida_id', $this->corridaActualId);
 
-        if ($this->agruparColores && config("rubros.rubros.{$this->rubro}.filtro_categoria")) {
+        if ($this->agruparColores && config("rubros.rubros.{$this->rubro}.filtro_categoria") && config("rubros.rubros.{$this->rubro}.filtro_colores", true)) {
             return $this->agruparTablaPorModelo($query);
         }
 

@@ -27,6 +27,10 @@ Principios aplicados: pausa aleatoria entre pedidos al mismo sitio, **sin parale
 | Tecnología: Compragamer (`cg_json`) | 4 pedidos en total (catálogo JSON estático), 1–2 s | 30 s × intento y ritmo adaptativo |
 | Tecnología: Maximus (`maximus_ws`) | 2,5–4,5 s entre pedidos (≈55) | idem |
 | Tecnología: Fullh4rd (`fh_html`) | 2,5–4,5 s entre páginas (≈160, 650 KB c/u) | idem |
+| Tecnología: Gezatek (`gz_html`) | 2,5–4,5 s entre páginas (≈50, 650 KB c/u) | idem |
+| Tecnología: Wiztech (`wt_json`) | 1 pedido (JSON de 193 KB) | idem |
+| Tecnología: Armytech (`at_html`) | 2,5–4,5 s entre páginas (11, ≈1 MB c/u) | idem |
+| Tecnología: Gamingcity (`gc_html`) | 2,5–4,5 s entre páginas (≈110 de 250 KB) | idem |
 
 Cambios de esta auditoría: pausas de perfumes más largas y reintento ante 429/503; Shopify de 6–9 s a 10–15 s; fichas de Dexter de 0,6–1,1 s a 1–1,8 s (+~15 min en la corrida); Moov corta tras 4 páginas seguidas sin descuentos (su orden "mayor descuento" no es estricto).
 
@@ -39,6 +43,7 @@ Se leyó el `robots.txt` de cada sitio (un pedido) y se comprobó que las rutas 
 * **Wrangler: `User-agent: *  Disallow: /`** (solo Googlebot permitido) → **desactivada** (`"activo": False` en `SITES`). Reactivar solo con autorización del sitio.
 * Nike: `robots.txt` devuelve 403 a una petición simple (Cloudflare); se lee con navegador real y pausas largas, sin evasión.
 * **Tecnología (2026-11-08):** Compragamer no publica `robots.txt` (devuelve su SPA) y el JSON que leemos es el que descarga cualquier visitante; Maximus veta login/checkout/perfil/seguimiento y nosotros solo pedimos el listado público; Fullh4rd veta `/cart`, `/order`, `/checkout`, `/tag?` y pedimos `/productos?page=N`. Sin `Crawl-delay` ni protección anti-bot en esas rutas. Mexx estaba en mantenimiento.
+  * **Agregadas el 2026-11-09:** Gezatek veta cuenta/carrito/checkout/login/admin y `?orderby=`/`?add-to-cart=` (pedimos `/<categoria>/?page=N`); Wiztech no publica `robots.txt` (devuelve su SPA) y leemos el mismo JSON que descarga la página; Armytech (PrestaShop) veta `?order=`, `?q=`, `?n=`, `controller=…` (pedimos `/2-productos?page=N`); Gamingcity veta `/productos.php?`, `/detalle.php?`, `/nov_detalle.php?`, `/control/`: **leemos las URLs amigables públicas** (`…--prod--<id>`), que son las del menú del sitio y no las rutas dinámicas vetadas (`Crawl-delay: 1` solo para Bingbot; respetamos más de 2,5 s igual).
 
 ## Protecciones anti-bot (Akamai, Lacoste/Adidas)
 

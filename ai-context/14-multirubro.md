@@ -52,6 +52,6 @@ Sumar el tercer rubro mostró qué seguía atado a "ropa". Quedó parametrizado 
 * `nombre_corto`: etiqueta del selector de rubro (3 opciones caben en el sidebar).
 * `generos` con **un solo valor** (`['unisex' => 'General']`): la sección "Género" no se muestra (sidebar y menú móvil de `livewire/dashboard.blade.php`).
 * `categorias_dinamicas`: los chips de **Categoría** salen de los datos (`Dashboard::$categoriasDisponibles`, calculado en `cargarOpcionesRopa`; `setCategoria` valida contra esa lista) en lugar de ropa/calzado/accesorios.
-* `tipo_label` (título del filtro de tipo, default "Prenda / tipo"), `usa_talles` (default true; en `false` la tabla no muestra talles ni "consultá en la tienda"), `filtro_colores` (default true; en `false` se oculta "Agrupar colores").
+* `tipo_label` (título del filtro de tipo, default "Prenda / tipo"), `usa_talles` (default true; en `false` la tabla no muestra talles ni "consultá en la tienda"), `filtro_colores` (default true; en `false` se oculta "Agrupar colores" y **no se agrupan** productos del mismo modelo y precio).
 * Alertas (`_alerta_form.blade.php`): los textos ya no asumen "perfume" para todo lo que no sea ropa (la presentación en ml solo se muestra para perfumes; el placeholder depende del rubro).
 * Sin pestaña "Comparar tiendas" (la de ropa cruza por `Support\Modelo::clave`, que no aplica a tecnología).

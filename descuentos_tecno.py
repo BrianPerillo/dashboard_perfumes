@@ -10,6 +10,10 @@ Tiendas (un adaptador por tienda; ver ai-context/tecno-01-tiendas-y-precios.md):
                     el identificador de sesion que el sitio publica en su HTML (hidWSId). Una categoria por vez.
   * fullh4rd     -> HTML del servidor, /productos?page=N (12 por pagina). No publica descuentos: la "rebaja" se calcula
                     contra el precio maximo de los ultimos 30 dias que ya guardamos de ese producto.
+  * gezatek      -> HTML propio, /<categoria>/?page=N (48 por pagina); precio final y precio tachado en promocion.
+  * wiztech      -> un JSON que pide la propia pagina (ProductosController.php?action=getProductosForCatalogo).
+  * armytech     -> PrestaShop, /2-productos?page=N (48 por pagina); precio actual y precio anterior.
+  * gamingcity   -> PHP propio con URLs amigables (<slug>--prod--<id>), paginado por offset de 25.
 
 Precio de referencia: SIEMPRE el precio de contado/transferencia/debito (el mas bajo de cada tienda), para que las tiendas
 sean comparables. precio_lista = ese mismo precio ANTES de la rebaja; si no hay rebaja, lista = actual (0 %).
@@ -33,6 +37,7 @@ import random
 import re
 import sys
 import time
+import unicodedata
 from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 
@@ -47,9 +52,23 @@ SITES = [
     {"name": "compragamer", "platform": "cg_json", "host": "compragamer.com"},
     {"name": "maximus", "platform": "maximus_ws", "host": "www.maximus.com.ar", "pag_max": 40},
     {"name": "fullh4rd", "platform": "fh_html", "host": "fullh4rd.com.ar", "pag_max": 220, "historial_dias": 30},
+    # Agregadas el 2026-11-09 (ver ai-context/tecno-01):
+    {"name": "gezatek", "platform": "gz_html", "host": "gezatek.com.ar", "pag_max": 40,
+     "categorias": ["almacenamiento", "combos-actualizacion", "electro", "gabinetes-y-fuentes", "memorias-portatiles", "memorias-ram",
+                    "motherboards", "notebooks-y-accesorios", "otros", "pc-armadas", "perifericos", "placas-de-video", "procesadores",
+                    "redes", "refrigeracion"]},
+    {"name": "wiztech", "platform": "wt_json", "host": "wiztech.com.ar", "historial_dias": 30},
+    {"name": "armytech", "platform": "at_html", "host": "www.armytech.com.ar", "pag_max": 40},
+    # categorias raiz de Gamingcity (incluyen a sus hijas); el listado se recorre siguiendo "Siguiente" (25 por pagina)
+    {"name": "gamingcity", "platform": "gc_html", "host": "www.gamingcity.com.ar", "pag_max": 60,
+     "categorias": ["computadoras--prod--162", "componentes--prod--166", "perifericos--prod--178", "notebooks--prod--50", "monitores--prod--32",
+                    "conectividad--prod--6", "impresoras-e-insumos--prod--174", "consolas--prod--25", "tabletas--prod--22", "sillas--prod--57",
+                    "estabilizadores-y-ups--prod--68", "camaras--prod--33", "accesorios--prod--19", "almacenamiento-extraible--prod--113",
+                    "simuladores--prod--175", "inteligencia-artificial--prod--183", "hogar--prod--94"]},
     # Mexx (www.mexx.com.ar) estaba en mantenimiento el 2026-11-08 (HTTP 400, "MEXX | Mantenimiento"): agregar cuando vuelva.
 ]
-_FUENTE = {"cg_json": "compragamer_json", "maximus_ws": "maximus_ws", "fh_html": "fullh4rd_html"}
+_FUENTE = {"cg_json": "compragamer_json", "maximus_ws": "maximus_ws", "fh_html": "fullh4rd_html", "gz_html": "gezatek_html",
+           "wt_json": "wiztech_json", "at_html": "armytech_html", "gc_html": "gamingcity_html"}
 
 
 class Bloqueado(Exception):
@@ -111,6 +130,8 @@ def _pedir(sesion, metodo: str, url: str, reintentos: int = 4, **kw):
             continue
         if r.status_code == 200:
             _ritmo_exito()
+            if (r.encoding or "").lower() in ("", "iso-8859-1"):       # requests asume latin-1 si el sitio no declara charset
+                r.encoding = "utf-8"
             return r
         if r.status_code not in (403, 429, 500, 502, 503, 504):
             raise Bloqueado(f"{url} -> HTTP {r.status_code}")
@@ -129,30 +150,42 @@ _REGLAS_NOMBRE = [
     (r"notebook|laptop|macbook|chromebook", "Notebooks"),
     (r"tablet|ipad", "Tablets"),
     (r"televisor|smart tv|tv\b", "Televisores"),
-    (r"pc armada|pc gamer|pc de escritorio|pc oficina|pc kit|pc all|computadora|all in one|mini ?pc|pc\b", "PC armadas"),
+    (r"pc armada|pc gamer|pc de escritorio|pc oficina|pc kit|pc all|computadora|supercomputadora|all in one|mini ?pc|pc\b", "PC armadas"),
     (r"combo|kit\b|pack\b", "Combos y kits"),
     (r"monitor|pantalla", "Monitores"),
     (r"proyector", "Proyectores"),
-    (r"placa de red|placa wifi|placa inal|adaptador wifi|adaptador usb wifi|router|access point|repetidor|extensor|mesh|switch|antena|powerline", "Conectividad"),
-    (r"placa de video|placa video|tarjeta de video|tarjeta grafica|geforce|radeon|gpu", "Placas de video"),
-    (r"procesador|microprocesador|cpu\b", "Procesadores"),
+    (r"placa de red|placa wifi|placa inal|adaptador wifi|adaptador usb wifi|capturador de red|receptor bluetooth|router|access point|repetidor|extensor|mesh|deco\b|switch|antena|powerline", "Conectividad"),
+    (r"placa de video|placa video|tarjeta de video|tarjeta grafica|geforce|radeon|gpu|vga\b", "Placas de video"),
+    (r"procesador|microprocesador|micro\b(?! ?sd)|cpu\b", "Procesadores"),
     (r"mother|placa madre", "Motherboards"),
-    (r"memoria (micro ?sd|sd\b|flash|usb)|micro ?sd|pendrive|pen drive|disco|ssd|hdd|unidad (solida|de estado)|nvme", "Almacenamiento"),
+    (r"memoria (micro ?sd|sd\b|flash|usb)|micro ?sd|pendrive|pen drive|disco|ssd|hdd|hd\b|unidad (solida|de estado)|nvme", "Almacenamiento"),
     (r"memoria|ram\b|sodimm|dimm", "Memorias RAM"),
     (r"fuente", "Fuentes"),
     (r"gabinete|case\b", "Gabinetes"),
-    (r"cooler|ventilador|fan\b|disipador|water ?cooling|refrigera|pasta t|liquid|kit de ventiladores|controladora", "Refrigeración"),
-    (r"silla|escritorio|mesa\b|soporte", "Sillas y muebles"),
+    (r"cooler|ventilador|fan\b|disipador|water ?cool(?:ing|er)|refrigera|pasta t|liquid|kit de ventiladores|controladora", "Refrigeración"),
+    (r"silla|escritorio|extension escritorio|mesa\b|soporte|rack\b", "Sillas y muebles"),
     (r"estabilizador|ups\b", "UPS y estabilizadores"),
-    (r"impresora|toner|cartucho|tinta|multifunci|cinta", "Impresoras"),
-    (r"teclado|mouse|auricular|headset|parlante|speaker|barra de sonido|webcam|camara web|microfono|joystick|gamepad|control |volante|pedalera|alfombra|pad\b|capturadora|stream|mando|lector|kit de teclado", "Periféricos"),
-    (r"cable|adaptador|conversor|hdmi|displayport|hub\b", "Cables y adaptadores"),
-    (r"accesorio|filtro|bracket|spl[i]?ter|tester|corrector|rig\b|riser|funda|mochila|robot", "Accesorios y otros"),
+    (r"impresora|toner|cartucho|tinta|multifunci|cinta|scanner|escaner|plotter", "Impresoras"),
+    (r"teclado|mouse|auricular|headset|parlante|speaker|barra de sonido|webcam|camara web|microfono|joystick|gamepad|control |palanca|shifter|simulador|controlador de juego|numpad|keycaps|stream deck|presentador|clutch|motor base|volante|pedalera|alfombra|pad\b|capturadora|stream|mando|lector|kit de teclado", "Periféricos"),
+    (r"cable|adaptador|conversor|hdmi|displayport|hub\b|placa pci", "Cables y adaptadores"),
+    (r"consola|playstation|xbox|nintendo|ps5\b|ps4\b", "Consolas y juegos"),
+    (r"celular|smartphone|iphone|smartwatch|watch\b|reloj inteligente", "Celulares y wearables"),
+    (r"aspiradora|licuadora|cafetera|freidora|microondas|heladera|pava\b|tostadora|batidora|plancha|purificador|aire acondicionado|lavarropas|"
+     r"termotanque|hervidora|multiprocesadora|sandwichera|waflera|bazar|vaso\b|botella|valija|herramienta|taladro|calefactor|estufa", "Hogar y electro"),
+    (r"camara|sensor|alarma|cerradura|timbre|domotic|enchufe inteligente|smart home|tapo", "Cámaras y smart home"),
+    (r"accesorio|windows|office\b|licencia|software|alcohol|dvd|thermal pad|conectores|luz profesional|dominator|filtro|bracket|spl[i]?ter|tester|corrector|rig\b|riser|funda|mochila|robot|powerbank|power bank|cargador|bateria|pila\b", "Accesorios y otros"),
 ]
+def _sin_tildes(txt: str) -> str:
+    return unicodedata.normalize("NFKD", txt or "").encode("ascii", "ignore").decode()
+
+
 _RE_OUTLET = re.compile(r"^\W*outlet\W*", re.I)
 # servicios que algunas tiendas publican como "producto" (no son articulos para comparar)
-_RE_EXCLUIR = re.compile(r"^\W*(armado|instalaci[oó]n|servicio t[eé]cnico)\b|no se vende suelto", re.I)
+_RE_EXCLUIR = re.compile(r"^\W*(armado|instalaci[oó]n|servicio t[eé]cnico)\b|no se vende suelto|^\W*art[ií]culo de prueba", re.I)
 _REGLAS_NOMBRE_RE = [(re.compile(r"^\W*(?:" + rx + ")", re.I), cat) for rx, cat in _REGLAS_NOMBRE]
+_CATS_SOLO_AL_INICIO = {"PC armadas", "Combos y kits", "Cables y adaptadores", "Accesorios y otros", "Periféricos", "Hogar y electro",
+                        "Cámaras y smart home", "Consolas y juegos", "Celulares y wearables", "Sillas y muebles", "Tablets", "Televisores"}
+_REGLAS_NOMBRE_ANY_RE = [(re.compile(r"\b(?:" + rx + ")", re.I), cat) for rx, cat in _REGLAS_NOMBRE if cat not in _CATS_SOLO_AL_INICIO]
 # categoria publicada por la tienda -> categoria comun (se usa si el nombre no empieza con un tipo conocido)
 _REGLAS_ETIQUETA = [
     (r"notebook|laptop", "Notebooks"), (r"tablet", "Tablets"), (r"televisor", "Televisores"), (r"monitor", "Monitores"),
@@ -163,6 +196,9 @@ _REGLAS_ETIQUETA = [
     (r"impresora", "Impresoras"), (r"ups|estabilizador", "UPS y estabilizadores"), (r"combo|kit", "Combos y kits"),
     (r"computadora|armad|pc de escritorio", "PC armadas"), (r"proyector", "Proyectores"), (r"perif|teclado|mouse|auricular", "Periféricos"),
     (r"cable|adaptador", "Cables y adaptadores"),
+    (r"hogar|electro|bazar|purificador|valija|herramienta|mueble", "Hogar y electro"),
+    (r"consola|simulador|juego", "Consolas y juegos"), (r"celular|smartwatch|wearable", "Celulares y wearables"),
+    (r"accesorio", "Accesorios y otros"),
 ]
 _REGLAS_ETIQUETA_RE = [(re.compile(rx, re.I), cat) for rx, cat in _REGLAS_ETIQUETA]
 
@@ -181,7 +217,8 @@ _ACRONIMOS = {"HDMI", "NVME", "WIFI", "RGB", "LED", "DDR4", "DDR5", "USB", "SSD"
 
 def clasificar(nombre: str, etiqueta: str = "") -> tuple[str, str]:
     """(categoria comun, tipo) de un producto a partir de su nombre y de la categoria que publica la tienda."""
-    nombre = _RE_OUTLET.sub("", nombre)
+    nombre = _RE_OUTLET.sub("", _sin_tildes(nombre))
+    etiqueta = _sin_tildes(etiqueta or "")
     cat = ""
     for rx, c in _REGLAS_NOMBRE_RE:
         if rx.search(nombre):
@@ -190,6 +227,13 @@ def clasificar(nombre: str, etiqueta: str = "") -> tuple[str, str]:
     if not cat:
         for rx, c in _REGLAS_ETIQUETA_RE:
             if rx.search(etiqueta or ""):
+                cat = c
+                break
+    if not cat:
+        # el nombre no arranca con el tipo (algunas tiendas empiezan con la marca: "Gamemax GX-1050 - Fuente 1050W"):
+        # se busca la palabra de tipo en cualquier parte, salvo las reglas genericas que darian falsos positivos
+        for rx, c in _REGLAS_NOMBRE_ANY_RE:
+            if rx.search(nombre):
                 cat = c
                 break
     if not cat:
@@ -219,6 +263,8 @@ _MARCAS = [
     "Sapphire", "Palit", "EVGA", "NZXT", "Phanteks", "Noctua", "Arctic", "Hisense", "BenQ", "AOC", "Gamdias", "Sharkoon",
     "Seagate", "Toshiba", "Netac", "Lexar", "Verbatim", "D-Link", "Ubiquiti", "Mikrotik", "Apple", "Motorola", "Sony", "Genesis",
     "Fury", "Xigmatek", "Lovingcool", "Qbox", "Performance", "Coolermaster", "Zowie", "Evga", "Nox", "Teros", "Noga", "Sentey",
+    "Fantech", "Hiksemi", "Kolke", "Philco", "Atma", "Kanji", "Thermalright", "Montech", "Mtek", "Gigabyte", "Gamer Pro",
+    "Oneplus", "Realme", "Huawei", "Garmin", "Jbl", "Kodak", "Tcl", "Bgh", "Liliana", "Peabody", "Oster", "Moulinex", "Ariston",
 ]
 _MARCAS_RE = []
 for _m in sorted(set(_MARCAS), key=len, reverse=True):
@@ -411,6 +457,212 @@ def scrap_fullh4rd(sesion, site: dict, max_paginas: int) -> list[ItemTecno]:
     return list(vistos.values())
 
 
+# --------------------------------------------------------------------------- #
+# Gezatek (HTML del servidor; ?page=N, 48 por pagina)
+# --------------------------------------------------------------------------- #
+_RE_GZ_URL = re.compile(r'<h4 class="card-title[^>]*>\s*<a href="([^"]+)">(.*?)</a>', re.S)
+_RE_GZ_STOCK = re.compile(r'<font[^>]*>\s*([^<]*stock[^<]*|[^<]*agotado[^<]*)\s*</font>', re.I)
+_RE_GZ_IMG = re.compile(r'<img src="(https://[^"]+)"')
+_RE_GZ_FINAL = re.compile(r'data-precio="([\d\.]+)"')
+_RE_GZ_TACHADO = re.compile(r'tachado_\d">\s*\$\s*([\d\.]+)\s*<')
+
+
+def items_de_gezatek(html_text: str, site: dict, etiqueta: str = "") -> list[ItemTecno]:
+    """Cada tarjeta trae: nombre/URL/SKU/stock ANTES del bloque <div class="price"> y los precios dentro de el: precio final
+    ("Precio Geza", de contado/transferencia, data-precio) y el tachado (precio anterior) cuando hay promocion."""
+    partes = html_text.split('<div class="price">')
+    out = []
+    for i in range(1, len(partes)):
+        ant, cur = partes[i - 1][-7000:], partes[i][:1000]     # la foto queda lejos del precio (botones, favoritos...)
+        urls = list(_RE_GZ_URL.finditer(ant))
+        mf = _RE_GZ_FINAL.search(cur)
+        if not (urls and mf):
+            continue
+        mu = urls[-1]
+        stock = [m.group(1).lower() for m in _RE_GZ_STOCK.finditer(ant)]
+        if stock and "agotado" in stock[-1]:
+            continue
+        actual = float(mf.group(1))
+        mt = _RE_GZ_TACHADO.search(cur)
+        tachado = float(mt.group(1)) if mt else 0.0
+        lista = tachado if tachado > actual else actual
+        url = mu.group(1)
+        idp = re.search(r"-(\d+)\.html", url)
+        if actual <= 0 or not idp:
+            continue
+        nombre_crudo = _html.unescape(re.sub(r"<[^>]+>", "", mu.group(2))).strip()
+        mi =list(_RE_GZ_IMG.finditer(ant[:mu.start()]))
+        cat, tipo = clasificar(nombre_crudo, etiqueta or url.split("/")[3].replace("-", " "))
+        out.append(ItemTecno(
+            tienda=site["name"], nombre=_bonito(nombre_crudo), referencia=f"gz-{idp.group(1)}", marca=detectar_marca(nombre_crudo),
+            categoria=cat, tipo=tipo, precio_lista=lista, precio_actual=actual, descuento_pct=_dto(lista, actual), url=url,
+            imagen=mi[-1].group(1) if mi else ""))               # el SKU de Gezatek (SSD029...) es interno: no sirve para comparar
+    return out
+
+
+def scrap_gezatek(sesion, site: dict, max_paginas: int) -> list[ItemTecno]:
+    vistos: dict = {}
+    for cat in site["categorias"]:
+        n_cat = 0
+        for pagina in range(1, min(max_paginas, site.get("pag_max", 40)) + 1):
+            _pausa()
+            r = _pedir(sesion, "GET", f"https://{site['host']}/{cat}/" + (f"?page={pagina}" if pagina > 1 else ""),
+                       headers={"Accept": "text/html,application/xhtml+xml,*/*"})
+            items = items_de_gezatek(r.text, site, cat.replace("-", " "))
+            nuevos = 0
+            for it in items:
+                if it.clave not in vistos:
+                    vistos[it.clave] = it
+                    nuevos += 1
+            n_cat += nuevos
+            if not items or nuevos == 0 or "rel='next'" not in r.text:
+                break
+        log.info("    %-26s %4d nuevos (acumulados %d)", cat, n_cat, len(vistos))
+    return list(vistos.values())
+
+
+# --------------------------------------------------------------------------- #
+# Wiztech (SPA Angular: un JSON con todo el catalogo, el mismo que pide la pagina)
+# --------------------------------------------------------------------------- #
+def scrap_wiztech(sesion, site: dict, max_paginas: int) -> list[ItemTecno]:
+    base = f"https://{site['host']}"
+    r = _pedir(sesion, "GET", f"{base}/backend/Controller/ProductosController.php?action=getProductosForCatalogo&param=0",
+               headers={"Accept": "application/json", "Referer": base + "/"})
+    datos = r.json()
+    if not datos.get("Ok") or not isinstance(datos.get("Result"), list):
+        raise Bloqueado(f"Wiztech: respuesta inesperada ({str(datos)[:120]})")
+    out = []
+    for p in datos["Result"]:
+        if (p.get("Cantidad") or 0) <= 0 or not p.get("HabilitadoWeb") or p.get("Consultar"):
+            continue
+        precio = float(p.get("Precio") or 0)
+        if precio <= 1:                                         # "1" = precio a consultar
+            continue
+        oferta = float(p.get("PrecioOferta") or 0)
+        actual = oferta if 0 < oferta < precio else precio
+        comp, marca, modelo = (p.get("Componente") or "").strip(), (p.get("Marca") or "").strip(), (p.get("Modelo") or "").strip()
+        nombre_crudo = f"{comp} {marca} {modelo}".strip()
+        cat, tipo = clasificar(nombre_crudo, comp)
+        img = (p.get("ImgSrcCollectionWeb") or [p.get("ImgSrc")] or [""])[0] or ""
+        out.append(ItemTecno(
+            tienda=site["name"], nombre=_bonito(nombre_crudo), referencia=f"wt-{p['IdProducto']}", marca=marca or detectar_marca(nombre_crudo),
+            categoria=cat, tipo=tipo, precio_lista=precio, precio_actual=actual, descuento_pct=_dto(precio, actual),
+            url=f"{base}/{p['ProductUrl']}" if p.get("ProductUrl") else base + "/", imagen=f"{base}/{img.lstrip('/')}" if img else ""))
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# Armytech (PrestaShop, tema iqit; /2-productos?page=N, 48 por pagina)
+# --------------------------------------------------------------------------- #
+_RE_AT_TARJETA = re.compile(r"(?=<article[^>]*product-miniature)")
+_RE_AT_ID = re.compile(r'data-id-product="(\d+)"')
+_RE_AT_TITULO = re.compile(r'product-title">\s*<a href="([^"]+)">\s*(.*?)\s*</a>', re.S)
+_RE_AT_PRECIO = re.compile(r'class="product-price"[^>]*content="([\d\.]+)"')
+_RE_AT_ANTES = re.compile(r'class="regular-price[^"]*">\s*\$\s*([\d\.,]+)')
+_RE_AT_IMG = re.compile(r'<img[^>]*src="(https://[^"]+)"[^>]*product-thumbnail-first|product-thumbnail-first[^>]*src="(https://[^"]+)"')
+_RE_AT_CAT = re.compile(r'product-category-name text-muted">\s*([^<]*?)\s*<')
+
+
+def items_de_armytech(html_text: str, site: dict) -> list[ItemTecno]:
+    out = []
+    for bloque in _RE_AT_TARJETA.split(html_text)[1:]:
+        bloque = bloque.split("</article>")[0]
+        if "s-marca" in bloque[:400]:                           # pseudo-productos del armador de PC ("Selecciona tu marca")
+            continue
+        mi, mt, mp = _RE_AT_ID.search(bloque), _RE_AT_TITULO.search(bloque), _RE_AT_PRECIO.search(bloque)
+        if not (mi and mt and mp):
+            continue
+        actual = float(mp.group(1))
+        ma = _RE_AT_ANTES.search(bloque)
+        antes = _num_ar(ma.group(1)) if ma else 0.0
+        lista = antes if antes > actual else actual
+        nombre_crudo = _html.unescape(re.sub(r"<[^>]+>", "", mt.group(2))).strip()
+        mc, mim = _RE_AT_CAT.search(bloque), _RE_AT_IMG.search(bloque)
+        cat, tipo = clasificar(nombre_crudo, mc.group(1) if mc else "")
+        out.append(ItemTecno(
+            tienda=site["name"], nombre=_bonito(nombre_crudo), referencia=f"at-{mi.group(1)}", marca=detectar_marca(nombre_crudo),
+            categoria=cat, tipo=tipo, precio_lista=lista, precio_actual=actual, descuento_pct=_dto(lista, actual), url=mt.group(1),
+            imagen=(mim.group(1) or mim.group(2)) if mim else ""))   # la "referencia" de Armytech es interna: no sirve para comparar
+    return out
+
+
+def scrap_armytech(sesion, site: dict, max_paginas: int) -> list[ItemTecno]:
+    vistos: dict = {}
+    for pagina in range(1, min(max_paginas, site.get("pag_max", 40)) + 1):
+        _pausa()
+        r = _pedir(sesion, "GET", f"https://{site['host']}/2-productos?page={pagina}", headers={"Accept": "text/html,application/xhtml+xml,*/*"})
+        items = items_de_armytech(r.text, site)
+        nuevos = 0
+        for it in items:
+            if it.clave not in vistos:
+                vistos[it.clave] = it
+                nuevos += 1
+        if pagina % 5 == 1 or not nuevos:
+            log.info("  pagina %d: %d productos, %d nuevos (acumulados %d)", pagina, len(items), nuevos, len(vistos))
+        if not items or nuevos == 0:
+            break
+    return list(vistos.values())
+
+
+# --------------------------------------------------------------------------- #
+# Gamingcity (PHP propio; URLs amigables "<slug>--prod--<id>", paginas por offset de 25)
+# --------------------------------------------------------------------------- #
+_RE_GC_CAJA = re.compile(r'<div class="col-md-3 col-xs-6 cajasoferta">')
+_RE_GC_URL = re.compile(r'href="([^"]*--det--(\d+))"')
+_RE_GC_NOMBRE = re.compile(r'class="titprod"[^>]*>\s*([^<]*?)\s*<')
+_RE_GC_IMG = re.compile(r'data-src="(https?://[^"]+)"')
+_RE_GC_VENTA = re.compile(r'price-sales">\s*\$\s*([\d\.,]+)')
+_RE_GC_ANTES = re.compile(r'price-standard">\s*\$\s*([\d\.,]+)')
+_RE_GC_PRECIO = re.compile(r'<div class="price"><span>\s*(?:<span[^>]*>)?\s*\$\s*([\d\.,]+)')
+_RE_GC_SIGUIENTE = re.compile(r'<a href="([^"]+)"[^>]*class="link">\s*Siguiente')
+
+
+def items_de_gamingcity(html_text: str, site: dict, etiqueta: str = "") -> list[ItemTecno]:
+    out = []
+    for caja in _RE_GC_CAJA.split(html_text)[1:]:
+        caja = caja.split("btn-compra")[0]
+        mu, mn = _RE_GC_URL.search(caja), _RE_GC_NOMBRE.search(caja)
+        if not (mu and mn):
+            continue
+        if re.search(r"sin stock|agotado|semaf_rojo", caja, re.I):
+            continue
+        mv, ma, mp = _RE_GC_VENTA.search(caja), _RE_GC_ANTES.search(caja), _RE_GC_PRECIO.search(caja)
+        actual = _num_ar((mv or mp).group(1)) if (mv or mp) else 0.0
+        if actual <= 0:
+            continue
+        antes = _num_ar(ma.group(1)) if ma else 0.0
+        lista = antes if antes > actual else actual
+        nombre_crudo = _html.unescape(mn.group(1)).strip()
+        cat, tipo = clasificar(nombre_crudo, etiqueta)
+        mi = _RE_GC_IMG.search(caja)
+        out.append(ItemTecno(
+            tienda=site["name"], nombre=_bonito(nombre_crudo), referencia=f"gc-{mu.group(2)}", marca=detectar_marca(nombre_crudo),
+            categoria=cat, tipo=tipo, precio_lista=lista, precio_actual=actual, descuento_pct=_dto(lista, actual),
+            url=f"https://{site['host']}/{mu.group(1)}", imagen=mi.group(1) if mi else ""))
+    return out
+
+
+def scrap_gamingcity(sesion, site: dict, max_paginas: int) -> list[ItemTecno]:
+    vistos: dict = {}
+    for ruta in site["categorias"]:
+        n_cat, url, paginas = 0, f"https://{site['host']}/{ruta}", 0
+        while url and paginas < min(max_paginas, site.get("pag_max", 60)):
+            _pausa()
+            r = _pedir(sesion, "GET", url, headers={"Accept": "text/html,application/xhtml+xml,*/*"})
+            items = items_de_gamingcity(r.text, site, ruta.split("--")[0].replace("-", " "))
+            nuevos = 0
+            for it in items:
+                if it.clave not in vistos:
+                    vistos[it.clave] = it
+                    nuevos += 1
+            n_cat += nuevos
+            paginas += 1
+            ms = _RE_GC_SIGUIENTE.search(r.text)
+            url = f"https://{site['host']}/{ms.group(1)}" if ms and nuevos else None
+        log.info("    %-44s %2d pag, %4d nuevos (acumulados %d)", ruta, paginas, n_cat, len(vistos))
+    return list(vistos.values())
+
+
 def aplicar_historial(items: list[ItemTecno], site: dict, ahora: datetime) -> int:
     """Fullh4rd no publica precio anterior: la rebaja se mide contra el precio maximo que tuvo el producto en los ultimos
     N dias segun nuestras propias observaciones (corridas anteriores). Devuelve cuantos productos quedaron con rebaja."""
@@ -435,6 +687,8 @@ def aplicar_historial(items: list[ItemTecno], site: dict, ahora: datetime) -> in
         conn.close()
     con = 0
     for it in items:
+        if it.descuento_pct > 0:
+            continue                                            # ya trae una rebaja publicada por la tienda
         mx = previos.get(it.referencia.lower())
         if mx and mx > it.precio_actual * 1.01:
             it.precio_lista = round(mx, 2)
@@ -560,10 +814,42 @@ def cerrar_corrida(fecha_hora: datetime, estado: str) -> bool:
         conn.close()
 
 
+def reclasificar_en_bd() -> int:
+    """Sin scrapear: vuelve a aplicar clasificar()/detectar_marca() a los productos de tecnologia guardados que quedaron en
+    'Otros' o sin marca (datos derivados). Nunca cambia un producto que ya tiene una categoria distinta de 'Otros': la
+    categoria que publica la tienda (que no se guarda) puede haber sido mas precisa que el nombre solo."""
+    import pymysql
+    conn = pymysql.connect(charset="utf8mb4", autocommit=False, **DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT p.id, p.nombre, p.categoria, p.tipo, p.marca FROM productos p JOIN tiendas t ON t.id=p.tienda_id WHERE t.rubro=%s", (RUBRO,))
+            cambios = []
+            for pid, nombre, cat, tipo, marca in cur.fetchall():
+                ncat, ntipo = (cat, tipo)
+                if not cat or cat == "Otros":
+                    c2, t2 = clasificar(nombre, "")
+                    if c2 != "Otros":
+                        ncat, ntipo = c2, (t2 or None)
+                nmarca = marca or detectar_marca(nombre) or None
+                if (ncat, ntipo, nmarca) != (cat, tipo, marca):
+                    cambios.append((ncat, ntipo, nmarca, pid))
+            cur.executemany("UPDATE productos SET categoria=%s, tipo=%s, marca=%s WHERE id=%s", cambios)
+        conn.commit()
+        log.info("Reclasificados %d productos de tecnologia (los que estaban en 'Otros' o sin marca).", len(cambios))
+        return 0
+    except Exception as e:  # noqa: BLE001
+        conn.rollback()
+        log.error("Error reclasificando (rollback): %s", e)
+        return 4
+    finally:
+        conn.close()
+
+
 # --------------------------------------------------------------------------- #
 # Main
 # --------------------------------------------------------------------------- #
-_ADAPTADORES = {"cg_json": scrap_compragamer, "maximus_ws": scrap_maximus, "fh_html": scrap_fullh4rd}
+_ADAPTADORES = {"cg_json": scrap_compragamer, "maximus_ws": scrap_maximus, "fh_html": scrap_fullh4rd, "gz_html": scrap_gezatek,
+                "wt_json": scrap_wiztech, "at_html": scrap_armytech, "gc_html": scrap_gamingcity}
 
 
 def main() -> int:
@@ -575,7 +861,10 @@ def main() -> int:
     ap.add_argument("--force-db", action="store_true", help="publicar la corrida aunque fallen tiendas")
     ap.add_argument("--umbral-tiendas", type=float, default=0.6, help="fraccion minima de tiendas OK para publicar la corrida")
     ap.add_argument("--json", metavar="RUTA", help="ademas volcar todos los items a JSON")
+    ap.add_argument("--reclasificar", action="store_true", help="sin scrapear: reclasifica los productos guardados en 'Otros' o sin marca")
     args = ap.parse_args()
+    if args.reclasificar:
+        return reclasificar_en_bd()
 
     # sin microsegundos: DATETIME(0) los trunca al insertar y cerrar_corrida() no encontraria la fila
     ahora = datetime.fromisoformat(args.fecha) if args.fecha else datetime.now().replace(microsecond=0)
